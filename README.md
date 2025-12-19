@@ -26,7 +26,7 @@ model/service --> bussiness logic (e.g; login)
 , Microservcies- diferent port and connection for each individual service
 
 --- user sign up
-
+store credentials in .env file
 CRUD operation with user table in index.js file
 
 createuser
