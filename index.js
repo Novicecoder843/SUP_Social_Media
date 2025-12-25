@@ -57,6 +57,48 @@ app.post("/createUser", async (req, res) => {
   }
 });
 
+app.post("/createUserss", async (req, res) => {
+  try {
+    const users = req.body;
+    const insertedUsers = [];
+
+    for (const user of users) {
+      const {
+        username,
+        email,
+        password_hash,
+        full_name,
+        phone_number,
+        gender,
+        date_of_birth,
+        bio,
+        profile_picture
+      } = user;
+
+      const result = await con.query(
+        `INSERT INTO user_schema.users
+         (username, email, password_hash, full_name, phone_number, gender, date_of_birth, bio, profile_picture)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+         RETURNING *`,
+        [username, email, password_hash, full_name, phone_number, gender, date_of_birth, bio, profile_picture]
+      );
+      if(result.rows.length > 0 ){
+      insertedUsers.push(result.rows[0]);
+      }
+      
+    }
+
+    res.status(201).json({
+      message: "Users inserted successfully",
+      data: insertedUsers
+    });
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
 app.get("/allUser", async (req, res) => {
   try {
     const result = await con.query(
