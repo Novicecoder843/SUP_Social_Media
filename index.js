@@ -1,5 +1,5 @@
 const express = require("express");
-// const Client = require("./db");
+const Client = require("./db");
 const con = require("./db");
 const bodyParser = require("body-parser");
 // const { result, Connection } = require("pg");
@@ -7,31 +7,9 @@ const app = express()
 app.use(express.json())
 
 
-app.post("/Create_User", async (req, res) => {
-  try {
-    const { username,
-      email,
-      password_hash,
-      full_name,
-      phone_number,
-      gender,
-      date_of_birth,
-      bio,
-      profile_picture,
-    } = req.body
-    const insert_quary = `INSERT INTO user_schema.users (username,email,password_hash,full_name,phone_number,gender,date_of_birth,bio,profile_picture) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`
-    const result = await con.query(insert_quary, [username, email, password_hash, full_name, phone_number, gender, date_of_birth, bio, profile_picture]);
-    res.status(201).json(result.rows[0]);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-
-});
-
-// app.post("/createUser", async (req, res) => {
+// app.post("/Create_User", async (req, res) => {
 //   try {
-//     const {
-//       username,
+//     const { username,
 //       email,
 //       password_hash,
 //       full_name,
@@ -39,22 +17,44 @@ app.post("/Create_User", async (req, res) => {
 //       gender,
 //       date_of_birth,
 //       bio,
-//       profile_picture
-//     } = req.body;
-
-//     const result = await con.query(
-//       `INSERT INTO user_schema.users
-//       (username, email, password_hash, full_name, phone_number, gender, date_of_birth, bio, profile_picture)
-//       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
-//       RETURNING *`,
-//       [username, email, password_hash, full_name, phone_number, gender, date_of_birth, bio, profile_picture]
-//     );
-
+//       profile_picture,
+//     } = req.body
+//     const insert_quary = `INSERT INTO user_schema.users (username,email,password_hash,full_name,phone_number,gender,date_of_birth,bio,profile_picture) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`
+//     const result = await con.query(insert_quary, [username, email, password_hash, full_name, phone_number, gender, date_of_birth, bio, profile_picture]);
 //     res.status(201).json(result.rows[0]);
 //   } catch (err) {
 //     res.status(500).json({ error: err.message });
 //   }
+
 // });
+
+app.post("/createUser", async (req, res) => {
+  try {
+    const {
+      username,
+      email,
+      password_hash,
+      full_name,
+      phone_number,
+      gender,
+      date_of_birth,
+      bio,
+      profile_picture
+    } = req.body;
+
+    const result = await con.query(
+      `INSERT INTO user_schema.users
+      (username, email, password_hash, full_name, phone_number, gender, date_of_birth, bio, profile_picture)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+      RETURNING *`,
+      [username, email, password_hash, full_name, phone_number, gender, date_of_birth, bio, profile_picture]
+    );
+
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 app.post("/createUserss", async (req, res) => {
   try {
@@ -197,5 +197,5 @@ app.delete("/deleteUser/:id", async (req, res) => {
 
 port = 3000
 app.listen(3000, () => {
-  console.log('server is runnng... http//localhost:3000');
+  console.log('server is runnng... http://localhost:3000');
 })
