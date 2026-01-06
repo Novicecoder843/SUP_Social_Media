@@ -34,3 +34,5 @@ updateuser
 deleteuser
 getalluser
 getsingleuserbyid
+
+app.js ---> roues ---> controller ----> model/services
