@@ -2,9 +2,10 @@
   "name": "sup_social_media",
   "version": "1.0.0",
   "description": "Social Media",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
-    "dev":"node index.js",
+    "start":"nodemon server.js",
+    "dev":"nodemon server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
