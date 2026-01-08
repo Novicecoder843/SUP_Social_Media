@@ -1,5 +1,5 @@
 const express = require("express");
-const client = require("./config/db");
+const pool = require("./config/db");
 const app = express();
 const PORT = 3000;
 
@@ -21,15 +21,19 @@ app.get("/", (req, res) => {
 //         res.status(500).json({ error: error.message });
 //     }
 // });
+
+app.use("/api", userRoutes);
+
 app.post("/users", async (req, res) => {
     try {
         const { username, email, password, full_name, bio, mobile } = req.body;
 
-        const query =` INSERT INTO users (username, email, 
-            password, full_name, bio, mobile) VALUES ($1, $2, $3, $4, $5, $6) RETURNING * `;
-
-            const values = [username, email, password, full_name, bio, mobile];
-            const result = await client.query(query, values);
+        const result = await pool.query(
+        ` INSERT INTO users (username, email, 
+password, full_name, bio, mobile) VALUES ($1, $2, $3, $4, $5, $6) RETURNING * `
+                     [username, email, password, full_name, bio, mobile]
+        );
+            
             res.status(201).json(result.rows[0]);
     } catch (error) {
         res.status(500).json({ error: error.message});
@@ -37,8 +41,7 @@ app.post("/users", async (req, res) => {
 });
 app.get("/users", async (req, res) => {
     try {
-        const result = await
-        client.query("SELECT * FROM users ORDER BY id DESC");
+        const result = await pool.query("SELECT * FROM users ORDER BY id DESC");
         res.json(result.rows);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -46,7 +49,7 @@ app.get("/users", async (req, res) => {
 });
 app.get("/users/:id", async (req, res) => {
     try {
-        const result = await client.query( "SELECT * FROM users WHERE id = $1", [req.params.id]);
+        const result = await pool.query( "SELECT * FROM users WHERE id = $1", [req.params.id]);
         if (result.rows.length === 0) {
             return res.status(404).json({ message: "User not found" });
         }
@@ -58,7 +61,7 @@ app.get("/users/:id", async (req, res) => {
 app.put("/users/:id", async (req, res) => {
     try {
         const { full_name, bio, mobile } = req.body;
-        const result = await client.query( `UPDATE users SET full_name = $1, bio = $2, mobile = $3 WHERE id = $4 
+        const result = await pool.query( `UPDATE users SET full_name = $1, bio = $2, mobile = $3 WHERE id = $4 
             RETURNING * `, [full_name, bio, mobile, req.params.id]);
             if (result.rows.length === 0) {
                 return res.status(404).json({ message: "User not found" });
@@ -70,7 +73,7 @@ app.put("/users/:id", async (req, res) => {
 });
 app.delete("/users/:id", async (req, res) => {
     try {
-        const result = await client.query("DELETE FROM users WHERE id = $1 RETURNING *", [req.params.id]);
+        const result = await pool.query("DELETE FROM users WHERE id = $1 RETURNING *", [req.params.id]);
         if (result.rows.length === 0) {
             return res.status(404).json({ message: "User not found" });
         }
@@ -79,6 +82,8 @@ app.delete("/users/:id", async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+
+
 app.listen(PORT, () => {
     console.log('Server started at http://localhost:${PORT}');
 });
