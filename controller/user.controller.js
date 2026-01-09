@@ -1,45 +1,51 @@
-const pool = require("../config/db");
+
+const UserModel = require("../model/user.model");
 
 exports.createUser = async (req, res) => {
-  const { name, email, password } = req.body;
+  try {
+    const { name, email, password, mobile } = req.body;
 
-  const result = await pool.query(
-    `INSERT INTO users (name, email, password)
-     VALUES ($1, $2, $3)
-     RETURNING *`,
-    [name, email, password]
-  );
+    const userResult = await UserModel.createUser({
+      name,
+      email,
+      password,
+      mobile
+    });
 
-  res.status(201).json(result.rows[0]);
+    res.status(201).json({
+      data: userResult,
+      success: true,
+      message: "User created successfully"
+    });
+  } catch (error) {
+    console.error("Create User Error:", error);
+    res.status(500).json({
+      data: [],
+      success: false,
+      message: "Internal server error"
+    });
+  }
 };
-
 
 exports.updateUser = async (req, res) => {
   try {
     const { id } = req.params;
     const { name, email } = req.body;
 
-    const result = await pool.query(
-      `UPDATE users
-       SET name = $1,
-           email = $2,
-           updated_at = CURRENT_TIMESTAMP
-       WHERE id = $3 AND deleted_at IS NULL
-       RETURNING *`,
-      [name, email, id]
-    );
+    const userResult = await UserModel.updateUser(id, { name, email });
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    console.log("User Updated:");
-    console.table(result.rows);
-
-    res.json(result.rows[0]);
+    res.status(200).json({
+      data: userResult,
+      success: true,
+      message: "User updated successfully"
+    });
   } catch (error) {
     console.error("Update User Error:", error);
-     res.status(500).json({ message: "Failed to update user" });
+    res.status(500).json({
+      data: [],
+      success: false,
+      message: "Internal server error"
+    });
   }
 };
 
@@ -47,41 +53,39 @@ exports.deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const result = await pool.query(
-      `UPDATE users
-       SET deleted_at = CURRENT_TIMESTAMP
-       WHERE id = $1 AND deleted_at IS NULL
-       RETURNING *`,
-      [id]
-    );
+    const userResult = await UserModel.deleteUser(id);
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    console.log("User Deleted:");
-    console.table(result.rows);
-
-    res.json({ message: "User deleted successfully" });
+    res.status(200).json({
+      data: userResult,
+      success: true,
+      message: "User deleted successfully"
+    });
   } catch (error) {
     console.error("Delete User Error:", error);
-    res.status(500).json({ message: "Failed to delete user" });
+    res.status(500).json({
+      data: [],
+      success: false,
+      message: "Internal server error"
+    });
   }
-}
+};
 
 exports.getAllUsers = async (req, res) => {
   try {
-    const result = await pool.query(
-      "SELECT * FROM users WHERE deleted_at IS NULL ORDER BY id"
-    );
+    const users = await UserModel.getAllUsers();
 
-    console.log("All Users:");
-    console.table(result.rows);
-
-    res.json(result.rows);
+    res.status(200).json({
+      data: users,
+      success: true,
+      message: "Users fetched successfully"
+    });
   } catch (error) {
     console.error("Get All Users Error:", error);
-    res.status(500).json({ message: "Failed to fetch users" });
+    res.status(500).json({
+      data: [],
+      success: false,
+      message: "Internal server error"
+    });
   }
 };
 
@@ -89,21 +93,19 @@ exports.getSingleUser = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const result = await pool.query(
-      "SELECT * FROM users WHERE id = $1 AND deleted_at IS NULL",
-      [id]
-    );
+    const user = await UserModel.getSingleUser(id);
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    console.log("Single User:");
-    console.table(result.rows);
-
-    res.json(result.rows[0]);
+    res.status(200).json({
+      data: user,
+      success: true,
+      message: "User fetched successfully"
+    });
   } catch (error) {
-    console.error("Get User Error:", error);
-    res.status(500).json({ message: "Failed to fetch user" });
+    console.error("Get Single User Error:", error);
+    res.status(500).json({
+      data: [],
+      success: false,
+      message: "Internal server error"
+    });
   }
 };
