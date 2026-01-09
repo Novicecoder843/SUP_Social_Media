@@ -26,10 +26,10 @@ exports.createuser = async (req,res) =>{
 
     try{
 
-        const { email, password, mobile, name, first_name, last_name, city } = req.body;
+        const { name,address,city,password,email,mobile } = req.body;
 
         const userResult  = await UserModel.CreateUser(
-            { email, password, mobile, name, first_name, last_name, city }
+            { name,address,city,password,email,mobile }
         )
 
         res.status(200).json({data:userResult,success:true, message: "User fetched successfully" });
