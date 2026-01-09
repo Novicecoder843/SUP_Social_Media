@@ -5,7 +5,7 @@ exports.getuserData = async () =>{
 
     try{
 
-        const result = await pool.query("SELECT * FROM users limit 10");
+        const result = await pool.query("SELECT * FROM users2 limit 10");
         console.log(result.rows);
         return result.rows
 
@@ -24,12 +24,11 @@ exports.CreateUser = async (data) =>{
     try{
 
         const result = await pool.query(
-            `INSERT INTO user_schema.users
-            (email, password, mobile, name, first_name, last_name, city)
-            VALUES ($1,$2,$3,$4,$5,$6,$7)
+            `INSERT INTO user_schema.users2
+            (name,address,city,password,email,mobile)
+            VALUES ($1,$2,$3,$4,$5,$6)
             RETURNING *`,
-            [data.email, data.password, data.mobile, data.name, data.first_name, data.last_name, 
-                data.city]
+            [data.name, data.address, data.city, data.password, data.email, data.mobile ]
           );
         console.log(result.rows);
         return result.rows
