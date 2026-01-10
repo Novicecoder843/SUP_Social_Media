@@ -1,73 +1,64 @@
-const UserModel = require('../model/userModel');
+const User = require('../models/user.model');
 
-/* =========================
-   GET USERS
-========================= */
-exports.getUser = async (req, res) => {
+// CREATE
+// ============================================
+exports.createUser = async (req, res) => {
   try {
-    const userResult = await UserModel.getUserData();
-
-    if (!userResult || userResult.length === 0) {
-      return res.status(404).json({
-        data: [],
-        success: false,
-        message: "Users not found"
-      });
-    }
-
-    return res.status(200).json({
-      data: userResult,
+    const result = await User.createUser(req.body);
+    res.status(201).json({
       success: true,
-      message: "Users fetched successfully"
+      data: result.rows[0]
     });
-
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({
-      data: [],
-      success: false,
-      message: "Internal server error"
-    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 
-/* =========================
-   CREATE USER
-========================= */
-exports.createUser = async (req, res) => {
+// GET ALL
+// =================================================
+exports.getAllUsers = async (req, res) => {
   try {
-    const { email, password, mobile, name, first_name, last_name, city } = req.body;
+    const result = await User.getAllUsers();
+    res.json({ success: true, data: result.rows });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
 
-    if (!email || !password) {
-      return res.status(400).json({
-        data: [],
-        success: false,
-        message: "Email and password are required"
-      });
+// GET SINGLE
+// ===========================================
+exports.getUserById = async (req, res) => {
+  try {
+    const result = await User.getUserById(req.params.id);
+
+    if (!result.rows.length) {
+      return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    const userResult = await UserModel.createUser({
-      email,
-      password,
-      mobile,
-      name,
-      first_name,
-      last_name,
-      city
-    });
+    res.json({ success: true, data: result.rows[0] });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
 
-    return res.status(201).json({
-      data: userResult,
-      success: true,
-      message: "User created successfully"
-    });
+// UPDATE
+// ============================================
+exports.updateUser = async (req, res) => {
+  try {
+    const result = await User.updateUser(req.params.id, req.body);
+    res.json({ success: true, data: result.rows[0] });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
 
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({
-      data: [],
-      success: false,
-      message: "Internal server error"
-    });
+// DELETE
+// ===========================================
+exports.deleteUser = async (req, res) => {
+  try {
+    await User.deleteUser(req.params.id);
+    res.json({ success: true, message: 'User deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
 };
