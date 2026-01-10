@@ -2,8 +2,8 @@ const RoleModel = require("../models/roleModel");
 
 exports.createRole = async (req, res) => {
   try {
-    const { name } = req.body;
-    const role = await RoleModel.createRole(name);
+    const { name,description } = req.body;
+    const role = await RoleModel.createRole(name,description);
     res.status(201).json(role);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -33,8 +33,8 @@ exports.getRoleById = async (req, res) => {
 
 exports.updateRole = async (req, res) => {
   try {
-    const { name } = req.body;
-    const role = await RoleModel.updateRole(req.params.id, name);
+    const { name , description } = req.body;
+    const role = await RoleModel.updateRole(req.params.id, name,description);
     if (!role) {
       return res.status(404).json({ message: "Role not found" });
     }

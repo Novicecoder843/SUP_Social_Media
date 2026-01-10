@@ -1,13 +1,13 @@
-const pool = require("../db/db");
+const pool = require("../config/db");
 
 const RoleModel = {
   createRole: async (name) => {
     const query = `
-      INSERT INTO user_schema.roles (name)
-      VALUES ($1)
+      INSERT INTO user_schema.roles (name , description)
+      VALUES ($1,$2)
       RETURNING *;
     `;
-    const { rows } = await pool.query(query, [name]);
+    const { rows } = await pool.query(query, [name , description]);
     return rows[0];
   },
 
@@ -23,14 +23,14 @@ const RoleModel = {
     return rows[0];
   },
 
-  updateRole: async (id, name) => {
+  updateRole: async (id, name , description) => {
     const query = `
       UPDATE user_schema.roles
-      SET name = $1
-      WHERE id = $2
+      SET name = $1 , description = $2 , updated_at=NOW()
+      WHERE id = $3
       RETURNING *;
     `;
-    const { rows } = await pool.query(query, [name, id]);
+    const { rows } = await pool.query(query, [name,description, id]);
     return rows[0];
   },
 
