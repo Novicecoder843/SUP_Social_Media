@@ -8,13 +8,8 @@ const pool = new Pool({
      port: 5432,
 
 });
-(async () => {
-   try {
-      const res = await pool.query("SELECT NOW()");
-      console.log("DB connected successfully");
-      console.log(res.rows);
-   } catch (err) {
-      console.error("DB error:", err.message);
-   }
-})();
 
+pool.query("SELECT NOW()")
+.then(() => console.log("DB connected successfully"))
+.catch(err => console.error("DB error:", err.message));
+module.exports = pool;

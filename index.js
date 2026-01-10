@@ -11,11 +11,11 @@ app.use(bodyParser.json());
 // app.get("/", (req, res) => {
 //     res.send("Sever is running fine");
 // });
-app.use("/api", userRouter );
+app.use("/api/users", userRouter );
 
 const PORT = 3000;
 app.listen(PORT, () => {
-    console.log('Server started at http://localhost:${PORT}');
+    console.log(`Server started at http://localhost:${PORT}`);
 });
 // app.get("/db", async (req, res) => {
 //     try {
