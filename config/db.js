@@ -5,12 +5,10 @@ const pool = new Pool ({
   port: 5432,
   password: "puja123",
   database: "Social_media",
+  port: 5432,
 });
-(async () => {
-  try {
- const res = await pool.query("SELECT NOW()");
-    console.log(res.rows);
-  } catch (error) {
-    console.error("DB connection error:", error.message);
-  }
-})();
+
+pool.query("SELECT NOW()")
+.then(() => console.log("DB connected successfully"))
+.catch(err => console.error("DB error:", err.message));
+module.exports = pool;
