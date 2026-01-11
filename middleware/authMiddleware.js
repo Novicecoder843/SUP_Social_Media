@@ -1,18 +1,13 @@
 const jwt = require("jsonwebtoken");
-const JWT = require("../config/jwt");
 
 module.exports = (req, res, next) => {
-  const authHeader = req.headers.authorization;
+  const token = req.headers["authorization"];
 
-  if (!authHeader)
-    return res.status(401).json({ message: "Token missing" });
+  if (!token) return res.status(401).json({ message: "Token missing" });
 
-  const token = authHeader.split(" ")[1];
-
-  try {
-    req.user = jwt.verify(token, JWT.SECRET);
+  jwt.verify(token.split(" ")[1], process.env.JWT_SECRET, (err, decoded) => {
+    if (err) return res.status(403).json({ message: "Invalid token" });
+    req.user = decoded;
     next();
-  } catch {
-    res.status(401).json({ message: "Token expired or invalid" });
-  }
+  });
 };

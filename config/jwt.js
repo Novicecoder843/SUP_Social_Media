@@ -1,4 +1,4 @@
 module.exports = {
-  SECRET: "JWT_SECRET_KEY",
-  EXPIRES_IN: "1h",
+  secret: "my_super_secret_key",
+  expiresIn: "1d",
 };

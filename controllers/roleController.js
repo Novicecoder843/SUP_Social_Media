@@ -2,9 +2,8 @@ const RoleModel = require("../models/roleModel");
 
 exports.createRole = async (req, res) => {
   try {
-    const { name,description } = req.body;
-    const role = await RoleModel.createRole(name,description);
-    res.status(201).json(role);
+  const role = await RoleModel.createRole(req.body);
+  res.json(role.rows[0]);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -12,33 +11,33 @@ exports.createRole = async (req, res) => {
 
 exports.getAllRoles = async (req, res) => {
   try {
-    const roles = await RoleModel.getAllRoles();
-    res.json(roles);
+  const roles = await RoleModel.getRoles();
+  res.json(roles.rows);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
-exports.getRoleById = async (req, res) => {
-  try {
-    const role = await RoleModel.getRoleById(req.params.id);
-    if (!role) {
-      return res.status(404).json({ message: "Role not found" });
-    }
-    res.json(role);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
+// exports.getRoleById = async (req, res) => {
+//   try {
+//     const role = await RoleModel.getRoleById(req.params.id);
+//     if (!role) {
+//       return res.status(404).json({ message: "Role not found" });
+//     }
+//     res.json(role);
+//   } catch (error) {
+//     res.status(500).json({ error: error.message });
+//   }
+// };
 
 exports.updateRole = async (req, res) => {
   try {
-    const { name , description } = req.body;
-    const role = await RoleModel.updateRole(req.params.id, name,description);
+    const role = await RoleModel.updateRole(req.params.id, req.body);
+ 
     if (!role) {
       return res.status(404).json({ message: "Role not found" });
     }
-    res.json(role);
+   res.json(role.rows[0]);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

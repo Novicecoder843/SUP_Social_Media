@@ -1,13 +1,13 @@
 const express = require("express");
 const bodyParser = require("body-parser");
-const userRoutes = require("./routes/userRouts");
 const roleRoutes = require("./routes/roleRouts");
 const authRouter =  require("./routes/authRouters")
+require("dotenv").config();
 
 const app = express();
 app.use(bodyParser.json());
 
-app.use("/api/users", userRoutes);
+// app.use("/api/users", userRoutes);
 app.use("/api/role", roleRoutes);
 app.use("/api/auth", authRouter );
 
