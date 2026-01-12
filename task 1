@@ -1,0 +1,135 @@
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const UserModel = require("../model/user.model");
+
+// ================= REGISTER =================
+exports.register = async (req, res) => {
+  try {
+    const { first_name, last_name, email, password, role_id } = req.body;
+
+    // Basic validation
+    if (!first_name || !email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "first_name, email and password are required"
+      });
+    }
+
+    // Check if email already exists
+    const existingUser = await UserModel.findByEmail(email);
+    if (existingUser) {
+      return res.status(409).json({
+        success: false,
+        message: "Email already exists"
+      });
+    }
+
+    // Validate role if provided
+    if (role_id) {
+      const roleExists = await UserModel.roleExists(role_id);
+      if (!roleExists) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid role_id"
+        });
+      }
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create user
+    const user = await UserModel.createUser({
+      first_name,
+      last_name: last_name || null,
+      email,
+      password: hashedPassword,
+      role_id: role_id || null
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "User registered successfully",
+      data: {
+        id: user.id,
+        email: user.email,
+        role_id: user.role_id
+      }
+    });
+
+  } catch (err) {
+    console.error("Register Error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error"
+    });
+  }
+};
+
+// ================= LOGIN =================
+exports.login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Email and password are required"
+      });
+    }
+
+    // Find user with role
+    const user = await UserModel.findByEmailWithRole(email);
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "Email or password incorrect"
+      });
+    }
+
+    // Check status
+    if (user.status !== "ACTIVE") {
+      return res.status(403).json({
+        success: false,
+        message: "User is inactive"
+      });
+    }
+
+    // Compare password
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: "Email or password incorrect"
+      });
+    }
+
+    // Generate JWT
+    const token = jwt.sign(
+      {
+        sub: user.id,
+        role: user.role_name
+      },
+      process.env.JWT_SECRET || "mysecretkey",
+      { expiresIn: "1h" }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Login successful",
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role_name
+      }
+    });
+
+  } catch (err) {
+    console.error("Login Error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error"
+    });
+  }
+};
