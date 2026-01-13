@@ -12,4 +12,5 @@ const pool = new Pool({
 pool.query("SELECT NOW()")
 .then(() => console.log("DB connected successfully"))
 .catch(err => console.error("DB error:", err.message));
-module.exports = pool;
+ module.exports = pool;
+
