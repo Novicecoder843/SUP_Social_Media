@@ -1,5 +1,7 @@
 const bcrypt = require("bcrypt");
+const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
+const pool = require("../config/db");
 const User = require("../models/userModel");
 const roleModel = require("../models/roleModel");
 const jwtConfig = require("../config/jwt");
@@ -129,13 +131,15 @@ exports.login = async (req, res) => {
         const result = await User.findByEmail(email);
         if (result.rows.length === 0)
             return res.status(401).json({ message: "Incorrect Email or password " });
-        // 3️⃣ Check user status
+        
+
+        const user = result.rows[0];
+
+            // 3️⃣ Check user status
         if (!user.status) {
             return res.status(403).json({ message: "User is inactive" });
         }
 
-
-        const user = result.rows[0];
         const isMatch = await bcrypt.compare(password, user.password_hash);
 
         if (!isMatch)
@@ -161,3 +165,105 @@ exports.login = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 };
+
+exports.logout = async (req, res) => {
+  try {
+    // Frontend/Postman should remove token
+    res.json({ message: "Logout successful" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
+//------------------ FORGOT PASSWORD ------------//
+
+exports.forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: "Email required" });
+    }
+
+    const result = await pool.query(
+      `SELECT id FROM user_schema.userstable WHERE email = $1`,
+      [email]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const userId = result.rows[0].id;
+
+    // 🔐 Generate reset token
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
+
+    await pool.query(
+      `INSERT INTO user_schema.password_reset_tokens 
+       (user_id, token, expires_at)
+       VALUES ($1, $2, $3)`,
+      [userId, resetToken, expiresAt]
+    );
+
+    // 📧 Email sending skipped (Postman testing)
+    res.json({
+      message: "Password reset token generated",
+      resetToken   // ⚠️ Only return in development
+    });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
+
+
+//============ Reset password =============//
+
+
+exports.resetPassword = async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+
+    if (!token || !newPassword) {
+      return res.status(400).json({ message: "Token and password required" });
+    }
+
+    const result = await pool.query(
+      `SELECT user_id FROM user_schema.password_reset_tokens
+       WHERE token = $1 AND expires_at > NOW()`,
+      [token]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(400).json({ message: "Invalid or expired token" });
+    }
+
+    const userId = result.rows[0].user_id;
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await pool.query(
+      `UPDATE user_schema.userstable
+       SET password_hash = $1
+       WHERE id = $2`,
+      [hashedPassword, userId]
+    );
+
+    // 🔥 Remove token after use
+    await pool.query(
+      `DELETE FROM user_schema.password_reset_tokens WHERE token = $1`,
+      [token]
+    );
+
+    res.json({ message: "Password reset successful" });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
