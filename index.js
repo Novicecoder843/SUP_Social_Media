@@ -1,22 +1,29 @@
 const express = require("express");
 const bodyParser = require('body-parser')
-const pool = require("./config/db");
-const userRouter = require("./routes/userRoutes")
+//const pool = require("./config/db");
+const userRoutes = require("./routes/userRoutes");
 const app = express();
-
 
 app.use(express.json());
 app.use(bodyParser.json());
 
-// app.get("/", (req, res) => {
-//     res.send("Sever is running fine");
-// });
-app.use("/api/users", userRouter );
+app.use("/api", userRoutes);
+
+app.use("/api", require("./routes/authRoutes"));
+
+const roleRoutes = require("./routes/roleRoutes");
+app.use("/api", roleRoutes);
 
 const PORT = 3000;
 app.listen(PORT, () => {
     console.log(`Server started at http://localhost:${PORT}`);
 });
+
+// app.get("/", (req, res) => {
+//     res.send("Sever is running fine");
+// });
+
+
 // app.get("/db", async (req, res) => {
 //     try {
 //         const result = await
