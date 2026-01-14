@@ -180,3 +180,17 @@ User not found → Email or password incorrect
 Password mismatch → Invalid credentials
 User inactive → User is inactive
 Token expired → Unauthorized
+
+Task ---
+implement formot password and reset password
+CREATE TABLE refresh_tokens (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT REFERENCES users(id),
+    token TEXT NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    is_revoked BOOLEAN DEFAULT false,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+sendEmail thorugh nodemailer while successfully registration
