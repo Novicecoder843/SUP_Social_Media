@@ -70,6 +70,12 @@ exports.login = async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: "1h" }
     );
+      res.cookie("token", token, {
+      httpOnly: true,      // JS cannot access
+      secure: false,       // true in production (HTTPS)
+      sameSite: "strict",  // CSRF protection
+      maxAge: 60 * 60 * 1000 // 1 hour
+    });
 
     res.json({
       success: true,
@@ -85,5 +91,28 @@ exports.login = async (req, res) => {
     res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
+exports.logout = async (req, res) => {
+  try {
+      res.clearCookie("token", {
+      httpOnly: true,
+      secure: false,      // true in production
+      sameSite: "strict"
+    });
+
+      
+    return res.status(200).json({
+      success: true,
+      message: "Logged out successfully",
+      
+    });
+  } catch (error) {
+    console.error("Logout error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Logout failed"
+    });
+  }
+};
+
 
 
