@@ -344,3 +344,207 @@ app.get("/admin/dashboard", authMiddleware, isAdmin, (req, res) => {
   res.json({ message: "Welcome Admin" });
 });
 
+// JWT Verification Middleware
+
+const jwt = require("jsonwebtoken");
+
+const authenticate = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader)
+    return res.status(401).json({ message: "Unauthorized" });
+
+  const token = authHeader.split(" ")[1];
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+    if (err) {
+      //  Token expired or invalid
+      if (err.name === "TokenExpiredError") {
+        return res.status(401).json({ message: "Token expired → Unauthorized" });
+      }
+      return res.status(403).json({ message: "Invalid token" });
+    }
+
+    req.user = decoded;
+    next();
+  });
+};
+
+
+// Send Email via Nodemailer
+
+const nodemailer = require("nodemailer");
+
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
+
+const sendEmail = async ({ to, subject, html }) => {
+  await transporter.sendMail({
+    from: `"Auth System" <${process.env.EMAIL_USER}>`,
+    to,
+    subject,
+    html,
+  });
+};
+
+module.exports = sendEmail;
+
+
+
+// Registration API
+
+const bcrypt = require("bcrypt");
+const sendEmail = require("../utils/sendEmail");
+
+app.post("/api/auth/register", async (req, res) => {
+  const { email, password, role_id } = req.body;
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  await db.query(
+    "INSERT INTO users (email, password, role_id) VALUES ($1, $2, $3)",
+    [email, hashedPassword, role_id]
+  );
+
+  //  Send email after successful DB insert
+  await sendEmail({
+    to: email,
+    subject: "Welcome to Our Platform 🎉",
+    html: `<p>Your account has been created successfully.</p>`
+  });
+
+  res.status(201).json({ message: "Registration successful" });
+});
+
+
+//Forgot Password API
+
+const jwt = require("jsonwebtoken");
+
+app.post("/api/auth/forgot-password", async (req, res) => {
+  const { email } = req.body;
+
+  const result = await db.query(
+    "SELECT id FROM users WHERE email=$1",
+    [email]
+  );
+
+  if (!result.rowCount)
+    return res.status(404).json({ message: "User not found" });
+
+  const userId = result.rows[0].id;
+
+  const resetToken = jwt.sign(
+    { userId },
+    process.env.JWT_SECRET,
+    { expiresIn: "10m" }
+  );
+
+  const resetLink = `http://localhost:3000/reset-password?token=${resetToken}`;
+
+  await sendEmail({
+    to: email,
+    subject: "Reset Password",
+    html: `<a href="${resetLink}">Reset Password</a>`
+  });
+
+  res.json({ message: "Reset link sent" });
+});
+
+
+// Reset Password API
+
+app.post("/api/auth/reset-password", async (req, res) => {
+  const { token, newPassword } = req.body;
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await db.query(
+      "UPDATE users SET password=$1 WHERE id=$2",
+      [hashedPassword, decoded.userId]
+    );
+
+    res.json({ message: "Password reset successful" });
+
+  } catch (err) {
+    if (err.name === "TokenExpiredError") {
+      return res.status(401).json({ message: "Reset token expired" });
+    }
+    res.status(400).json({ message: "Invalid token" });
+  }
+});
+
+// {
+//   "message": "Reset token expired"
+// }
+
+
+// Login API
+
+const crypto = require("crypto");
+
+app.post("/api/auth/login", async (req, res) => {
+  const { email, password } = req.body;
+
+  const result = await db.query(
+    "SELECT * FROM users WHERE email=$1",
+    [email]
+  );
+
+  const user = result.rows[0];
+
+  const valid = await bcrypt.compare(password, user.password);
+  if (!valid)
+    return res.status(401).json({ message: "Invalid credentials" });
+
+  // Access token
+  const accessToken = jwt.sign(
+    { sub: user.id },
+    process.env.JWT_SECRET,
+    { expiresIn: "15m" }
+  );
+
+  // Refresh token
+  const refreshToken = crypto.randomBytes(40).toString("hex");
+
+  await db.query(
+    `INSERT INTO refresh_tokens (user_id, token, expires_at)
+     VALUES ($1, $2, NOW() + INTERVAL '7 days')`,
+    [user.id, refreshToken]
+  );
+
+  res.json({ accessToken, refreshToken });
+});
+
+// Refresh Token
+
+app.post("/api/auth/refresh-token", async (req, res) => {
+  const { refreshToken } = req.body;
+
+  const result = await db.query(
+    `SELECT * FROM refresh_tokens
+     WHERE token=$1 AND is_revoked=false AND expires_at > NOW()`,
+    [refreshToken]
+  );
+
+  if (!result.rowCount)
+    return res.status(401).json({ message: "Refresh token expired or revoked" });
+
+  const newAccessToken = jwt.sign(
+    { sub: result.rows[0].user_id },
+    process.env.JWT_SECRET,
+    { expiresIn: "15m" }
+  );
+
+  res.json({ accessToken: newAccessToken });
+});
+
+
