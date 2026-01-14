@@ -1,55 +1,91 @@
+const express = require("express");
+const client = require("./config/db");
+const app = express();
+const PORT = 3000;
 
- require("dotenv").config();
- const pool=require('./db');
+app.use(express.json());
 
- const express=require('express');
-    const app=express();
-    app.use(express.json());  
-    
-    app.get('/',async (req,res) =>{
-        res.status(200).json({ message: "Server  Connected" });
-    })
+app.get("/", (req, res) => {
+    res.send("Sever is running fine");
+});
 
-app.post('/createuser',async (req,res) =>{
-
-    try{
-
-
-    const userName = req.body.name
-    const email = req.body.email
-    const usermobile  = req.body.mobile
-
-    //destructuring
-    const insertData = await pool.query(
-    `insert into users(name,email,mobile)
-     values (${userName},${email},${usermobile})`
-    )
-
-    res.status(201).json({ 
-        result:insertData.rows,
-        status:true,
-        message: 'User created successfully' });
-
-    }catch(error){
-        res.status(500).json({ 
-            result:[],
-            status:false,
-            message: error.message });
-    }
-   
-
-})
-//    app.get("/", async (req, res) => {
-//   try {
-//     const result = await pool.query("SELECT * FROM users");
-//     console.log(result.rows);
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({ message: "Database error" });
-//   }
+app.get("/db", async (req, res) => {
+// app.get("/db", async (req, res) => {
+//     try {
+//         const result = await
+//         client.query("SELECT NOW()");
+//         res.json({
+//             message: "Database connected successfully",
+//             time: result.rows[0]
+//         }); 
+//     } catch (error) {
+//         res.status(500).json({ error: error.message });
+//     }
 // });
-port=3000
+app.post("/users", async (req, res) => {
+    try {
+        const { username, email, password, full_name, bio, mobile } = req.body;
 
-    app.listen(port,()=>{
-        console.log(`server is running on port ${port}`);
-    });
+        const query =` INSERT INTO users (username, email, 
+            password, full_name, bio, mobile) VALUES ($1, $2, $3, $4, $5, $6) RETURNING * `;
+
+            const values = [username, email, password, full_name, bio, mobile];
+            const result = await client.query(query, values);
+            res.status(201).json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: error.message});
+    }
+});
+app.get("/users", async (req, res) => {
+    try {
+        const result = await
+        client.query("SELECT NOW()");
+        res.json({
+            message: "Database connected successfully",
+            time: result.rows[0]
+        }); 
+        client.query("SELECT * FROM users ORDER BY id DESC");
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+app.get("/users/:id", async (req, res) => {
+    try {
+        const result = await client.query( "SELECT * FROM users WHERE id = $1", [req.params.id]);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: "User not found" });
+        }
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+app.put("/users/:id", async (req, res) => {
+    try {
+        const { full_name, bio, mobile } = req.body;
+        const result = await client.query( `UPDATE users SET full_name = $1, bio = $2, mobile = $3 WHERE id = $4 
+            RETURNING * `, [full_name, bio, mobile, req.params.id]);
+            if (result.rows.length === 0) {
+                return res.status(404).json({ message: "User not found" });
+            }
+            res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+app.delete("/users/:id", async (req, res) => {
+    try {
+        const result = await client.query("DELETE FROM users WHERE id = $1 RETURNING *", [req.params.id]);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: "User not found" });
+        }
+        res.json({ message: "User deleted successfully" });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+app.listen(PORT, () => {
+    console.log(`Server started at http://localhost:${PORT}`);
+});
+});
