@@ -44,26 +44,27 @@ exports.register = async (req, res) => {
   }
 };
 /* Login API */
+const AuthModel = require("../models/authModel");
+
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const result = await userModel.findUserByEmail(email);
-    if (!result.rows.length) {
-      return res.status(401).json({ message: "Email or password incorrect" });
+    if (!email || !password) {
+      return res
+        .status(400)
+        .json({ message: "Email and password required" });
     }
 
-    const user = result.rows[0];
+    const user = await AuthModel.findByEmail(email);
 
-    if (!user.status) {
-      return res.status(403).json({ message: "User is inactive" });
+    if (!user) {
+      return res.status(401).json({ message: "Invalid email" });
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(401).json({ message: "Invalid credentials" });
+    if (user.password !== password) {
+      return res.status(401).json({ message: "Invalid password" });
     }
-
     // Generate JWT
     const token = jwt.sign(
       {
@@ -83,6 +84,77 @@ exports.login = async (req, res) => {
         role_id: user.role_id
       }
     });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+/* logout API */
+exports.logout = async (rqe, res) => {
+  try {
+    res.status(200).json({
+      message: "Logout successful"
+    });
+  } catch (err) {
+    res.status(500).json({
+      error: err.message
+    });
+  }
+};
+/* Password */
+const crypto = require("crypto");
+
+// FORGOT PASSWORD
+exports.forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: "Email required" });
+    }
+
+    // Generate random token
+    const token = crypto.randomBytes(20).toString("hex");
+    const expires = new Date(Date.now() + 15 * 60 * 1000); // 15 min
+
+    const user = await AuthModel.setResetToken(email, token, expires);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    console.log(`Reset token for ${email}: ${token}`);
+    res.status(200).json({
+      message: "Reset token generated successfully",
+      token 
+    });
+  } catch (err) {
+    res.status(500).json({
+      error: err.message
+    });
+  }
+};
+// RESET PASSWORD
+exports.resetPassword = async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+
+    if (!token || !newPassword) {
+      return res.status(400).json({ message: "Token and new password required" });
+    }
+
+    const user = await AuthModel.findByResetToken(token);
+
+    if (!user) {
+      return res.status(400).json({ message: "Invalid or expired token" });
+    }
+
+    const updatedUser = await AuthModel.updatePassword(user.id, newPassword);
+
+    res.status(200).json({
+      message: "Password reset successful",
+      user: updatedUser
+    });
+
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

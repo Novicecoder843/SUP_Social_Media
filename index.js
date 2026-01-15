@@ -14,6 +14,9 @@ app.use("/api", require("./routes/authRoutes"));
 const roleRoutes = require("./routes/roleRoutes");
 app.use("/api", roleRoutes);
 
+const authRoutes = require("./routes/authRoutes");
+app.use("/api", authRoutes);
+
 const PORT = 3000;
 app.listen(PORT, () => {
     console.log(`Server started at http://localhost:${PORT}`);
