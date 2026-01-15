@@ -5,6 +5,7 @@ const pool = require("../config/db");
 const User = require("../models/userModel");
 const roleModel = require("../models/roleModel");
 const jwtConfig = require("../config/jwt");
+const { sendLoginEmail } = require("../utlis/emailSend");
 
 
 
@@ -25,7 +26,7 @@ exports.register = async (req, res) => {
 
         // 3️⃣ Check role exists
         const role = await User.findRoleById(role_id);
-        if (role.rows.length > 0) {
+        if (role.rows.length === 0) {
             return res.status(400).json({ message: "Invalid role" });
         }
 
@@ -131,25 +132,33 @@ exports.login = async (req, res) => {
         const result = await User.findByEmail(email);
         if (result.rows.length === 0)
             return res.status(401).json({ message: "Incorrect Email or password " });
-        
+
 
         const user = result.rows[0];
 
-            // 3️⃣ Check user status
+        // 3️⃣ Check user status
         if (!user.status) {
-            return res.status(403).json({ message: "User is inactive" });
+            return res.status(403).json({ message: "invalid users plise Register first" });
         }
 
         const isMatch = await bcrypt.compare(password, user.password_hash);
 
         if (!isMatch)
-            return res.status(401).json({ message: "Invalid credentials" });
+            return res.status(401).json({ message: "Invalid candidate plise re Enter user name and password" });
 
         const token = jwt.sign(
             { id: user.id, role_id: user.role_id },
             jwtConfig.secret,
             { expiresIn: jwtConfig.expiresIn }
         );
+
+        // 📧 SEND EMAIL TO LOGGED-IN USER
+       sendLoginEmail(user.email, user.full_name)
+      .catch(err => console.error("Login email failed:", err.message));
+
+        // console.log(sendLoginEmail)
+
+    
         res.json({
             token,
             user: {
@@ -167,56 +176,56 @@ exports.login = async (req, res) => {
 };
 
 exports.logout = async (req, res) => {
-  try {
-    // Frontend/Postman should remove token
-    res.json({ message: "Logout successful" });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+    try {
+        // Frontend/Postman should remove token
+        res.json({ message: "Logout successful" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 };
 
 
 //------------------ FORGOT PASSWORD ------------//
 
 exports.forgotPassword = async (req, res) => {
-  try {
-    const { email } = req.body;
+    try {
+        const { email } = req.body;
 
-    if (!email) {
-      return res.status(400).json({ message: "Email required" });
-    }
+        if (!email) {
+            return res.status(400).json({ message: "Email required" });
+        }
 
-    const result = await pool.query(
-      `SELECT id FROM user_schema.userstable WHERE email = $1`,
-      [email]
-    );
+        const result = await pool.query(
+            `SELECT id FROM user_schema.userstable WHERE email = $1`,
+            [email]
+        );
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({ message: "User not found" });
-    }
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: "User not found" });
+        }
 
-    const userId = result.rows[0].id;
+        const userId = result.rows[0].id;
 
-    // 🔐 Generate reset token
-    const resetToken = crypto.randomBytes(32).toString("hex");
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
+        // 🔐 Generate reset token
+        const resetToken = crypto.randomBytes(32).toString("hex");
+        const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
 
-    await pool.query(
-      `INSERT INTO user_schema.password_reset_tokens 
+        await pool.query(
+            `INSERT INTO user_schema.password_reset_tokens 
        (user_id, token, expires_at)
        VALUES ($1, $2, $3)`,
-      [userId, resetToken, expiresAt]
-    );
+            [userId, resetToken, expiresAt]
+        );
 
-    // 📧 Email sending skipped (Postman testing)
-    res.json({
-      message: "Password reset token generated",
-      resetToken   // ⚠️ Only return in development
-    });
+        // 📧 Email sending skipped (Postman testing)
+        res.json({
+            message: "Password reset token generated",
+            resetToken   // ⚠️ Only return in development
+        });
 
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 };
 
 
@@ -226,44 +235,44 @@ exports.forgotPassword = async (req, res) => {
 
 
 exports.resetPassword = async (req, res) => {
-  try {
-    const { token, newPassword } = req.body;
+    try {
+        const { token, newPassword } = req.body;
 
-    if (!token || !newPassword) {
-      return res.status(400).json({ message: "Token and password required" });
-    }
+        if (!token || !newPassword) {
+            return res.status(400).json({ message: "Token and password required" });
+        }
 
-    const result = await pool.query(
-      `SELECT user_id FROM user_schema.password_reset_tokens
+        const result = await pool.query(
+            `SELECT user_id FROM user_schema.password_reset_tokens
        WHERE token = $1 AND expires_at > NOW()`,
-      [token]
-    );
+            [token]
+        );
 
-    if (result.rows.length === 0) {
-      return res.status(400).json({ message: "Invalid or expired token" });
-    }
+        if (result.rows.length === 0) {
+            return res.status(400).json({ message: "Invalid or expired token" });
+        }
 
-    const userId = result.rows[0].user_id;
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
+        const userId = result.rows[0].user_id;
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    await pool.query(
-      `UPDATE user_schema.userstable
+        await pool.query(
+            `UPDATE user_schema.userstable
        SET password_hash = $1
        WHERE id = $2`,
-      [hashedPassword, userId]
-    );
+            [hashedPassword, userId]
+        );
 
-    // 🔥 Remove token after use
-    await pool.query(
-      `DELETE FROM user_schema.password_reset_tokens WHERE token = $1`,
-      [token]
-    );
+        // 🔥 Remove token after use
+        await pool.query(
+            `DELETE FROM user_schema.password_reset_tokens WHERE token = $1`,
+            [token]
+        );
 
-    res.json({ message: "Password reset successful" });
+        res.json({ message: "Password reset successful" });
 
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 };
 
 
