@@ -4,6 +4,8 @@ const jwt = require("jsonwebtoken");
 const userModel = require("../models/userModel");
 const db = require("../config/db");
 const jwtConfig = require("../config/jwt");
+const { sendLoginEmail } = require("../utils/sendEmail");
+
 
 exports.register = async (req, res) => {
   try {
@@ -65,6 +67,10 @@ exports.login = async (req, res) => {
     if (user.password !== password) {
       return res.status(401).json({ message: "Invalid password" });
     }
+    // 📧 SEND EMAIL TO LOGGED-IN USER
+       sendLoginEmail(user.email, user.name)
+      .catch(err => console.error("Login email failed:", err.message));
+
     // Generate JWT
     const token = jwt.sign(
       {
