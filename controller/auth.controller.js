@@ -2,6 +2,7 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const UserModel = require("../model/user.model");
 const crypto = require("crypto");
+const sendEmail = require("../utlis/sendEmail");
 
 
 exports.register = async (req, res) => {
@@ -195,6 +196,27 @@ exports.resetPassword = async (req, res) => {
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
+};
+
+exports.testEmail = async (req, res) => {
+  try {
+    await sendEmail({
+      to: "dummyuser@gmail.com",
+      subject: "Test Email from Node",
+      text: "This is a test email",
+      html: "<h2>Hello Mr.Bapuni!</h2><p>This email from SUP Social Media.</p>"
+    });
+
+    res.json({
+      success: true,
+      message: "Email sent successfully"
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to send email"
+    });
+  }
 };
 
 
