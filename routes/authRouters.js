@@ -11,7 +11,7 @@ router.delete("/deleteregister/:id", authController.deleteUser);
 
 
 
-
+router.post("/verify-login-otp", authController.verifyLoginOtp);
 router.post("/login", authController.login);
 router.post("/logout",auth , authController.logout);
 router.post("/forgot-password", authController.forgotPassword);

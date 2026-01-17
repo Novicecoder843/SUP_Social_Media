@@ -16,6 +16,29 @@ exports.findRoleById = (role_id) => {
   return pool.query(`SELECT * FROM user_schema.userstable WHERE role_id=$1`, [role_id]);
 };
 
+exports.saveLoginOtp = (id, otp, expires) => {
+  return pool.query(
+    `UPDATE user_schema.userstable
+     SET login_otp = $1,
+         login_otp_expires = $2
+     WHERE id = $3`,
+    [otp, expires, id]
+  );
+};
+
+exports.clearLoginOtp = (id) => {
+  return pool.query(
+    `UPDATE user_schema.userstable
+     SET login_otp = NULL,
+         login_otp_expires = NULL,
+         is_email_verified = true
+     WHERE id = $1`,
+    [id]
+  );
+};
+
+
+
 
 exports.getAllUsers = () => {
   return pool.query(

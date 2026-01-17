@@ -5,7 +5,7 @@ const pool = require("../config/db");
 const User = require("../models/userModel");
 const roleModel = require("../models/roleModel");
 const jwtConfig = require("../config/jwt");
-const { sendLoginEmail } = require("../utlis/emailSend");
+const { sendLoginEmail , sendLoginOtpEmail} = require("../utlis/emailSend");
 
 
 
@@ -146,19 +146,64 @@ exports.login = async (req, res) => {
         if (!isMatch)
             return res.status(401).json({ message: "Invalid candidate plise re Enter user name and password" });
 
-        const token = jwt.sign(
-            { id: user.id, role_id: user.role_id },
-            jwtConfig.secret,
-            { expiresIn: jwtConfig.expiresIn }
-        );
+
+
+        // 🔢 Generate 6-digit OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 min
+
+        // Save OTP
+        await User.saveLoginOtp(user.id, otp, expiresAt);
+
+        // Send OTP email
+        await sendLoginOtpEmail(user.email, user.full_name, otp);
+
+        return res.status(200).json({
+            message: "OTP sent to your email. Please verify to continue."
+        });
+
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// ======== VERYFY OTP AND LOGIN USER ============//
+
+exports.verifyLoginOtp = async (req, res) => {
+    try {
+        const { email, otp } = req.body;
+
+        const result = await User.findByEmail(email);
+        if (result.rows.length === 0) {
+            return res.status(400).json({ message: "Invalid Candidate" });
+        }
+
+        const user = result.rows[0];
+
+        // ❌ OTP invalid or expired
+        if (
+            user.login_otp !== otp ||
+            new Date(user.login_otp_expires) < new Date()
+        ) {
+            return res.status(400).json({ message: "Invalid OTP  Plise Try Again" });
+        }
+
+        // Clear OTP + mark verified
+        await User.clearLoginOtp(user.id);
+
+        // ✅ Generate JWT
+            const token = jwt.sign(
+                { id: user.id, role_id: user.role_id },
+                jwtConfig.secret,
+                { expiresIn: jwtConfig.expiresIn }
+            );
+
 
         // 📧 SEND EMAIL TO LOGGED-IN USER
-       sendLoginEmail(user.email, user.full_name)
-      .catch(err => console.error("Login email failed:", err.message));
+        sendLoginEmail(user.email, user.full_name)
+            .catch(err => console.error("Login email failed:", err.message));
 
-        // console.log(sendLoginEmail)
 
-    
         res.json({
             token,
             user: {
@@ -169,11 +214,18 @@ exports.login = async (req, res) => {
             }, message: "Login success",
         });
 
-
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 };
+
+
+
+
+
+
+
+
 
 exports.logout = async (req, res) => {
     try {

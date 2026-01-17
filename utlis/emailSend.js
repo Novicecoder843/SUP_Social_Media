@@ -20,10 +20,28 @@ transporter.verify((error, success) => {
 });
 
 
+exports.sendLoginOtpEmail = async (toEmail, fullName, otp) => {
+  return transporter.sendMail({
+    from: `"SUP_SOCIAL_MEDIA" <${process.env.EMAIL_USER}>`,
+    to: toEmail,
+    subject: "Your Login Verification Code",
+    html: `
+      <h3>Hello ${fullName} 👋</h3>
+      <p>Your login verification code is:</p>
+      <h2>${otp}</h2>
+      <p>This code is valid for 5 minutes.</p>
+      <p>If this wasn’t you, please ignore this email.</p>
+    `
+  });
+};
+
+
+
+
 
 exports.sendLoginEmail = async (toEmail, fullName) => {
     await transporter.sendMail({
-        from: `"My App" <${process.env.EMAIL_USER}>`, // enter your gmail or mail referal
+        from: `"SUP_SOCIAL_MEDIA" <${process.env.EMAIL_USER}>`, // enter your gmail or mail referal
         to: toEmail,                                 //  TO (logged-in user)
         subject: "Welcome to your profile",
         html: `
