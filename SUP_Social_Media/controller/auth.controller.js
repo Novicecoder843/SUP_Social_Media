@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const sendEmail = require('../utils/sendEmail');
 const pool = require('../config/db');
 
 // /* ================= REGISTER ================= */
@@ -66,39 +67,78 @@ const pool = require('../config/db');
 
 
 /* ================= REGISTER ================= */
+
+
 exports.register = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password } = req.body;
 
-    if (!name || !email || !password)
-      return res.status(400).json({ message: 'All fields required' });
-
-    const exists = await pool.query(
-      'SELECT id FROM auth.user WHERE email = $1',
-      [email]
-    );
-
-    if (exists.rowCount > 0)
-      return res.status(409).json({ message: 'User already exists' });
-
-    const hashed = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     const emailToken = crypto.randomBytes(32).toString('hex');
 
     await pool.query(
       `INSERT INTO auth.user
-       (name, email, password, role, email_verify_token, email_verify_expires)
-       VALUES ($1,$2,$3,$4,$5, NOW() + INTERVAL '24 hours')`,
-      [name, email, hashed, role || 'user', emailToken]
+       (name, email, password, email_verify_token, email_verify_expires)
+       VALUES ($1, $2, $3, $4, NOW() + INTERVAL '24 hours')`,
+      [name, email, hashedPassword, emailToken]
     );
 
-    console.log('VERIFY EMAIL TOKEN:', emailToken); // Postman testing
+    // 📧 SEND EMAIL
+    await sendEmail({
+      to: email,
+      subject: 'Welcome! Verify your email',
+      html: `
+        <h2>Hello ${name} 👋</h2>
+        <p>Your account was created successfully.</p>
+        <p><b>Email verification token:</b></p>
+        <p>${emailToken}</p>
+        <p>Valid for 24 hours.</p>
+      `
+    });
 
-    res.status(201).json({ message: 'Registered successfully' });
+    res.status(201).json({
+      message: 'Registration successful. Email sent.'
+    });
+
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ message: err.message });
   }
 };
+
+// exports.register = async (req, res) => {
+//   try {
+//     const { name, email, password, role } = req.body;
+
+//     if (!name || !email || !password)
+//       return res.status(400).json({ message: 'All fields required' });
+
+//     const exists = await pool.query(
+//       'SELECT id FROM auth.user WHERE email = $1',
+//       [email]
+//     );
+
+//     if (exists.rowCount > 0)
+//       return res.status(409).json({ message: 'User already exists' });
+
+//     const hashed = await bcrypt.hash(password, 10);
+
+//     const emailToken = crypto.randomBytes(32).toString('hex');
+
+//     await pool.query(
+//       `INSERT INTO auth.user
+//        (name, email, password, role, email_verify_token, email_verify_expires)
+//        VALUES ($1,$2,$3,$4,$5, NOW() + INTERVAL '24 hours')`,
+//       [name, email, hashed, role || 'user', emailToken]
+//     );
+
+//     console.log('VERIFY EMAIL TOKEN:', emailToken); // Postman testing
+
+//     res.status(201).json({ message: 'Registered successfully' });
+//   } catch (err) {
+//     res.status(500).json({ error: err.message });
+//   }
+// };
 
 /* ================= LOGIN ================= */
 exports.login = async (req, res) => {
