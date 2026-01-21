@@ -1,21 +1,28 @@
  const express = require("express");
  const bodyParser = require('body-parser')
- const pool = require("./config/db");
- const userRouter = require("./routes/userRoutes")
+ //const pool = require("./config/db");
+ const userRoutes = require("./routes/userRoutes")
  const app = express();
- const PORT = 3000;
 
-app.use(express.json());
+ app.use(express.json());
 app.use(bodyParser.json());
 
-// app.get("/", (req, res) => {
-//     res.send("Sever is running fine");
-// });
-app.use("/api/users", userRouter );
+app.use("/api", userRoutes);
 
+app.use("/api", require("./routes/authRoutes"));
+
+const roleRoutes = require("./routes/roleRoutes");
+app.use("/api", roleRoutes);
+
+const PORT = 3000;
  app.listen(PORT, () => {
      console.log(`Server started at http://localhost:${PORT}`);
  });
+
+ // app.get("/", (req, res) => {
+//     res.send("Sever is running fine");
+// });
+
 
 // //app.get("/db", async (req, res) => {
 // //     try {
@@ -29,6 +36,8 @@ app.use("/api/users", userRouter );
 // //         res.status(500).json({ error: error.message });
 // //     }
 // // });
+
+
 // app.post("/users", async (req, res) => {
 //     try {
 //         const { username, email, password, full_name, bio, mobile } = req.body;
@@ -38,6 +47,7 @@ app.use("/api/users", userRouter );
 // password, full_name, bio, mobile) VALUES ($1, $2, $3, $4, $5, $6) RETURNING * `
 //                      [username, email, password, full_name, bio, mobile]
 //         );
+
             
 //             res.status(201).json(result.rows[0]);
 //     } catch (error) {
@@ -87,6 +97,3 @@ app.use("/api/users", userRouter );
 //         res.status(500).json({ error: error.message });
 //     }
 // });
-
-// app.use("/api", userRoutes);
-
