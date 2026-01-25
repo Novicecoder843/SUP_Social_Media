@@ -128,7 +128,7 @@ exports.forgotPassword = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    console.log(Reset token for ${email}: ${token});
+    console.log(`Reset token for ${email}: ${token}`);
     res.status(200).json({
       message: "Reset token generated successfully",
       token 
