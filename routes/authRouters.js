@@ -17,4 +17,17 @@ router.post("/logout",auth , authController.logout);
 router.post("/forgot-password", authController.forgotPassword);
 router.post("/reset-password", authController.resetPassword);
 
+
+router.get("/me",auth, authController.getMe);
+router.put("/updateme",auth, authController.updateMe);
+
+router.get("/:id",auth, authController.getUserById);
+
+router.post("/follow/:id",auth, authController.follow);
+router.post("/unfollow/:id",auth, authController.unfollow);
+router.post("/block/:id",auth, authController.block);
+
+
 module.exports = router;
+
+

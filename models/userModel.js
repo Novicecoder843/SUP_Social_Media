@@ -74,3 +74,99 @@ exports.softDeleteUser = (id) => {
     [id]
   );
 };
+
+
+
+
+
+
+
+
+/* ===================== GET MY PROFILE ===================== */
+exports.getMyProfile = (userId) => {
+  return pool.query(`
+    SELECT 
+      u.id,
+      u.full_name,
+      u.email,
+      p.username,
+      p.bio,
+      p.profile_image,
+      p.cover_image,
+      COUNT(f.following_id) AS followers
+    FROM user_schema.userstable u
+    JOIN user_schema.user_profiles p ON p.user_id = u.id
+    LEFT JOIN user_schema.user_followers f ON f.following_id = u.id
+    WHERE u.id = $1
+    GROUP BY u.id, p.username, p.bio, p.profile_image, p.cover_image
+  `, [userId]);
+};
+
+/* ===================== UPDATE PROFILE ===================== */
+exports.isUsernameTaken = (username, userId) => {
+  return pool.query(`
+    SELECT 1 FROM user_schema.user_profiles
+    WHERE username = $1 AND user_id != $2
+  `, [username, userId]);
+};
+
+exports.updateProfile = (userId, data) => {
+  const { username, bio, profile_image, cover_image } = data;
+
+  return pool.query(`
+    UPDATE user_schema.user_profiles
+    SET
+      username = $1,
+      bio = $2,
+      profile_image = $3,
+      cover_image = $4,
+      updated_at = NOW()
+    WHERE user_id = $5
+  `, [username, bio, profile_image, cover_image, userId]);
+};
+
+/* ===================== PUBLIC PROFILE ===================== */
+exports.getProfileById = (id) => {
+  return pool.query(`
+    SELECT 
+      u.id,
+      p.username,
+      p.bio,
+      p.profile_image,
+      p.cover_image
+    FROM user_schema.userstable u
+    JOIN user_schema.user_profiles p ON p.user_id = u.id
+    WHERE u.id = $1
+  `, [id]);
+};
+
+/* ===================== FOLLOW / UNFOLLOW ===================== */
+exports.followUser = (userId, targetId) => {
+  return pool.query(`
+    INSERT INTO user_schema.user_followers (follower_id, following_id)
+    VALUES ($1, $2)
+    ON CONFLICT DO NOTHING
+  `, [userId, targetId]);
+};
+
+exports.unfollowUser = (userId, targetId) => {
+  return pool.query(`
+    DELETE FROM user_schema.user_followers
+    WHERE follower_id = $1 AND following_id = $2
+  `, [userId, targetId]);
+};
+
+/* ===================== BLOCK ===================== */
+exports.blockUser = async (userId, targetId) => {
+  await pool.query(`
+    DELETE FROM user_schema.user_followers
+    WHERE (follower_id = $1 AND following_id = $2)
+       OR (follower_id = $2 AND following_id = $1)
+  `, [userId, targetId]);
+
+  return pool.query(`
+    INSERT INTO user_schema.user_blocks (blocker_id, blocked_id)
+    VALUES ($1, $2)
+    ON CONFLICT DO NOTHING
+  `, [userId, targetId]);
+};

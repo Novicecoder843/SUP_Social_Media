@@ -193,9 +193,10 @@ exports.verifyLoginOtp = async (req, res) => {
 
         // ✅ Generate JWT
             const token = jwt.sign(
-                { id: user.id, role_id: user.role_id },
-                jwtConfig.secret,
-                { expiresIn: jwtConfig.expiresIn }
+                { id: user.id, role_id: user.role_id }, process.env.JWT_SECRET,
+                // jwtConfig.secret,
+                 { expiresIn: "1d" }
+                // { expiresIn: jwtConfig.expiresIn }
             );
 
 
@@ -218,10 +219,6 @@ exports.verifyLoginOtp = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 };
-
-
-
-
 
 
 
@@ -328,3 +325,85 @@ exports.resetPassword = async (req, res) => {
 };
 
 
+
+//===== get user is correct ========//
+
+exports.getMe = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const result = await User.getMyProfile(userId);
+    if (result.rows.length === 0)
+      return res.status(404).json({ message: "Profile not found" });
+
+    res.json(result.rows[0]);
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
+exports.updateMe = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { username, bio, profile_image, cover_image } = req.body;
+
+    if (!username)
+      return res.status(400).json({ message: "Username required" });
+
+    const exists = await User.isUsernameTaken(username, userId);
+    if (exists.rows.length > 0)
+      return res.status(409).json({ message: "Username already taken" });
+
+    await User.updateProfile(userId, {
+      username,
+      bio,
+      profile_image,
+      cover_image
+    });
+
+    res.json({ message: "Profile updated successfully" });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
+
+exports.getUserById = async (req, res) => {
+  const result = await User.getProfileById(req.params.id);
+
+  if (result.rows.length === 0)
+    return res.status(404).json({ message: "User not found" });
+
+  res.json(result.rows[0]);
+};
+
+
+
+
+//======= Follow And Unfollow And block =======
+
+
+exports.follow = async (req, res) => {
+  if (req.user.id == req.params.id)
+    return res.status(400).json({ message: "Cannot follow yourself" });
+
+  await User.followUser(req.user.id, req.params.id);
+  res.json({ message: "User followed" });
+};
+
+exports.unfollow = async (req, res) => {
+  await User.unfollowUser(req.user.id, req.params.id);
+  res.json({ message: "User unfollowed" });
+};
+
+exports.block = async (req, res) => {
+  if (req.user.id == req.params.id)
+    return res.status(400).json({ message: "Cannot block yourself" });
+
+  await User.blockUser(req.user.id, req.params.id);
+  res.json({ message: "User blocked" });
+};
