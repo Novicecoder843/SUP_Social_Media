@@ -181,28 +181,80 @@ exports.getUserById = async (req, res) => {
 
 // POST /api/users/follow/:id
 
-exports.followUser = async (req, res) => {
-  try {
-    const followerId = req.user.id;
-    const followingId = parseInt(req.params.id);
+// exports.followUser = async (req, res) => {
+//   try {
+//     const followerId = req.user.id;
+//     const followingId = parseInt(req.params.id);
 
-    if (followerId === followingId) {
-      return res.status(400).json({ message: "You can't follow yourself" });
+//     if (followerId === followingId) {
+//       return res.status(400).json({ message: "You can't follow yourself" });
+//     }
+
+//     await pool.query(
+//       `
+//       INSERT INTO auth.user_followers (follower_id, following_id)
+//       VALUES ($1, $2)
+//       ON CONFLICT DO NOTHING
+//       `,
+//       [followerId, followingId]
+//     );
+
+//     res.json({ message: 'User followed successfully' });
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ message: 'Server error' });
+//   }
+// };
+exports.followUser = async (req, res) => {
+  const followerId = req.user.id;          // from JWT
+  const followingId = Number(req.params.id);
+
+  if (followerId === followingId) {
+    return res.status(400).json({
+      message: "You cannot follow yourself"
+    });
+  }
+
+  try {
+    // 1️⃣ target user exists?
+    const userCheck = await pool.query(
+      `SELECT id FROM auth."user" WHERE id = $1`,
+      [followingId]
+    );
+
+    if (userCheck.rowCount === 0) {
+      return res.status(404).json({
+        message: "User not found"
+      });
     }
 
-    await pool.query(
-      `
-      INSERT INTO auth.user_followers (follower_id, following_id)
-      VALUES ($1, $2)
-      ON CONFLICT DO NOTHING
-      `,
+    // 2️⃣ already followed?
+    const exists = await pool.query(
+      `SELECT 1 FROM auth.user_followers
+       WHERE follower_id = $1 AND following_id = $2`,
       [followerId, followingId]
     );
 
-    res.json({ message: 'User followed successfully' });
+    if (exists.rowCount > 0) {
+      return res.status(400).json({
+        message: "Already following"
+      });
+    }
+
+    // 3️⃣ insert follow
+    await pool.query(
+      `INSERT INTO auth.user_followers (follower_id, following_id)
+       VALUES ($1, $2)`,
+      [followerId, followingId]
+    );
+
+    res.status(201).json({
+      message: "Followed successfully"
+    });
+
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -211,68 +263,112 @@ exports.followUser = async (req, res) => {
 
 
 
-exports.unfollowUser = async (req, res) => {
-  try {
-    const followerId = req.user.id;
-    const followingId = parseInt(req.params.id);
+// exports.unfollowUser = async (req, res) => {
+//   try {
+//     const followerId = req.user.id;
+//     const followingId = parseInt(req.params.id);
 
-    await pool.query(
-      `
-      DELETE FROM auth.user_followers
-      WHERE follower_id = $1 AND following_id = $2
-      `,
+//     await pool.query(
+//       `
+//       DELETE FROM auth.user_followers
+//       WHERE follower_id = $1 AND following_id = $2
+//       `,
+//       [followerId, followingId]
+//     );
+
+//     res.json({ message: 'User unfollowed successfully' });
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ message: 'Server error' });
+//   }
+// };
+
+
+exports.unfollowUser = async (req, res) => {
+  const followerId = req.user.id;
+  const followingId = Number(req.params.id);
+
+  if (followerId === followingId) {
+    return res.status(400).json({
+      message: "You cannot unfollow yourself"
+    });
+  }
+
+  try {
+    // check follow exists
+    const exists = await pool.query(
+      `SELECT 1 FROM auth.user_followers
+       WHERE follower_id = $1 AND following_id = $2`,
       [followerId, followingId]
     );
 
-    res.json({ message: 'User unfollowed successfully' });
+    if (exists.rowCount === 0) {
+      return res.status(400).json({
+        message: "You are not following this user"
+      });
+    }
+
+    // delete follow
+    await pool.query(
+      `DELETE FROM auth.user_followers
+       WHERE follower_id = $1 AND following_id = $2`,
+      [followerId, followingId]
+    );
+
+    res.json({
+      message: "Unfollowed successfully"
+    });
+
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({
+      message: "Server error"
+    });
   }
 };
 
 // POST /api/users/block/:id
 
-
 exports.blockUser = async (req, res) => {
+  const blockerId = req.user.id;
+  const blockedId = Number(req.params.id);
+
+  if (blockerId === blockedId) {
+    return res.status(400).json({
+      message: "You cannot block yourself"
+    });
+  }
+
   try {
-    const blockerId = req.user.id;
-    const blockedId = parseInt(req.params.id);
+    await pool.query("BEGIN");
 
-    if (blockerId === blockedId) {
-      return res.status(400).json({ message: "You can't block yourself" });
-    }
-
-    await pool.query('BEGIN');
-
-    // Block
+    // insert block
     await pool.query(
-      `
-      INSERT INTO auth.user_blocks (blocker_id, blocked_id)
-      VALUES ($1, $2)
-      ON CONFLICT DO NOTHING
-      `,
+      `INSERT INTO auth.user_blocks (blocker_id, blocked_id)
+       VALUES ($1, $2)
+       ON CONFLICT DO NOTHING`,
       [blockerId, blockedId]
     );
 
-    // Auto-unfollow both sides
+    // remove follow both ways
     await pool.query(
-      `
-      DELETE FROM auth.user_followers
-      WHERE
-        (follower_id = $1 AND following_id = $2)
-        OR
-        (follower_id = $2 AND following_id = $1)
-      `,
+      `DELETE FROM auth.user_followers
+       WHERE (follower_id = $1 AND following_id = $2)
+          OR (follower_id = $2 AND following_id = $1)`,
       [blockerId, blockedId]
     );
 
-    await pool.query('COMMIT');
+    await pool.query("COMMIT");
 
-    res.json({ message: 'User blocked successfully' });
+    res.json({
+      message: "User blocked successfully"
+    });
+
   } catch (err) {
-    await pool.query('ROLLBACK');
+    await pool.query("ROLLBACK");
     console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({
+      message: "Server error"
+    });
   }
 };
