@@ -1,25 +1,39 @@
+require(`dotenv`).config();
 const express = require("express");
- const bodyParser = require('body-parser')
- const pool = require("./config/db");
- const userRouter = require("./routes/userRoutes")
- const app = express();
- const PORT = 3000;
+require(`dotenv`).config();
 
+ const bodyParser = require('body-parser')
+ //const pool = require("./config/db");
+ const userRoutes = require("./routes/userRoutes")
+ const app = express();
+ 
 app.use(express.json());
 app.use(bodyParser.json());
 
-// app.get("/", (req, res) => {
-//     res.send("Sever is running fine");
-// });
-app.use("/api/users", userRouter );
+app.use("/api", usersRoutes);
+
+app.use("api", require("./routes/authRoutes"));
+
+const roleRoutes = require("./routes/roleRoutes");
+app.user("/api" , roleRoutes);
+
+const authRoutes = require("./routes/authRoutes");
+app.user("/api" , authRoutes);
+
+const PORT = 3000;
 
  app.listen(PORT, () => {
      console.log(`Server started at http://localhost:${PORT}`);
  });
 
+// app.get("/", (req, res) => {
+//     res.send("Sever is running fine");
+// });
+
 // //app.get("/db", async (req, res) => {
 // //     try {
 // //         const result = await
+
 // //         client.query("SELECT NOW()");
 // //         res.json({
 // //             message: "Database connected successfully",
