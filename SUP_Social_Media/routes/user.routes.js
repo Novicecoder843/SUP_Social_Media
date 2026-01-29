@@ -12,13 +12,22 @@ const router = express.Router();
 const auth = require('../middleware/auth.middleware');
 const userController = require('../controller/user.controller');
 const authMiddleware = require('../middleware/auth.middleware');
+const upload = require("../middleware/upload");
 
 router.get('/me', auth, userController.getMe);
-router.put('/me', auth, userController.updateMe);
-router.get('/:id', auth, userController.getUserById);
-router.post('/follow/:id', auth, userController.followUser);
-router.post('/unfollow/:id', auth, userController.unfollowUser);
-router.post('/block/:id', auth, userController.blockUser);
+// router.put('/me', auth, userController.updateMe);
+router.put(
+  "/me",
+  authMiddleware,   // MUST be here
+  upload.fields([
+    { name: "profile_image", maxCount: 1 },
+    { name: "cover_image", maxCount: 1 }
+  ]),
+  userController.updateMe
+);
+
+module.exports = router;
+
 
 // // router.get('/me', authMiddleware, userController.getMe);
 // router.get('/me', authMiddleware, userController.getMe);
@@ -27,10 +36,4 @@ router.post('/block/:id', auth, userController.blockUser);
 // router.get('/me', authMiddleware, getMe);
 // router.put('/me', authMiddleware, updateMe);
 // router.get('/:id', authMiddleware, getUserById);
-
-module.exports = router;
-
-
-
-
 

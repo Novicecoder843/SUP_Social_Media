@@ -71,6 +71,7 @@
 const pool = require('../config/db'); 
 const db = require('../config/db');
 
+
 /* GET /api/users/me */
 
 exports.getMe = async (req, res) => {
@@ -107,33 +108,112 @@ exports.getMe = async (req, res) => {
 exports.updateMe = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { username, bio, profile_image, cover_image } = req.body;
+
+    const username = req.body.username || null;
+    const bio = req.body.bio || null;
+
+    const profileImage =
+      req.files?.profile_image?.[0]?.filename || null;
+
+    const coverImage =
+      req.files?.cover_image?.[0]?.filename || null;
 
     const result = await pool.query(
       `
-      INSERT INTO auth.user_profiles (user_id, username, bio, profile_image, cover_image)
+      INSERT INTO auth.user_profiles
+        (user_id, username, bio, profile_image, cover_image)
       VALUES ($1, $2, $3, $4, $5)
       ON CONFLICT (user_id)
       DO UPDATE SET
-        username = EXCLUDED.username,
-        bio = EXCLUDED.bio,
-        profile_image = EXCLUDED.profile_image,
-        cover_image = EXCLUDED.cover_image,
-        updated_at = CURRENT_TIMESTAMP
+        username = COALESCE(EXCLUDED.username, auth.user_profiles.username),
+        bio = COALESCE(EXCLUDED.bio, auth.user_profiles.bio),
+        profile_image = COALESCE(EXCLUDED.profile_image, auth.user_profiles.profile_image),
+        cover_image = COALESCE(EXCLUDED.cover_image, auth.user_profiles.cover_image),
+        updated_at = NOW()
       RETURNING *;
       `,
-      [userId, username, bio, profile_image, cover_image]
+      [userId, username, bio, profileImage, coverImage]
     );
 
     res.json({
-      message: 'Profile updated successfully',
+      message: "Profile updated successfully",
       profile: result.rows[0]
     });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    console.error("UPDATE PROFILE ERROR:", err);
+    res.status(500).json({ message: "Server error" });
   }
 };
+
+
+// exports.updateMe = async (req, res) => {
+//   try {
+//     const userId = req.user.id;
+//     const { username, bio, profile_image, cover_image } = req.body;
+
+//     const result = await pool.query(
+//       `
+//       INSERT INTO auth.user_profiles (user_id, username, bio, profile_image, cover_image)
+//       VALUES ($1, $2, $3, $4, $5)
+//       ON CONFLICT (user_id)
+//       DO UPDATE SET
+//         username = EXCLUDED.username,
+//         bio = EXCLUDED.bio,
+//         profile_image = EXCLUDED.profile_image,
+//         cover_image = EXCLUDED.cover_image,
+//         updated_at = CURRENT_TIMESTAMP
+//       RETURNING *;
+//       `,
+//       [userId, username, bio, profile_image, cover_image]
+//     );
+
+//     res.json({
+//       message: 'Profile updated successfully',
+//       profile: result.rows[0]
+//     });
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ message: 'Server error' });
+//   }
+// };
+
+// exports.updateMe = async (req, res) => {
+//   try {
+//     const userId = req.user.id;
+//     const { username, bio } = req.body;
+
+//     const profileImage = req.files?.profile_image
+//       ? req.files.profile_image[0].filename
+//       : null;
+
+//     const coverImage = req.files?.cover_image
+//       ? req.files.cover_image[0].filename
+//       : null;
+
+//     const result = await pool.query(
+//       `
+//       UPDATE user_profiles
+//       SET
+//         username = COALESCE($1, username),
+//         bio = COALESCE($2, bio),
+//         profile_image = COALESCE($3, profile_image),
+//         cover_image = COALESCE($4, cover_image),
+//         updated_at = NOW()
+//       WHERE user_id = $5
+//       RETURNING *;
+//       `,
+//       [username, bio, profileImage, coverImage, userId]
+//     );
+
+//     res.json({
+//       message: "Profile updated successfully",
+//       profile: result.rows[0]
+//     });
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
 
 /* GET /api/users/:id */
 
