@@ -34,3 +34,23 @@ updateuser
 deleteuser
 getalluser
 getsingleuserbyid
+
+
+
+
+
+index.js
+config/
+    db.js
+rotes/
+    auth.rotes
+    USER.routes
+    userprofile routes
+controller/
+    auth.controller
+    USER.controller
+    userprofile controller
+model/
+    auth.model
+    USER.model
+    userprofile model
