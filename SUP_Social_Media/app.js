@@ -10,6 +10,22 @@ app.use('/api/roles', roleRoutes);
 app.use("/api/auth", require("./routes/auth.routes"));
 app.use("/api/users", require("./routes/user.routes"));
 app.use("/uploads", express.static("uploads"));
+app.use((err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    if (err.code === "LIMIT_FILE_SIZE") {
+      return res.status(400).json({
+        message: "File size must be less than 2MB"
+      });
+    }
+  }
+
+  if (err.message.includes("Only images")) {
+    return res.status(400).json({ message: err.message });
+  }
+
+  next(err);
+});
+
 
 module.exports = app;
 
