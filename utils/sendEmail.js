@@ -21,7 +21,7 @@ transporter.verify((error, success) => {
 
 exports.sendLoginEmail = async (toEmail, name) => {
     await transporter.sendMail({
-        from: "My App" <${process.env.EMAIL_USER}>, // enter your gmail or mail referal
+        from: `"My App" <${process.env.EMAIL_USER}>`, // enter your gmail or mail referal
         to: toEmail,                                 //  TO (logged-in user)
         subject: "Welcome to your profile",
         html: `

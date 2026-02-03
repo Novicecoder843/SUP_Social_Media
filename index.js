@@ -10,15 +10,15 @@ require(`dotenv`).config();
 app.use(express.json());
 app.use(bodyParser.json());
 
-app.use("/api", usersRoutes);
+app.use("/api", userRoutes);
 
 app.use("api", require("./routes/authRoutes"));
 
 const roleRoutes = require("./routes/roleRoutes");
-app.user("/api" , roleRoutes);
+app.use("/api" , roleRoutes);
 
 const authRoutes = require("./routes/authRoutes");
-app.user("/api" , authRoutes);
+app.use("/api" , authRoutes);
 
 const PORT = 3000;
 

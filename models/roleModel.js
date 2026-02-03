@@ -13,17 +13,17 @@ const RoleModel = {
   },
 
   getAllRoles: async () => {
-    const query = SELECT * FROM roles ORDER BY id DESC;
+    const query = `SELECT * FROM roles ORDER BY id DESC`;
     const result = await db.query(query);
     return result.rows;
-  },
+  },   
 
   updateRole: async (id, name, description) => {
     const query = `
       UPDATE roles
       SET name = $1, description = $2
       WHERE id = $3
-      RETURNING *
+      RETUR NING *
     `;
     const values = [name, description, id];
     const result = await db.query(query, values);
@@ -31,7 +31,7 @@ const RoleModel = {
   },
 
   deleteRole: async (id) => {
-    const query = DELETE FROM roles WHERE id = $1 RETURNING *;
+    const query = `DELETE FROM roles WHERE id = $1 RETURNING *`;
     const result = await db.query(query, [id]);
     return result.rows[0];
   },

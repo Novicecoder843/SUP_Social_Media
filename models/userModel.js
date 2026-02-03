@@ -32,7 +32,7 @@ exports.updateUser = async (id, name, email, role_id) => {
 };
 
 exports.deleteUser = async (id) => {
-  const query = DELETE FROM users WHERE id = $1 RETURNING *;
+  const query = `DELETE FROM users WHERE id = $1 RETURNING *`;
   const result = await db.query(query, [id]);
   return result.rows[0];
 };

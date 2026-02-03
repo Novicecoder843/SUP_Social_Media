@@ -13,7 +13,7 @@ exports.register = async (req, res) => {
 
     // Check role exists
     const role = await db.query(
-      SELECT id FROM roles WHERE id = $1 AND status = true,
+      `SELECT id FROM roles WHERE id = $1 AND status = true`,
       [role_id]
     );
     if (!role.rows.length) {
@@ -128,7 +128,7 @@ exports.forgotPassword = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    console.log(Reset token for ${email}: ${token});
+    console.log(`Reset token for ${email}: ${token}`);
     res.status(200).json({
       message: "Reset token generated successfully",
       token 
