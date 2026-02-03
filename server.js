@@ -11,6 +11,7 @@ app.use(bodyParser.json());
 // app.use("/api/users", userRoutes);
 app.use("/api/role", roleRoutes);
 app.use("/api/auth", authRouter );
+app.use("/uploads", express.static("uploads"));
 
 
 app.listen(3000, () => {

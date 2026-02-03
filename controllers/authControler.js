@@ -347,7 +347,7 @@ exports.getMe = async (req, res) => {
 exports.updateMe = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { username, bio, profile_image, cover_image } = req.body;
+    const { username, bio ,profile_image ,cover_image} = req.body;
 
     if (!username)
       return res.status(400).json({ message: "Username required" });
@@ -369,6 +369,47 @@ exports.updateMe = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+
+// exports.updateMe = async (req, res) => {
+//   try {
+//     const userId = req.user.id;
+//     const { username, bio } = req.body;
+
+//     if (!username) {
+//       return res.status(400).json({ message: "Username required" });
+//     }
+
+//     // check username uniqueness
+//     const exists = await User.isUsernameTaken(username, userId);
+//     if (exists.rows.length > 0) {
+//       return res.status(409).json({ message: "Username already taken" });
+//     }
+
+//     // files (optional)
+//     const profileImage = req.files?.profile_image
+//       ? req.files.profile_image[0].filename
+//       : null;
+
+//     const coverImage = req.files?.cover_image
+//       ? req.files.cover_image[0].filename
+//       : null;
+
+//     await User.updateProfile(userId, {
+//       username,
+//       bio,
+//       profile_image: profileImage,
+//       cover_image: coverImage
+//     });
+
+//     res.json({ message: "Profile updated successfully" });
+
+//   } catch (err) {
+//     res.status(500).json({ error: err.message });
+//   }
+// };
+
+
 
 
 

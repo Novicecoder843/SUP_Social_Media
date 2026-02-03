@@ -2,6 +2,10 @@ const express = require("express");
 const router = express.Router();
 const authController = require("../controllers/authControler");
 const auth = require("../middleware/authMiddleware");
+const upload = require ("../middleware/uploadMiddleware")
+
+
+
 
 router.post("/register", authController.register);
 router.get("/allRegister", authController.getAllUsers);
@@ -19,7 +23,12 @@ router.post("/reset-password", authController.resetPassword);
 
 
 router.get("/me",auth, authController.getMe);
-router.put("/updateme",auth, authController.updateMe);
+// router.put("/updateme",auth,upload , authController.updateMe);
+
+router.put("/updateme",auth,  upload.fields([
+    { name: "profile_image", maxCount: 1 },
+    { name: "cover_image", maxCount: 1 }
+  ]), authController.updateMe);
 
 router.get("/:id",auth, authController.getUserById);
 

@@ -118,8 +118,8 @@ exports.updateProfile = (userId, data) => {
     SET
       username = $1,
       bio = $2,
-      profile_image = $3,
-      cover_image = $4,
+      profile_image = COALESCE($3, profile_image),
+      cover_image = COALESCE($4, cover_image),
       updated_at = NOW()
     WHERE user_id = $5
   `, [username, bio, profile_image, cover_image, userId]);
