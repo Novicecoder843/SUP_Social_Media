@@ -1,6 +1,5 @@
 require('dotenv').config();
 const express = require("express");
-require('dotenv').config();
 
 const bodyParser = require('body-parser')
 //const pool = require("./config/db");
@@ -19,6 +18,8 @@ app.use("/api", roleRoutes);
 
 const authRoutes = require("./routes/authRoutes");
 app.use("/api", authRoutes);
+
+app.use("/api/users", require("./routes/userRoutes"));
 
 const PORT = 3000;
 app.listen(PORT, () => {

@@ -1,5 +1,3 @@
-// const User = require("../models/userModel");
-
 // /* CREATE USER */
 // exports.createUsers = async (req, res) => {
 //   try {
@@ -102,5 +100,44 @@ exports.deleteUser = async (req, res) => {
     res.json({ success: true, message: "User deleted successfully" });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+exports.getMyProfile = async (req, res) => {
+  try {
+    const userId = req.user.id; //from JWT only
+
+    const user = await UserModel.getMe(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res.status(200).json(user);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+exports.updateMyProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { username, bio, profile_image } = req.body;
+
+    if (!username && !bio && !profile_image) {
+      return res.status(400).json({ message: "No data to update" });
+    }
+
+    await UserModel.updateMyProfile(userId, {
+      username,
+      bio,
+      profile_image
+    });
+
+    res.status(200).json({ message: "Profile updated successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
   }
 };

@@ -11,8 +11,11 @@ module.exports = (req, res, next) => {
   const token = authHeader.split(" ")[1];
 
   try {
-    const decoded = jwt.verify(token, jwtConfig.secret);
-    req.user = decoded;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = {
+      id: decoded.id,
+      role_id: decoded.role_id
+    };
     next();
   } catch (err) {
     return res.status(401).json({ message: "Token expired or invalid" });
