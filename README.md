@@ -54,3 +54,7 @@ model/
     auth.model
     USER.model
     userprofile model
+
+    ---- use model
+    ----- use return keyword every response
+    ----- store and hit and save all api in postman 
