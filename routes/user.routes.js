@@ -9,17 +9,19 @@ const {
   deleteUser,
 } = require("../controller/user.controller");
 
-// CREATE
-router.post("/users", createUser);
+// CREATE USER
+router.post("/", createUser);
 
-// READ
-router.get("/users", getAllUsers);
-router.get("/users/:id", getUserById);
+// GET ALL USERS
+router.get("/", getAllUsers);
 
-// UPDATE
-router.put("/users/:id", updateUser);
+// GET USER BY ID
+router.get("/:id", getUserById);
 
-// DELETE
-router.delete("/users/:id", deleteUser);
+// UPDATE USER
+router.put("/updateuser/:id", updateUser);
+
+// DELETE USER
+router.delete("/:id", deleteUser);
 
 module.exports = router;
