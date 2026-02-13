@@ -14,6 +14,7 @@ app.get("/", (req, res) => {
 
 // ✅ Correct route prefix
 app.use("/api/users", userRoutes);
+app.use("/api/auth", userRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
