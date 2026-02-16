@@ -393,3 +393,55 @@ GET /:id → Who is this person
 follow → Connect
 unfollow → Disconnect
 block → Protect myself
+
+
+# -------- Post Management  - Posts - id,userid,content,visbility,likecount,commentcount,is_delted
+# post media - postid,mediaUrl,mediatype,
+<!-- create post
+get post by id api/posts/2
+edit post by id
+delete post
+get feed
+get user posts/api/users/2/posts
+
+----- 20 post
+
+likes - 1,5, created_At --(post_id,user_id,time)
+comments - id,post_id,user_id,content,like_count,is_deleted,
+commentlikes - comment_id,user_id
+stories
+stryviews
+
+
+Create Post
+Edit
+Delete post
+share
+feed
+trending posts
+hashtags, mentions -->
+# POSTS
+3. POSTS & MEDIA
+
+CREATE TABLE posts , post_media
+POST   /api/posts
+GET    /api/posts/:id
+PUT    /api/posts/:id
+DELETE /api/posts/:id
+GET    /api/feed
+GET    /api/users/:id/posts
+
+# POST INTERACTIONS
+4. LIKES & COMMENTS
+create table post_likes,comments,comment_likes
+
+POST   /api/posts/:id/like
+POST   /api/posts/:id/unlike
+POST   /api/posts/:id/comment
+GET    /api/posts/:id/comments
+
+# COMMENTS
+POST   /api/comments/:id/like
+POST   /api/comments/:id/unlike
+DELETE /api/comments/:id
+
