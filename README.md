@@ -364,5 +364,3 @@ GET /:id → Who is this person
 follow → Connect
 unfollow → Disconnect
 block → Protect myself
-
-
