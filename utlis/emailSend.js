@@ -26,7 +26,7 @@ exports.sendLoginOtpEmail = async (toEmail, fullName, otp) => {
     to: toEmail,
     subject: "Your Login Verification Code",
     html: `
-      <h3>Hello ${fullName} 👋</h3>
+      <h3>Hello ${fullName} </h3>
       <p>Your login verification code is:</p>
       <h2>${otp}</h2>
       <p>This code is valid for 5 minutes.</p>
@@ -46,10 +46,11 @@ exports.sendLoginEmail = async (toEmail, fullName) => {
         subject: "Welcome to your profile",
         html: `
       <h3>Hello ${fullName} 👋</h3>
-      <p>You have logged in successfully.</p>
+      <p>You have logged in successfully ,
+      wellcome to your profile , plise cheak your account .</p>
       <p>If this was not you, please secure your account.</p>
       <br/>
-      <p>— My App Team</p>
+      <p> its your social_media platfrom . </p>
     `
     });
 };

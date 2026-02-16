@@ -22,7 +22,6 @@ router.post("/forgot-password", authController.forgotPassword);
 router.post("/reset-password", authController.resetPassword);
 
 
-router.get("/me",auth, authController.getMe);
 // router.put("/updateme",auth,upload , authController.updateMe);
 
 router.put("/updateme",auth,  upload.fields([
@@ -30,7 +29,10 @@ router.put("/updateme",auth,  upload.fields([
     { name: "cover_image", maxCount: 1 }
   ]), authController.updateMe);
 
+  
+router.get("/me",auth, authController.getMe);
 router.get("/:id",auth, authController.getUserById);
+
 
 router.post("/follow/:id",auth, authController.follow);
 router.post("/unfollow/:id",auth, authController.unfollow);
