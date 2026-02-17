@@ -1,6 +1,7 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const User = require("../model/auth.model");
+const pool = require("../config/db");  
 
 /* ================= REGISTER ================= */
 async function register(req, res) {
@@ -77,7 +78,7 @@ async function login(req, res) {
       { expiresIn: "7d" }
     );
 
-    res.json({
+    return res.json({
       success: true,
       accessToken,
       refreshToken,
@@ -90,7 +91,6 @@ async function login(req, res) {
     });
   }
 }
-
 /* ================= PROFILE ================= */
 async function profile(req, res) {
   try {
@@ -149,19 +149,122 @@ async function refreshToken(req, res) {
 }
 
 /* ================= VERIFY EMAIL ================= */
+
 async function verifyEmail(req, res) {
-  res.json({
-    success: true,
-    message: "Email verified successfully (Dummy Implementation)",
-  });
+  try {
+    const { email } = req.body;
+
+    // 1️⃣ Validate email
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is required",
+      });
+    }
+
+    // 2️⃣ Check if user exists
+    const userResult = await pool.query(
+      "SELECT id, is_email_verified FROM users WHERE email = $1",
+      [email]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found, please register first.",
+      });
+    }
+
+    const user = userResult.rows[0];
+
+    // 3️⃣ Check if already verified
+    if (user.is_email_verified) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is already verified.",
+      });
+    }
+
+    // 4️⃣ Update email verification status
+    await pool.query(
+      "UPDATE users SET is_email_verified = true WHERE email = $1",
+      [email]
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Email verified successfully.",
+    });
+
+  } catch (error) {
+    console.error("Verify Email Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
 }
+
+module.exports = { verifyEmail };
+
 
 /* ================= FORGOT PASSWORD ================= */
 async function forgotPassword(req, res) {
-  res.json({
-    success: true,
-    message: "Password reset link sent (Dummy Implementation)",
-  });
+  try {
+    const { email, newPassword, confirmPassword } = req.body;
+
+    // 1️⃣ Validate inputs
+    if (!email || !newPassword || !confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Email, newPassword and confirmPassword are required",
+      });
+    }
+
+    // 2️⃣ Check if passwords match
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Passwords do not match",
+      });
+    }
+
+    // 3️⃣ Optional: password length validation
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must be at least 6 characters long",
+      });
+    }
+
+    // 4️⃣ Check if user exists
+    const user = await User.findByEmail(email);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // 5️⃣ Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // 6️⃣ Update password in DB
+    await User.updatePassword(user.id, hashedPassword);
+
+    return res.status(200).json({
+      success: true,
+      message: "Password updated successfully",
+    });
+
+  } catch (error) {
+    console.error("Forgot Password Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
 }
 
 /* ================= RESET PASSWORD ================= */
@@ -171,7 +274,6 @@ async function resetPassword(req, res) {
     message: "Password reset successfully (Dummy Implementation)",
   });
 }
-
 /* ================= EXPORT ================= */
 module.exports = {
   register,
