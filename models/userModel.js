@@ -96,3 +96,32 @@ exports.updateMyProfile = async (userId, data) => {
     [userId, bio || null, profile_image || null]
   );
 };
+
+exports.getUserByUsername = async (username, viewerId = null) => {
+  const query = `
+    SELECT 
+      u.id,
+      u.username,
+      up.bio,
+      up.profile_image,
+
+      (SELECT COUNT(*) FROM user_followers WHERE user_id = u.id) AS followers,
+      (SELECT COUNT(*) FROM user_followers WHERE follower_id = u.id) AS following,
+
+      ${
+        viewerId
+          ? `(SELECT COUNT(*) FROM user_followers 
+              WHERE user_id = u.id AND follower_id = $2) AS is_following`
+          : `false AS is_following`
+      }
+
+    FROM users u
+    LEFT JOIN user_profiles up ON up.user_id = u.id
+    WHERE u.username = $1 AND u.status = true
+  `;
+
+  const values = viewerId ? [username, viewerId] : [username];
+  const result = await db.query(query, values);
+
+  return result.rows[0];
+};

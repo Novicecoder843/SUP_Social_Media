@@ -141,3 +141,24 @@ exports.updateMyProfile = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+exports.getUserProfileByUsername = async (req, res) => {
+  try {
+    const { username } = req.params;
+    const viewerId = req.user?.id || null; // JWT optional
+
+    const user = await UserModel.getUserByUsername(username, viewerId);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // convert count → boolean
+    user.is_following = Boolean(Number(user.is_following));
+
+    res.status(200).json(user);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
