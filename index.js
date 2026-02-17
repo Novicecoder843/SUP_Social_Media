@@ -4,22 +4,17 @@ const express = require("express");
 const bodyParser = require('body-parser')
 //const pool = require("./config/db");
 const userRoutes = require("./routes/userRoutes");
+const authRoutes = require("./routes/authRoutes");
+const roleRoutes = require("./routes/roleRoutes");
 const app = express();
 
 app.use(express.json());
 app.use(bodyParser.json());
 
 app.use("/api", userRoutes);
-
-app.use("/api", require("./routes/authRoutes"));
-
-const roleRoutes = require("./routes/roleRoutes");
 app.use("/api", roleRoutes);
-
-const authRoutes = require("./routes/authRoutes");
 app.use("/api", authRoutes);
 
-app.use("/api/users", require("./routes/userRoutes"));
 
 const PORT = 3000;
 app.listen(PORT, () => {
