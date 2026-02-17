@@ -112,12 +112,14 @@ exports.isUsernameTaken = (username, userId) => {
 
 exports.updateProfile = (userId, data) => {
   const { username, bio, profile_image, cover_image } = data;
+ 
+// console.log(data)
 
   return pool.query(`
     UPDATE user_schema.user_profiles
     SET
-      username = $1,
-      bio = $2,
+      username = COALESCE($1,username),
+      bio = COALESCE($2, bio),
       profile_image = COALESCE($3, profile_image),
       cover_image = COALESCE($4, cover_image),
       updated_at = NOW()

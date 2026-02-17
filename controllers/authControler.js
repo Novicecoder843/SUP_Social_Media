@@ -5,7 +5,7 @@ const pool = require("../config/db");
 const User = require("../models/userModel");
 const roleModel = require("../models/roleModel");
 const jwtConfig = require("../config/jwt");
-const { sendLoginEmail , sendLoginOtpEmail} = require("../utlis/emailSend");
+const { sendLoginEmail, sendLoginOtpEmail } = require("../utlis/emailSend");
 
 
 
@@ -192,12 +192,12 @@ exports.verifyLoginOtp = async (req, res) => {
         await User.clearLoginOtp(user.id);
 
         // ✅ Generate JWT
-            const token = jwt.sign(
-                { id: user.id, role_id: user.role_id }, process.env.JWT_SECRET,
-                // jwtConfig.secret,
-                 { expiresIn: "1d" }
-                // { expiresIn: jwtConfig.expiresIn }
-            );
+        const token = jwt.sign(
+            { id: user.id, role_id: user.role_id }, process.env.JWT_SECRET,
+            // jwtConfig.secret,
+            { expiresIn: "1d" }
+            // { expiresIn: jwtConfig.expiresIn }
+        );
 
 
         // 📧 SEND EMAIL TO LOGGED-IN USER
@@ -329,45 +329,60 @@ exports.resetPassword = async (req, res) => {
 //===== get user is correct ========//
 
 exports.getMe = async (req, res) => {
-  try {
-    const userId = req.user.id;
+    try {
+        const userId = req.user.id;
 
-    const result = await User.getMyProfile(userId);
-    if (result.rows.length === 0)
-      return res.status(404).json({ message: "Profile not found" });
+        const result = await User.getMyProfile(userId);
+        if (result.rows.length === 0)
+            return res.status(404).json({ message: "Profile not found" });
 
-    res.json(result.rows[0]);
+        res.json(result.rows[0]);
 
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 };
 
 
 exports.updateMe = async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const { username, bio ,profile_image ,cover_image} = req.body;
+    try {
+        const userId = req.user.id;
+        // console.log(req.files, 'ooooooooooooooooooo')
+        const { username, bio } = req.body;
 
-    if (!username)
-      return res.status(400).json({ message: "Username required" });
+        if (!username)
+            return res.status(400).json({ message: "Username required" });
 
-    const exists = await User.isUsernameTaken(username, userId);
-    if (exists.rows.length > 0)
-      return res.status(409).json({ message: "Username already taken" });
+        const exists = await User.isUsernameTaken(username, userId);
+        if (exists.rows.length > 0)
+            return res.status(409).json({ message: "Username already taken" });
 
-    await User.updateProfile(userId, {
-      username,
-      bio,
-      profile_image,
-      cover_image
-    });
 
-    res.json({ message: "Profile updated successfully" });
+        // ✅ Extract uploaded images from multer
+        const profileImage = req.files?.profile_image?.[0]?.path || null;
+        const coverImage = req.files?.cover_image?.[0]?.path || null;
 
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+        await pool.query(`
+  INSERT INTO user_schema.user_profiles (user_id, username)
+  VALUES ($1, $2)
+  ON CONFLICT (user_id) DO NOTHING
+`, [userId, username || `user_${userId}`]);
+
+
+
+
+        await User.updateProfile(userId, {
+            username,
+            bio,
+            profile_image: profileImage,
+            cover_image: coverImage
+        });
+
+        res.json({ message: "Profile updated successfully" });
+
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 };
 
 
@@ -414,12 +429,12 @@ exports.updateMe = async (req, res) => {
 
 
 exports.getUserById = async (req, res) => {
-  const result = await User.getProfileById(req.params.id);
+    const result = await User.getProfileById(req.params.id);
 
-  if (result.rows.length === 0)
-    return res.status(404).json({ message: "User not found" });
+    if (result.rows.length === 0)
+        return res.status(404).json({ message: "User not found" });
 
-  res.json(result.rows[0]);
+    res.json(result.rows[0]);
 };
 
 
@@ -429,22 +444,22 @@ exports.getUserById = async (req, res) => {
 
 
 exports.follow = async (req, res) => {
-  if (req.user.id == req.params.id)
-    return res.status(400).json({ message: "Cannot follow yourself" });
+    if (req.user.id == req.params.id)
+        return res.status(400).json({ message: "Cannot follow yourself" });
 
-  await User.followUser(req.user.id, req.params.id);
-  res.json({ message: "User followed" });
+    await User.followUser(req.user.id, req.params.id);
+    res.json({ message: "User followed" });
 };
 
 exports.unfollow = async (req, res) => {
-  await User.unfollowUser(req.user.id, req.params.id);
-  res.json({ message: "User unfollowed" });
+    await User.unfollowUser(req.user.id, req.params.id);
+    res.json({ message: "User unfollowed" });
 };
 
 exports.block = async (req, res) => {
-  if (req.user.id == req.params.id)
-    return res.status(400).json({ message: "Cannot block yourself" });
+    if (req.user.id == req.params.id)
+        return res.status(400).json({ message: "Cannot block yourself" });
 
-  await User.blockUser(req.user.id, req.params.id);
-  res.json({ message: "User blocked" });
+    await User.blockUser(req.user.id, req.params.id);
+    res.json({ message: "User blocked" });
 };

@@ -4,11 +4,11 @@ const fs = require ("fs");
 
 
 
-const profilePath = path.join(__dirname, "uploads/profiles");
-const coverPath   = path.join(__dirname, "uploads/covers");
+const profilePath =  "uploads/profiles"
+const coverPath   =  "uploads/covers" ;
 
-console.log("Profile Path:", profilePath);
-console.log("Cover Path:", coverPath);
+// console.log("Profile Path:", profilePath);
+// console.log("Cover Path:", coverPath);
 
 
 // create folders if not exist
