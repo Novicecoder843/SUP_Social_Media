@@ -34,5 +34,5 @@ const updatePassword = async (userId, hashedPassword) => {
 module.exports = {
   findByEmail,
   createUser,
-  updatePassword,   // ✅ added here
+  updatePassword,
 };

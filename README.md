@@ -196,7 +196,7 @@ CREATE TABLE refresh_tokens (
 
 sendEmail thorugh nodemailer while successfully registration
 
-USER PROFILE & SOCIAL GRAPH – API FEATURES
+# USER PROFILE & SOCIAL GRAPH – API FEATURES
 
 GET    /api/users/me
 PUT    /api/users/me

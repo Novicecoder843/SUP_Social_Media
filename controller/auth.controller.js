@@ -1,20 +1,25 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const User = require("../model/auth.model");
-const pool = require("../config/db");  
+const pool = require("../config/db");
+const crypto = require("crypto");
+const nodemailer = require("nodemailer");
 
 /* ================= REGISTER ================= */
+
 async function register(req, res) {
   try {
     const { username, email, password } = req.body;
 
+    // 1️⃣ Validate input
     if (!username || !email || !password) {
       return res.status(400).json({
         success: false,
-        message: "Username, email and password are required",
+        message: "All fields are required",
       });
     }
 
+    // 2️⃣ Check if email already exists
     const existingUser = await User.findByEmail(email);
     if (existingUser) {
       return res.status(400).json({
@@ -22,30 +27,73 @@ async function register(req, res) {
         message: "Email already registered",
       });
     }
-
+    // 3️⃣ Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = await User.createUser({
+    // 4️⃣ Generate verification token
+    const verificationToken = crypto.randomBytes(32).toString("hex");
+
+    // 5️⃣ Create user (email not verified)
+    await User.createUser({
       username,
       email,
       password: hashedPassword,
+      verification_token: verificationToken,
     });
 
-    res.status(201).json({
+    // 6️⃣ Create transporter
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS, // MUST be Gmail App Password
+      },
+    });
+
+    // 7️⃣ Verify transporter connection
+    await transporter.verify();
+    console.log("SMTP Server is ready to send emails");
+
+    // 8️⃣ Verification link
+    const verifyLink = `http://localhost:5000/api/auth/verify-email`;
+
+    // 9️⃣ Send email
+    const info = await transporter.sendMail({
+      from: `"Social App" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: "Verify Your Email",
+      html: `
+        <h2>Welcome ${username}</h2>
+        <p>Please click below to verify your email:</p>
+        <a href="${verifyLink}">${verifyLink}</a>
+      `,
+    });
+
+    // 🔎 Debug logs
+    console.log("Message ID:", info.messageId);
+    console.log("Accepted:", info.accepted);
+    console.log("Rejected:", info.rejected);
+    console.log("Response:", info.response);
+
+    return res.status(201).json({
       success: true,
-      message: "User registered successfully",
-      data: user,
+      message: "Registration successful. Please check your email to verify your account.",
     });
 
   } catch (error) {
-    res.status(500).json({
+    console.error("Register Error:", error);
+
+    return res.status(500).json({
       success: false,
       message: error.message,
     });
   }
 }
 
-/* ================= LOGIN ================= */
+module.exports = { register };
+
+
+///* ================= LOGIN ================= */
 async function login(req, res) {
   try {
     const { email, password } = req.body;
