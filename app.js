@@ -5,6 +5,7 @@ require("./config/db");
 const userRoutes = require("./routes/user.routes");
 const authRoutes = require("./routes/auth.routes");
 const userProfileRoutes = require("./routes/userprofile.routes");
+const userFollowRoutes = require("./routes/userfollow.routes");
 
 const app = express();
 
@@ -17,6 +18,7 @@ app.get("/", (req, res) => {
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/profile", userProfileRoutes);
+app.use("/api/users", userFollowRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
