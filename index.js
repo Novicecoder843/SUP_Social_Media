@@ -9,10 +9,21 @@ const roleRoutes = require("./routes/roleRoutes");
 const app = express();
 
 app.use(express.json());
+
+app.use((req, res, next) => {
+    console.log("Request Method:", req.method);
+    console.log("Request URL:", req.originalUrl);
+    console.log("Request Params:", req.params);
+    console.log("Request Query:", req.query);
+    console.log("Request Body:", req.body);
+    console.log("----------------------------------------------");
+    next();
+});
+
 app.use(bodyParser.json());
 
-app.use("/api", userRoutes);
-app.use("/api", roleRoutes);
+app.use("/api/users", require("./routes/userRoutes"));
+app.use("/api/roles", require("./routes/roleRoutes"));
 app.use("/api", authRoutes);
 
 

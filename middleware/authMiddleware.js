@@ -3,8 +3,9 @@ const jwtConfig = require("../config/jwt");
 
 module.exports = (req, res, next) => {
   const authHeader = req.headers.authorization;
-
+console.log(authHeader)
   if (!authHeader) {
+    console.log("Authorization header missing");
     return res.status(401).json({ message: "Token missing" });
   }
 

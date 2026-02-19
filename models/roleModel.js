@@ -1,5 +1,11 @@
 const db = require("../config/db");
 
+exports.getRoleById = async (id) => {
+  return await db.query(
+    "SELECT * FROM roles WHERE id = $1", [id]
+  );
+};
+
 const RoleModel = {
   createRole: async (name, description) => {
     const query = `
