@@ -10,7 +10,7 @@
 // con.connect().then(()=> console.log("connected"))
 
 // module.exports = con ;
-const { Pool } = require("pg");
+const { Pool, Client } = require("pg");
 
 const pool = new Pool({
   host: "localhost",
@@ -26,5 +26,14 @@ pool.on("connect", () => {
 console.log("connected successfully")
 
 });
+
+const originalQuery = pool.query;
+
+pool.query = async (...args) => {
+  console.log("SQL:", args[0]);     // Query text
+  console.log("Params:", args[1]);  // Values
+  return originalQuery.apply(pool, args);
+};
+
 
 module.exports = pool;

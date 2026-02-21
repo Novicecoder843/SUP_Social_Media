@@ -4,6 +4,9 @@ const authController = require("../controllers/authControler");
 const auth = require("../middleware/authMiddleware");
 const upload = require ("../middleware/uploadMiddleware")
 
+const uploadMedia = require("../middleware/postUploadMiddleware");
+const postControler =require ("../controllers/postController");
+
 
 
 
@@ -39,6 +42,16 @@ router.post("/unfollow/:id",auth, authController.unfollow);
 router.post("/block/:id",auth, authController.block);
 
 
+
+// router post -- upload image,video
+
+router.post("/upload",auth ,uploadMedia ,postControler.createPost );
+// router.get("/Allpost", postControler.getAllPosts);
+// router.get("/postsById:id", postControler.getPostById);
+
+router.get("/posts", postControler.getAllPosts);
+router.get("/posts/:id", postControler.getPostById);
+router.delete("/deletepost:id", auth, postControler.deletePost);
 module.exports = router;
 
 
