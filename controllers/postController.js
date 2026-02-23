@@ -33,7 +33,7 @@ exports.createPost = async (req, res) => {
   }
 };
 
-exports.getAllPosts = async (req, res) => {
+exports.AllPosts = async (req, res) => {
   try {
     const posts = await Post.getAllPosts();
     res.json(posts.rows);
