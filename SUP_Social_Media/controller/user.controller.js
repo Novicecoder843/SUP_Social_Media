@@ -70,6 +70,7 @@
 
 const pool = require('../config/db'); 
 const db = require('../config/db');
+const userModel = require("../models/user.model");
 
 
 /* GET /api/users/me */

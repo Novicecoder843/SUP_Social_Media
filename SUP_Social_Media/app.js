@@ -2,7 +2,7 @@ const express = require('express');
 require('dotenv').config();
 
 const roleRoutes = require('./routes/role.routes');
-
+const postRoutes = require('./routes/post.routes');
 const app = express();
 app.use(express.json());
 
@@ -25,9 +25,13 @@ app.use((err, req, res, next) => {
 
   next(err);
 });
-
+app.use('/uploads', express.static('uploads'));
+app.use('/api/posts', postRoutes);
 
 module.exports = app;
+
+
+
 
 
 

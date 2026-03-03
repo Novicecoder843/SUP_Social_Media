@@ -7,11 +7,10 @@ const pool = new Pool({
   database: process.env.DB_NAME,
   password: process.env.DB_PASSWORD,
   port: process.env.DB_PORT,
-  connectionString: process.env.DATABASE_URL
+  ssl: false,
+  max: 10, // reduce from 20
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000,
 });
-
-pool.connect()
-  .then(() => console.log('PostgreSQL connected ✅'))
-  .catch(err => console.error('DB error ❌', err));
 
 module.exports = pool;
