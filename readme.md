@@ -2,6 +2,19 @@
 # SUP_Social_Media
 Social Media
 
+localhost:3000
+
+app.js - server setup - applisten at port 3000
+app.use('/api',routes)
+Routes/ index.js
+            router.use('/auth',authroutes)
+    different routes file for different model/service
+controller
+        req,res handle
+model
+    bussiness logic - queries
+
+
 npm inti -y
 create idex.js file
 create server with node and express
@@ -109,7 +122,7 @@ Name
 Email
 Password
 Role
-Validate input (backend validation)
+Validate input (backend validation) - dependencies ZOD,JOI
 Check if email already exists in DB
 Hash the password (bcrypt)
 Store user details in DB
