@@ -94,7 +94,7 @@ exports.getMyProfile = (userId) => {
       p.profile_image,
       p.cover_image,
       COUNT(f.following_id) AS followers,
-      COUNT(DISTINCT f2.follower_id) AS following
+      COUNT( f2.follower_id) AS following
     FROM user_schema.userstable u
     JOIN user_schema.user_profiles p ON p.user_id = u.id
     LEFT JOIN user_schema.user_followers f ON f.following_id = u.id 
