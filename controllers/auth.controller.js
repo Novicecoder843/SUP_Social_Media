@@ -2,10 +2,16 @@ const authService = require("../services/auth.service");
 
 exports.register = async (req, res) => {
   try {
+
     const { email, password } = req.body;
-    const user = await authService.register({ email, password });
+
+    const user = await authService.register({
+      email,
+      password,
+    });
+
     res.json(user);
-    return
+
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -13,9 +19,15 @@ exports.register = async (req, res) => {
 
 exports.login = async (req, res) => {
   try {
+
     const { email, password } = req.body;
-    const token = await authService.login({ email, password });
-    res.json({ token });
+
+    const data = await authService.login({
+      email,
+      password,
+    });
+
+    res.json(data);
 
   } catch (err) {
     res.status(500).json({ error: err.message });

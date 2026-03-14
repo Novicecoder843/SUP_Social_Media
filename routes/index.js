@@ -1,11 +1,8 @@
 const router = require("express").Router();
 
-const authroutes=require("../routes/auth.routes");
-const userRoutes=require("../routes/auth.routes");
-
-
-router.use("/auth",authroutes);
-router.use("/users",userRoutes);
-
-
-module.exports=router;
+router.get("/", (req, res) => {
+  res.json({ message: "API Working" });
+});
+const authRoutes = require("./auth.routes");
+router.use("/auth", authRoutes);
+module.exports = router;
