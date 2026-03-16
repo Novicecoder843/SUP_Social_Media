@@ -77,3 +77,78 @@ exports.deletePost = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+exports.likePost = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const postId = req.params.id;
+
+    if (isNaN(postId)) {
+      return res.status(400).json({
+        message: "Invalid post id"
+      });
+    }
+
+    await Post.likePost(userId, postId);
+
+    res.json({ message: "Post liked " });
+
+  } catch (err) {
+    res.status(500).json({
+      message: 'cant find post id'
+    });
+  }
+};
+
+exports.commentPost = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const postId = req.params.id;
+    const { comment } = req.body;
+
+    if (isNaN(postId)) {
+      return res.status(400).json({
+        message: "Invalid post id"
+      });
+    }
+
+    await Post.commentPost(userId, postId, comment);
+
+    res.json({ message: "Comment added" });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message ,  message: 'cant find post id'});
+  }
+};
+
+exports.sharePost = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const postId = req.params.id;
+
+    if (isNaN(postId)) {
+      return res.status(400).json({
+        message: "Invalid post id"
+      });
+    }
+    await Post.sharePost(userId, postId);
+
+    res.json({ message: "Post shared" });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message , message: 'cant find post id' });
+  }
+};
+
+exports.getPostStats = async (req, res) => {
+  try {
+    const postId = req.params.id;
+
+    const stats = await Post.getStats(postId);
+
+    res.json(stats.rows[0]);
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};

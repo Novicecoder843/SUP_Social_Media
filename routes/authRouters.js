@@ -49,6 +49,18 @@ router.post("/upload",auth ,uploadMedia ,postControler.createPost );
 router.get("/user/posts", postControler.AllPosts);
 router.get("/posts/:id", postControler.getPostById);
 router.delete("/deletepost:id", auth, postControler.deletePost);
+
+
+router.post("/posts/:id/like", auth, postControler.likePost);
+router.post("/posts/:id/comment", auth, postControler.commentPost);
+router.post("/posts/:id/share", auth, postControler.sharePost);
+router.get("/posts/:id/stats", auth, postControler.getPostStats);
+
+
+// router.post("/comment/:commentId/replies", auth ,postControler.replyComment);
+// router.post("/post/:postId/comments", auth ,postControler.getPostComment);
+
+
 module.exports = router;
 
 
