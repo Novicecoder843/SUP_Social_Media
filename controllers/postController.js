@@ -1,4 +1,5 @@
 const Post = require("../models/postModel");
+const { post } = require("../routes/authRouters");
 
 exports.createPost = async (req, res) => {
   try {
@@ -9,6 +10,8 @@ exports.createPost = async (req, res) => {
     const post = postResult.rows[0];
 
     // ✅ Save uploaded media
+
+
     if (req.files?.length > 0) {
       for (const file of req.files) {
         const mediaType = file.mimetype.startsWith("image")
@@ -42,6 +45,8 @@ exports.AllPosts = async (req, res) => {
   }
 };
 
+// POST GET BY ID//
+
 exports.getPostById = async (req, res) => {
   try {
     const postId = parseInt(req.params.id);
@@ -61,6 +66,9 @@ exports.getPostById = async (req, res) => {
   }
 };
 
+
+// DELETE POST//
+
 exports.deletePost = async (req, res) => {
   try {
     const postId = parseInt(req.params.id);
@@ -77,6 +85,8 @@ exports.deletePost = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+// LIKE POST ///
 
 exports.likePost = async (req, res) => {
   try {
@@ -100,6 +110,8 @@ exports.likePost = async (req, res) => {
   }
 };
 
+// COMMENT POST //
+
 exports.commentPost = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -117,9 +129,11 @@ exports.commentPost = async (req, res) => {
     res.json({ message: "Comment added" });
 
   } catch (err) {
-    res.status(500).json({ error: err.message ,  message: 'cant find post id'});
+    res.status(500).json({ error: err.message, message: 'cant find post id' });
   }
 };
+
+// SHAIR A POST//
 
 exports.sharePost = async (req, res) => {
   try {
@@ -136,9 +150,10 @@ exports.sharePost = async (req, res) => {
     res.json({ message: "Post shared" });
 
   } catch (err) {
-    res.status(500).json({ error: err.message , message: 'cant find post id' });
+    res.status(500).json({ error: err.message, message: 'cant find post id' });
   }
 };
+// GET POST STATUSH//
 
 exports.getPostStats = async (req, res) => {
   try {
@@ -152,3 +167,231 @@ exports.getPostStats = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+// REPLAY TO COMMENT //
+
+exports.replyComment = async (req, res) => {
+  try {
+
+    const userId = req.user.id;
+    const commentId = parseInt(req.params.commentId);
+    const { comment } = req.body;
+
+    if (isNaN(commentId)) {
+      return res.status(400).json({
+        message: "Invalid comment id"
+      });
+    }
+
+    if (!comment) {
+      return res.status(400).json({
+        message: "Reply comment is required"
+      });
+    }
+
+    const reply = await Post.replyComment(userId, commentId, comment);
+
+    res.status(201).json({
+      message: "Reply added successfully",
+      reply: reply.rows[0]
+    });
+
+  } catch (err) {
+
+    if (err.code === "23503") {
+      return res.status(404).json({
+        message: "Comment not found"
+      });
+    }
+
+    res.status(500).json({
+      message: "Server error",
+      error: err.message
+    });
+  }
+};
+
+
+// GET POST COMMENT //
+
+exports.getPostComments = async (req, res) => {
+  try {
+
+    const postId = parseInt(req.params.postId);
+
+    if (isNaN(postId)) {
+      return res.status(400).json({
+        message: "Invalid post id"
+      });
+    }
+
+    const comments = await Post.getPostComments(postId);
+
+    res.status(200).json({
+      comments: comments.rows
+    });
+
+  } catch (err) {
+
+    res.status(500).json({
+      message: "Server error",
+      error: err.message
+    });
+
+  }
+};
+
+// LIKE AND UNLIKE COMMENT //
+exports.toggleLikeComment = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const commentId = parseInt(req.params.id);
+
+    const result = await Post.toggleLike(userId, commentId);
+
+    res.json(result);
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// EDIT COMMENT //
+
+exports.editComment = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const commentId = parseInt(req.params.id);
+    const { comment } = req.body;
+
+    if (!comment) {
+      return res.status(400).json({ message: "Comment required" });
+    }
+
+    const updated = await Post.editComment(userId, commentId, comment);
+
+    if (updated.rowCount === 0) {
+      return res.status(403).json({ message: "Not allowed" });
+    }
+
+    res.json({ message: "Comment updated" });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// delete comment//
+
+exports.deleteComments = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const commentId = parseInt(req.params.id);
+
+    const deleted = await Post.deleteComments(userId, commentId);
+
+    if (deleted.rowCount === 0) {
+      return res.status(403).json({ message: "Not allowed" });
+    }
+
+    res.json({ message: "Comment deleted" });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
+
+// hastags//
+exports.getPostHashtags = async (req, res) => {
+  try {
+
+    const postId = parseInt(req.params.postId);
+
+    if (isNaN(postId)) {
+      return res.status(400).json({
+        message: "Invalid post id"
+      });
+    }
+
+    const result = await Post.getPostHashtags(postId);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        message: "No hashtags found"
+      });
+    }
+
+    res.json({
+      hashtags: result.rows
+    });
+
+  } catch (err) {
+    res.status(500).json({
+      message: "Server error",
+      error: err.message
+    });
+  }
+};
+
+
+exports.getPostsByHashtag = async (req, res) => {
+  try {
+
+    const tag = req.params.tag;
+
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 5;
+    const offset = (page - 1) * limit;
+
+    if (!tag) {
+      return res.status(400).json({
+        message: "Hashtag is required"
+      });
+    }
+
+    const posts = await Post.getPostsByTag(tag, limit, offset);
+
+    if (posts.rows.length === 0) {
+      return res.status(404).json({
+        message: "No posts found for this hashtag"
+      });
+    }
+
+    res.json({
+      page,
+      limit,
+      count: posts.rows.length,
+      data: posts.rows
+    });
+
+  } catch (err) {
+    res.status(500).json({
+      message: "Server error",
+      error: err.message
+    });
+  }
+};
+
+// GET TRANDING HASTAGS //
+
+// exports.getTrendingHashtags = async (req, res) => {
+//   try {
+
+//     const result = await Post.getTrending();
+
+//     res.json({
+//       trending: result.rows
+//     });
+
+//   } catch (err) {
+//     res.status(500).json({
+//       message: "Server error",
+//       error: err.message
+//     });
+//   }
+// };
+
+
+

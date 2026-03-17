@@ -108,3 +108,149 @@ exports.getStats = (postId) => {
     [postId]
   );
 };
+
+
+exports.replyComment = async (userId, commentId, comment) => {
+
+  // get post id from parent comment
+  const parent = await pool.query(
+    `SELECT post_id FROM user_schema.post_comments
+     WHERE id=$1`,
+    [commentId]
+  );
+
+  if (parent.rows.length === 0) {
+    throw new Error("Comment not found");
+  }
+
+  const postId = parent.rows[0].post_id;
+
+  return pool.query(
+    `INSERT INTO user_schema.post_comments
+     (post_id,user_id,comment,parent_comment_id)
+     VALUES($1,$2,$3,$4)
+     RETURNING *`,
+    [postId, userId, comment, commentId]
+  );
+};
+
+
+exports.getPostComments = (postId) => {
+
+  return pool.query(
+    `SELECT 
+        c.id,
+        c.comment,
+        c.parent_comment_id,
+        c.created_at,
+        u.full_name
+     FROM user_schema.post_comments c
+     JOIN user_schema.userstable u
+        ON c.user_id = u.id
+     WHERE c.post_id = $1
+     ORDER BY c.created_at ASC`,
+    [postId]
+  );
+
+};
+
+
+exports.toggleLike = async (userId, commentId) => {
+
+  const check = await pool.query(
+    `SELECT * FROM user_schema.comment_likes
+     WHERE user_id=$1 AND comment_id=$2`,
+    [userId, commentId]
+  );
+
+  if (check.rows.length > 0) {
+    await pool.query(
+      `DELETE FROM user_schema.comment_likes
+       WHERE user_id=$1 AND comment_id=$2`,
+      [userId, commentId]
+    );
+    return { message: "Unliked" };
+  }
+
+  await pool.query(
+    `INSERT INTO user_schema.comment_likes(user_id,comment_id)
+     VALUES($1,$2)`,
+    [userId, commentId]
+  );
+
+  return { message: "Liked" };
+};
+
+
+exports.editComment = (userId, commentId, comment) => {
+  return pool.query(
+    `UPDATE user_schema.post_comments
+     SET comment=$1
+     WHERE id=$2 AND user_id=$3`,
+    [comment, commentId, userId]
+  );
+};
+
+
+exports.deleteComments = (userId, commentId) => {
+  return pool.query(
+    `UPDATE user_schema.post_comments
+     SET is_deleted=true
+     WHERE id=$1 AND user_id=$2`,
+    [commentId, userId]
+  );
+};
+
+
+// search hastag quarry //
+
+
+exports.getPostsByTag = (tag, limit, offset) => {
+  return pool.query(
+    `SELECT 
+        p.id,
+        p.content,
+        p.created_at,
+        u.full_name,
+        p.like_count,
+        p.comment_count
+     FROM user_schema.posts p
+     JOIN user_schema.post_hashtags ph
+        ON p.id = ph.post_id
+     JOIN user_schema.hashtags h
+        ON ph.hashtag_id = h.id
+     JOIN user_schema.userstable u
+        ON p.user_id = u.id
+     WHERE h.tag = $1
+     ORDER BY p.created_at DESC
+     LIMIT $2 OFFSET $3`,
+    [tag, limit, offset]
+  );
+};
+
+// get post tag
+
+exports.getPostHashtags = (postId) => {
+  return pool.query(
+    `SELECT h.id, h.tag
+     FROM user_schema.hashtags h
+     JOIN user_schema.post_hashtags ph
+        ON h.id = ph.hashtag_id
+     WHERE ph.post_id = $1`,
+    [postId]
+  );
+};
+
+// // tranding hastag quarry//
+
+// exports.getTrending = () => {
+//   return pool.query(
+//     `SELECT h.tag, COUNT(ph.post_id) AS usage_count
+//      FROM user_schema.hashtags h
+//      JOIN user_schema.post_hashtags ph
+//        ON h.id = ph.hashtag_id
+//      GROUP BY h.id
+//      ORDER BY usage_count DESC
+//      LIMIT 10`
+//   );
+// };

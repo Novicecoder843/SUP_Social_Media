@@ -50,6 +50,7 @@ router.get("/user/posts", postControler.AllPosts);
 router.get("/posts/:id", postControler.getPostById);
 router.delete("/deletepost:id", auth, postControler.deletePost);
 
+// post like,comment,share,status //
 
 router.post("/posts/:id/like", auth, postControler.likePost);
 router.post("/posts/:id/comment", auth, postControler.commentPost);
@@ -57,8 +58,33 @@ router.post("/posts/:id/share", auth, postControler.sharePost);
 router.get("/posts/:id/stats", auth, postControler.getPostStats);
 
 
-// router.post("/comment/:commentId/replies", auth ,postControler.replyComment);
-// router.post("/post/:postId/comments", auth ,postControler.getPostComment);
+//     comment section ///
+
+// replay comment  reply (multi-level) //
+router.post("/comment/:commentId/replies", auth ,postControler.replyComment);
+// get post comment //
+
+router.post("/post/:postId/comments", auth ,postControler.getPostComments);
+
+// like / unlike
+router.post("/comment_like/:id/like", auth, postControler.toggleLikeComment);
+
+// edit comment
+router.put("/update_comment/:id", auth, postControler.editComment);
+
+// delete comment
+router.delete("/delete_comment/:id", auth, postControler.deleteComments);
+
+// 🔍 search hashtags
+router.get("/:tag/posts ", postControler.getPostsByHashtag);
+
+// get hashtags of a post
+router.get("/:postId/hashtags", postControler.getPostHashtags);
+
+
+// // 🔥 trending hashtags
+// router.get("/trending", postControler.getTrendingHashtags);
+
 
 
 module.exports = router;
