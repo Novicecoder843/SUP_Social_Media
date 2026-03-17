@@ -20,7 +20,7 @@ app.use((req, res, next) => {
     next();
 });
 
-app.use(bodyParser.json());
+//app.use(bodyParser.json());
 
 app.use("/api/users", require("./routes/userRoutes"));
 app.use("/api/roles", require("./routes/roleRoutes"));

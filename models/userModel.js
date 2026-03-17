@@ -54,6 +54,7 @@ exports.deleteUser = async (id) => {
 
 //*
 exports.getMe = async (userId) => {
+  try{
   const query = `
     SELECT 
       u.id,
@@ -64,40 +65,48 @@ exports.getMe = async (userId) => {
 
       (SELECT COUNT(*) FROM user_followers WHERE user_id = u.id) AS followers,
       (SELECT COUNT(*) FROM user_followers WHERE follower_id = u.id) AS following
-
     FROM users u
     LEFT JOIN user_profiles up ON up.user_id = u.id
-    WHERE u.id = $1 AND u.status = true
+    WHERE u.id = $1
   `;
 
   const result = await db.query(query, [userId]);
   return result.rows[0];
+  }catch(error){
+    console.log(error)
+    throw error
+  }
 };
 
-exports.updateMyProfile = async (userId, data) => {
-  const { username, bio, profile_image } = data;
+exports.updateMe = async (user_id, username, email, bio, profile_image) => {
+try{
 
-  if (username) {
-    await db.query(
-      `UPDATE users SET username = $1 WHERE id = $2`,
-      [username, userId]
-    );
-  }
+   await db.query(
+    `UPDATE users
+    SET name = $1, email = $2
+    WHERE id = $3`,
+    [username, email, user_id]
+  );
 
-  await db.query(
-    `
-    INSERT INTO user_profiles (user_id, bio, profile_image)
-    VALUES ($1, $2, $3)
+  const result = await db.query(
+    `INSERT INTO user_profiles (user_id,username, bio, profile_image)
+    VALUES ($1, $2, $3,$4)
     ON CONFLICT (user_id)
     DO UPDATE SET
       bio = EXCLUDED.bio,
       profile_image = EXCLUDED.profile_image
-    `,
-    [userId, bio || null, profile_image || null]
+    RETURNING *`,
+    [user_id, username,bio, profile_image]
   );
-};
 
-exports.getUserByUsername = async (username, viewerId = null) => {
+return result.rows[0];
+}catch(error) {
+  console.log(error);
+  throw error;
+} 
+};
+exports.getUserByUsername = async (username, currentUserId) => {
+  try{
   const query = `
     SELECT 
       u.id,
@@ -108,20 +117,20 @@ exports.getUserByUsername = async (username, viewerId = null) => {
       (SELECT COUNT(*) FROM user_followers WHERE user_id = u.id) AS followers,
       (SELECT COUNT(*) FROM user_followers WHERE follower_id = u.id) AS following,
 
-      ${
-        viewerId
-          ? `(SELECT COUNT(*) FROM user_followers 
-              WHERE user_id = u.id AND follower_id = $2) AS is_following`
-          : `false AS is_following`
-      }
+       (SELECT COUNT(*) FROM user_followers 
+              WHERE user_id = u.id AND follower_id = $2) AS is_following
 
     FROM users u
     LEFT JOIN user_profiles up ON up.user_id = u.id
-    WHERE u.username = $1 AND u.status = true
-  `;
 
-  const values = viewerId ? [username, viewerId] : [username];
-  const result = await db.query(query, values);
+    WHERE LOWER(u.username) = LOWER($1)
+    `;
 
-  return result.rows[0];
+    const result = await db.query(query, [username, currentUserId]);
+
+    return result.rows[0];
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
 };

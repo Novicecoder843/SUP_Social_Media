@@ -103,62 +103,99 @@ exports.deleteUser = async (req, res) => {
   }
 };
 
+// exports.getMyProfile = async (req, res) => {
+//   try {
+//     const userId = req.user.id;
+
+//     const result = await UserModel.getMe(userId);
+//     if(result.rows.length === 0)
+//       return res.status(404).json({ message: "profile not found" });
+
+//     res.json(result.rows[0]);
+
+// } catch (err) {
+//   res.status(500).json({ error: err.message });
+// }
+// };
+
 exports.getMyProfile = async (req, res) => {
   try {
-    const userId = req.user.id; //from JWT only
+    const userId = req.user.id;
+console.log(userId)
+    const result = await UserModel.getMe(userId);
+    console.log(result,'resu;ttttt')
 
-    const user = await UserModel.getMe(userId);
-
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
+    if(!result){  
+            return res.status(404).json({ message: "profile not found" });
     }
 
-    return res.status(200).json(user);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error" });
+            return res.status(200).json({ data: result,success:true,message:"profile fetched successfully"});
+
+  } catch (err) {
+    console.log(err)
+    res.status(500).json({ data: [],success:false,message:"Internal server error"});
+    return
   }
 };
+
 
 exports.updateMyProfile = async (req, res) => {
   try {
-    const userId = req.user.id;
-    const { username, bio, profile_image } = req.body;
+    const user_id = req.user.id;
+    console.log("userId:", user_id);
 
-    if (!username && !bio && !profile_image) {
-      return res.status(400).json({ message: "No data to update" });
-    }
+    console.log("Body:", req.body);
 
-    await UserModel.updateMyProfile(userId, {
-      username,
-      bio,
-      profile_image
+    const { username, email, bio, profile_image } = req.body;
+
+   const result = await UserModel.updateMe(user_id, username, email, bio, profile_image);
+
+   console.log("DB Result:", result);
+
+   if (!result) {
+    return res.status(404).json({
+      success: false, 
+      message: "User not found"
     });
+   }
 
-    res.status(200).json({ message: "Profile updated successfully" });
+   return res.status(200).json({
+    success:true,
+    data: result,
+    message: "Profile updates successfully"
+   });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error" });
+    console.log(err);
+    return res.status(500).json({ 
+      success: false, 
+      message: "Internal server error"
+    });
   }
-};
+  };
 
 exports.getUserProfileByUsername = async (req, res) => {
   try {
-    const { username } = req.params;
-    const viewerId = req.user?.id || null; // JWT optional
+    const username = req.params.username;
+    const currentUserId = req.user.id;
 
-    const user = await UserModel.getUserByUsername(username, viewerId);
+    console.log("Username:", username);
+
+    const user = await UserModel.getUserByUsername(username, currentUserId);
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // convert count → boolean
-    user.is_following = Boolean(Number(user.is_following));
+    return res.status(200).json({
+      success: true,
+      data: user
+    });
 
-    res.status(200).json(user);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error" });
+    console.log(err);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error"
+    });
   }
 };

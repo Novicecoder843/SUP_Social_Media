@@ -14,6 +14,7 @@ router.post("/register", userController.registerUser);
 router.get("/users", userController.getAllUsers);
 router.put("/users/:id", userController.updateUser);
 router.delete("/users/:id", userController.deleteUser);
+
 router.get("/me", auth, userController.getMyProfile);
 router.put("/me", auth, userController.updateMyProfile);
 router.post("/:id/follow", auth, followController.followUnfollow);
