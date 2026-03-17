@@ -21,4 +21,11 @@ const pool = new Pool({
   }
 })();
 
+const originalQuery = pool.query;
+
+pool.query = async (...args) => {
+  console.log("SQL:", args[0]);     // Query text
+  console.log("Params:", args[1]);  // Values
+  return originalQuery.apply(pool, args);
+};
 module.exports = pool;

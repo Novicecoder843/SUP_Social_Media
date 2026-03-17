@@ -394,3 +394,13 @@ GET /:id → Who is this person
 follow → Connect
 unfollow → Disconnect
 block → Protect myself
+
+
+create Post - image / vedio , captions, tag- userid, location - postid
+getmypost by id - 
+get all my post-
+archive post
+delete post
+
+
+postid - comments,likes,share,save
