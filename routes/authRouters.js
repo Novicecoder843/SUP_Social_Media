@@ -75,15 +75,11 @@ router.put("/update_comment/:id", auth, postControler.editComment);
 // delete comment
 router.delete("/delete_comment/:id", auth, postControler.deleteComments);
 
-// 🔍 search hashtags
-router.get("/:tag/posts ", postControler.getPostsByHashtag);
-
 // get hashtags of a post
 router.get("/:postId/hashtags", postControler.getPostHashtags);
 
 
-// // 🔥 trending hashtags
-// router.get("/trending", postControler.getTrendingHashtags);
+
 
 
 

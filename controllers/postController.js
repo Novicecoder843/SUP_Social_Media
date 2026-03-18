@@ -336,62 +336,7 @@ exports.getPostHashtags = async (req, res) => {
 };
 
 
-exports.getPostsByHashtag = async (req, res) => {
-  try {
 
-    const tag = req.params.tag;
-
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 5;
-    const offset = (page - 1) * limit;
-
-    if (!tag) {
-      return res.status(400).json({
-        message: "Hashtag is required"
-      });
-    }
-
-    const posts = await Post.getPostsByTag(tag, limit, offset);
-
-    if (posts.rows.length === 0) {
-      return res.status(404).json({
-        message: "No posts found for this hashtag"
-      });
-    }
-
-    res.json({
-      page,
-      limit,
-      count: posts.rows.length,
-      data: posts.rows
-    });
-
-  } catch (err) {
-    res.status(500).json({
-      message: "Server error",
-      error: err.message
-    });
-  }
-};
-
-// GET TRANDING HASTAGS //
-
-// exports.getTrendingHashtags = async (req, res) => {
-//   try {
-
-//     const result = await Post.getTrending();
-
-//     res.json({
-//       trending: result.rows
-//     });
-
-//   } catch (err) {
-//     res.status(500).json({
-//       message: "Server error",
-//       error: err.message
-//     });
-//   }
-// };
 
 
 

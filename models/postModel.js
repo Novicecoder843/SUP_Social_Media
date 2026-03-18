@@ -202,31 +202,6 @@ exports.deleteComments = (userId, commentId) => {
 };
 
 
-// search hastag quarry //
-
-
-exports.getPostsByTag = (tag, limit, offset) => {
-  return pool.query(
-    `SELECT 
-        p.id,
-        p.content,
-        p.created_at,
-        u.full_name,
-        p.like_count,
-        p.comment_count
-     FROM user_schema.posts p
-     JOIN user_schema.post_hashtags ph
-        ON p.id = ph.post_id
-     JOIN user_schema.hashtags h
-        ON ph.hashtag_id = h.id
-     JOIN user_schema.userstable u
-        ON p.user_id = u.id
-     WHERE h.tag = $1
-     ORDER BY p.created_at DESC
-     LIMIT $2 OFFSET $3`,
-    [tag, limit, offset]
-  );
-};
 
 // get post tag
 
@@ -241,16 +216,3 @@ exports.getPostHashtags = (postId) => {
   );
 };
 
-// // tranding hastag quarry//
-
-// exports.getTrending = () => {
-//   return pool.query(
-//     `SELECT h.tag, COUNT(ph.post_id) AS usage_count
-//      FROM user_schema.hashtags h
-//      JOIN user_schema.post_hashtags ph
-//        ON h.id = ph.hashtag_id
-//      GROUP BY h.id
-//      ORDER BY usage_count DESC
-//      LIMIT 10`
-//   );
-// };
