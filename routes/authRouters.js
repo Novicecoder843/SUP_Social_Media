@@ -43,9 +43,13 @@ router.post("/block/:id",auth, authController.block);
 
 
 
+
 // router post -- upload image,video
 
 router.post("/upload",auth ,uploadMedia ,postControler.createPost );
+// 👥 Get posts mentioning a user
+router.get("/mention/:userId/mentions", authController.getUserMentions);
+
 router.get("/user/posts", postControler.AllPosts);
 router.get("/posts/:id", postControler.getPostById);
 router.delete("/deletepost:id", auth, postControler.deletePost);

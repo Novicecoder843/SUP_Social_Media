@@ -2,6 +2,7 @@ const bcrypt = require("bcrypt");
 const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
 const pool = require("../config/db");
+const mentionModel = require("../models/mentionModel");
 const User = require("../models/userModel");
 const roleModel = require("../models/roleModel");
 const jwtConfig = require("../config/jwt");
@@ -462,4 +463,30 @@ exports.block = async (req, res) => {
 
     await User.blockUser(req.user.id, req.params.id);
     res.json({ message: "User blocked" });
+};
+
+
+
+// mentions //
+
+exports.getUserMentions = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+
+    const result = await mentionModel.getMentionsByUserId(userId);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        message: "No mentions found for this user"
+      });
+    }
+
+    res.json({
+      total: result.rows.length,
+      mentions: result.rows
+    });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 };

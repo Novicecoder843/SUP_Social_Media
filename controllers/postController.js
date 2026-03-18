@@ -1,5 +1,8 @@
 const Post = require("../models/postModel");
 const { post } = require("../routes/authRouters");
+const mentionModel = require("../models/mentionModel");
+const { extractMentions } = require("../utlis/mentionUtil");
+
 
 exports.createPost = async (req, res) => {
   try {
@@ -23,6 +26,26 @@ exports.createPost = async (req, res) => {
           `uploads/posts/${file.path}`,
           mediaType
         );
+      }
+    }
+
+    // 3️⃣ Extract mentions from content
+    const mentions = [...new Set(extractMentions(content))];
+    console.log("Mentions:", mentions);
+    // 4️⃣ Save mentions in DB
+    for (const username of mentions) {
+      const userRes = await mentionModel.getUserByUsername(username);
+
+      console.log("Searching:", username, userRes.rows);
+
+      if (userRes.rows.length > 0) {
+        const mentionedUserId = userRes.rows[0].id;
+
+        // console.log("mantionid" , mentionedUserId );
+        console.log("Searching:", username, userRes.rows);
+        await mentionModel.createMention(post.id, mentionedUserId);
+      } else {
+        console.log("User NOT found:", username);
       }
     }
 
