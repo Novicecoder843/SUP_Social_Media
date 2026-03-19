@@ -54,6 +54,9 @@ router.get("/user/posts", postControler.AllPosts);
 router.get("/posts/:id", postControler.getPostById);
 router.delete("/deletepost:id", auth, postControler.deletePost);
 
+// 🔄 Toggle Save
+router.post("/savepost/:postId/toggle-save", auth, postControler.toggleSavePost);
+
 // post like,comment,share,status //
 
 router.post("/posts/:id/like", auth, postControler.likePost);
@@ -61,6 +64,8 @@ router.post("/posts/:id/comment", auth, postControler.commentPost);
 router.post("/posts/:id/share", auth, postControler.sharePost);
 router.get("/posts/:id/stats", auth, postControler.getPostStats);
 
+// 🚨 Report Post
+router.post("/report/:postId/report", auth, postControler.reportPost);
 
 //     comment section ///
 

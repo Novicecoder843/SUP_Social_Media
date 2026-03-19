@@ -361,5 +361,77 @@ exports.getPostHashtags = async (req, res) => {
 
 
 
+exports.toggleSavePost = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const postId = req.params.postId;
 
+    // 1️⃣ Check existing
+    const existing = await Post.checkSaved(userId, postId);
+
+    // 2️⃣ If exists → UNSAVE
+    if (existing.rows.length > 0) {
+      await Post.unsavePost(userId, postId);
+
+      return res.json({
+        message: "Post unsaved",
+        saved: false
+      });
+    }
+
+    // 3️⃣ Else → SAVE
+    await Post.savePost(userId, postId);
+
+    res.json({
+      message: "Post saved",
+      saved: true
+    });
+
+  } catch (err) {
+    console.error(err);
+
+    // FK error
+    if (err.code === "23503") {
+      return res.status(400).json({
+        message: "Invalid post_id (post not found)"
+      });
+    }
+
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
+
+
+exports.reportPost = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const postId = req.params.postId;
+    const { reason } = req.body;
+
+    if (!reason) {
+      return res.status(400).json({
+        message: "Report reason is required"
+      });
+    }
+
+    await Post.reportPost(userId, postId, reason);
+
+    res.json({
+      message: "Post reported successfully" , reason
+    });
+
+  } catch (err) {
+    console.error(err);
+
+    if (err.code === "23503") {
+      return res.status(400).json({
+        message: "Invalid post_id"
+      });
+    }
+
+    res.status(500).json({ error: err.message });
+  }
+};
 

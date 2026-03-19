@@ -216,3 +216,45 @@ exports.getPostHashtags = (postId) => {
   );
 };
 
+
+
+// check if post already saved
+exports.checkSaved = (userId, postId) => {
+  return pool.query(
+    `SELECT id FROM user_schema.saved_posts
+     WHERE user_id = $1 AND post_id = $2`,
+    [userId, postId]
+  );
+};
+
+// save post
+exports.savePost = (userId, postId) => {
+  return pool.query(
+    `INSERT INTO user_schema.saved_posts (user_id, post_id)
+     VALUES ($1, $2)
+     RETURNING id`,
+    [userId, postId]
+  );
+};
+
+// unsave post
+exports.unsavePost = (userId, postId) => {
+  return pool.query(
+    `DELETE FROM user_schema.saved_posts
+     WHERE user_id = $1 AND post_id = $2`,
+    [userId, postId]
+  );
+};
+
+
+
+
+
+exports.reportPost = (userId, postId, reason) => {
+  return pool.query(
+    `INSERT INTO user_schema.reported_posts (reporter_id, post_id, reason)
+     VALUES ($1, $2, $3)
+     ON CONFLICT (reporter_id, post_id) DO NOTHING`,
+    [userId, postId, reason]
+  );
+};

@@ -4,6 +4,7 @@ const bodyParser = require("body-parser");
 const roleRoutes = require("./routes/roleRouts");
 const authRouter =  require("./routes/authRouters");
 const hastagRouter =  require("./routes/hastagRouter");
+const chatRouter = require("./routes/chatRoutes")
 const app = express();
 app.use(express.json());
 
@@ -13,7 +14,7 @@ app.use(bodyParser.json());
 app.use("/api/role", roleRoutes);
 app.use("/api/auth", authRouter );
 app.use("/api/hashtags", hastagRouter );
-
+app.use("/api/chats", chatRouter );
 app.use("/uploads", express.static("uploads"));
 
 
