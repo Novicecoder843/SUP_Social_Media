@@ -15,4 +15,10 @@ router.delete("/deleteChats/:messageId", auth, chatController.deleteMessage);
 // 📩 get chat
 router.get("/getChats/:userId", auth, chatController.getChat);
 
+// Get Chats Between Users
+router.get("/conversation/:user2", auth, chatController.getConversation);
+
+
+router.put("/seen/:senderId", auth, chatController.markAsSeen);
+
 module.exports = router;

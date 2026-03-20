@@ -45,3 +45,52 @@ exports.getChat = (user1, user2) => {
     [user1, user2]
   );
 };
+
+
+
+exports.getConversation = (user1, user2, limit = 20, offset = 0) => {
+  return pool.query(
+    `
+    SELECT 
+      c.id,
+      c.message,
+      c.sender_id,
+      c.receiver_id,
+      c.parent_message_id,
+      c.is_deleted,
+      c.created_at,
+
+      u.full_name AS sender_name,
+      up.username AS sender_username,
+      up.profile_image AS sender_profile
+
+    FROM user_schema.chats c
+    JOIN user_schema.userstable u ON u.id = c.sender_id
+    LEFT JOIN user_schema.user_profiles up ON up.user_id = u.id
+
+    WHERE 
+      (c.sender_id = $1 AND c.receiver_id = $2)
+      OR
+      (c.sender_id = $2 AND c.receiver_id = $1)
+
+    ORDER BY c.created_at ASC
+    LIMIT $3 OFFSET $4
+    `,
+    [user1, user2, limit, offset]
+  );
+};
+
+exports.markAsSeen = async (senderId, receiverId) => {
+  const query = `
+        UPDATE user_schema.chats
+        SET is_seen = true
+        WHERE sender_id = $1 AND receiver_id = $2 AND is_seen = false
+        RETURNING *;
+    `;
+  const result = await pool.query(query, [senderId, receiverId]);
+
+  return {
+    rows: result.rows,
+    count: result.rowCount
+  };
+};

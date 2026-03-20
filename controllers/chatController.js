@@ -1,3 +1,4 @@
+const pool = require("../config/db");
 const Chat = require("../models/chatModel");
 
 // 💬 Send Message
@@ -77,4 +78,88 @@ exports.getChat = async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+};
+
+
+exports.getConversation = async (req, res) => {
+  try {
+    const user1 = req.user.id;
+    const user2 = Number(req.params.user2);
+
+    const { page = 1, limit = 20 } = req.query;
+    const offset = (page - 1) * limit;
+
+    const result = await Chat.getConversation(
+      user1,
+      user2,
+      limit,
+      offset
+    );
+
+    res.json({
+      page: Number(page),
+      count: result.rows.length,
+      messages: result.rows
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
+exports.markAsSeen = async (req, res) => {
+  try {
+    const receiverId = req.user.id;
+    const { senderId } = req.params;
+
+    // Step 1: Check total messages
+    const checkQuery = `
+            SELECT COUNT(*) 
+            FROM user_schema.chats
+            WHERE sender_id = $1 AND receiver_id = $2;
+        `;
+    const totalResult = await pool.query(checkQuery, [senderId, receiverId]);
+    const totalMessages = parseInt(totalResult.rows[0].count);
+
+    // ❌ No messages exist
+    if (totalMessages === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No messages found"
+      });
+    }
+
+    // Step 2: Check unseen messages
+    const unseenQuery = `
+            SELECT COUNT(*) 
+            FROM user_schema.chats
+            WHERE sender_id = $1 
+            AND receiver_id = $2 
+            AND is_seen = false;
+        `;
+    const unseenResult = await pool.query(unseenQuery, [senderId, receiverId]);
+    const unseenCount = parseInt(unseenResult.rows[0].count);
+
+    // ✅ Already seen
+    if (unseenCount === 0) {
+      return res.json({
+        success: true,
+        message: "Messages already seen"
+      });
+    }
+
+     // Step 3: Mark as seen
+        const result = await Chat.markAsSeen(senderId, receiverId);
+
+        res.json({
+            success: true,
+            message: "Messages marked as seen",
+            updatedCount: result.count
+        });
+
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 };
