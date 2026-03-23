@@ -4,7 +4,11 @@ require('dotenv').config();
 const roleRoutes = require('./routes/role.routes');
 const postRoutes = require('./routes/post.routes');
 const app = express();
+const likeRoutes = require('./routes/like.routes');
+const commentRoutes = require('./routes/comment.routes');
 app.use(express.json());
+app.use('/api', likeRoutes);
+app.use('/api', commentRoutes);
 
 app.use('/api/roles', roleRoutes);
 app.use("/api/auth", require("./routes/auth.routes"));

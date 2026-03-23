@@ -26,5 +26,5 @@ const upload = multer({
   fileFilter,
   limits: { fileSize: 50 * 1024 * 1024 } // 50MB
 });
-
+// const upload = multer({ storage });
 module.exports = upload;
