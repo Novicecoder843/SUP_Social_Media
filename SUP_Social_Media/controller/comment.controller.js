@@ -1,35 +1,57 @@
 const Comment = require('../models/comment.model');
 
-exports.addComment = async (req, res) => {
-  try {
-    const { content } = req.body;
+// exports.addComment = async (req, res) => {
+//   try {
+//     const { content } = req.body;
 
-    if (!content) {
-      return res.status(400).json({
-        error: "Content required"
+//     if (!content) {
+//       return res.status(400).json({
+//         error: "Content required"
+//       });
+//     }
+
+//     const comment = await Comment.addComment(
+//       req.params.id,
+//       req.user.id,
+//       content
+//     );
+
+//     res.status(201).json({
+//       message: "Comment added",
+//       comment
+//     });
+
+//   } catch (err) {
+//     res.status(500).json({ error: err.message });
+//   }
+// };
+
+// exports.getComments = async (req, res) => {
+//   try {
+//     const comments = await Comment.getComments(req.params.id);
+//     res.json(comments);
+
+//   } catch (err) {
+//     res.status(500).json({ error: err.message });
+//   }
+// };
+
+exports.deleteComment = async (req, res) => {
+  try {
+    const deleted = await Comment.deleteComment(
+      req.params.id,
+      req.user.id
+    );
+
+    if (!deleted) {
+      return res.status(404).json({
+        error: "Comment not found or not authorized"
       });
     }
 
-    const comment = await Comment.addComment(
-      req.params.id,
-      req.user.id,
-      content
-    );
-
-    res.status(201).json({
-      message: "Comment added",
-      comment
+    res.json({
+      message: "Comment deleted"
     });
-
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-exports.getComments = async (req, res) => {
-  try {
-    const comments = await Comment.getComments(req.params.id);
-    res.json(comments);
 
   } catch (err) {
     res.status(500).json({ error: err.message });
