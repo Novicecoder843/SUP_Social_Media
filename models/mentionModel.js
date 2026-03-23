@@ -3,9 +3,9 @@ const pool = require("../config/db");
 // get user by username
 exports.getUserByUsername = (username) => {
   return pool.query(
-  `SELECT user_id AS id 
-   FROM user_schema.user_profiles 
-   WHERE LOWER(username) = LOWER($1)`,
+  `SELECT id AS id 
+   FROM user_schema.userstable 
+   WHERE id = $1`,
   [username]
 );
 };
