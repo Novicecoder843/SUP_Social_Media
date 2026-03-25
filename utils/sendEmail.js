@@ -2,13 +2,11 @@ const nodemailer = require("nodemailer");
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
-
     auth: {
         user: process.env.EMAIL_USER, // FROM email//
         pass: process.env.EMAIL_PASS
     }
 });
-
 
 // ✅ Verify SMTP connection  ==== Veryfay your SMTP email server fatch is respond or not =====  
 transporter.verify((error, success) => {
@@ -19,10 +17,11 @@ transporter.verify((error, success) => {
   }
 });
 
-exports.sendLoginEmail = async (toEmail, name) => {
-    await transporter.sendMail({
+exports.sendLoginEmail = async (email, name ) => {
+   try {
+    const info = await transporter.sendMail({
         from: `"My App" <${process.env.EMAIL_USER}>`, // enter your gmail or mail referal
-        to: toEmail,                                 //  TO (logged-in user)
+        to: email,                                 //  TO (logged-in user)
         subject: "Welcome to your profile",
         html: `
       <h3>Hello ${name} 👋</h3>
@@ -32,4 +31,10 @@ exports.sendLoginEmail = async (toEmail, name) => {
       <p>— My App Team</p>
     `
     });
+
+    console.log("Email sent successfully:" , info.messageId);
+    
+} catch (error) {
+  console.error("Error sending email:" , error.message);
+}
 };

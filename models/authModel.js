@@ -35,4 +35,4 @@ exports.updatePassword = async (id, newPassword) => {
   `;
   const result = await db.query(query, [newPassword, id]);
   return result.rows[0];
-};
+}; 

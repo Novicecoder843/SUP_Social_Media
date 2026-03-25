@@ -42,6 +42,7 @@ exports.register = async (req, res) => {
       user: user.rows[0]
     });
   } catch (err) {
+    console.log (err)
     res.status(500).json({ error: err.message });
   }
 };
@@ -50,11 +51,12 @@ const AuthModel = require("../models/authModel");
 
 exports.login = async (req, res) => {
   try {
+
     const { email, password } = req.body;
 
     if (!email || !password) {
       return res
-        .status(400)
+        .status(400) 
         .json({ message: "Email and password required" });
     }
 
@@ -91,6 +93,7 @@ exports.login = async (req, res) => {
       }
     });
   } catch (err) {
+    console.log (err)
     res.status(500).json({ error: err.message });
   }
 };
@@ -134,6 +137,7 @@ exports.forgotPassword = async (req, res) => {
       token 
     });
   } catch (err) {
+    console.log (err)
     res.status(500).json({
       error: err.message
     });
@@ -162,6 +166,7 @@ exports.resetPassword = async (req, res) => {
     });
 
   } catch (err) {
+    console.log (err)
     res.status(500).json({ error: err.message });
   }
 };

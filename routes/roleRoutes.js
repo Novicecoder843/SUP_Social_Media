@@ -9,6 +9,6 @@ const authMiddleware = require("../middleware/authMiddleware");
 router.post("/roles", roleController.createRole);
 router.get("/AllRoles", roleController.getAllRoles);
 router.put("/updateRole/:id", roleController.updateRole);
-router.delete("/deleteRole/:id", roleController.deleteRole);
+    router.delete("/deleteRole/:id", roleController.deleteRole);
 
  module.exports = router;
