@@ -42,6 +42,7 @@ exports.register = async (req, res) => {
       user: user.rows[0]
     });
   } catch (err) {
+    console.log(err)
     res.status(500).json({ error: err.message });
   }
 };
@@ -91,6 +92,7 @@ exports.login = async (req, res) => {
       }
     });
   } catch (err) {
+    console.log(err)
     res.status(500).json({ error: err.message });
   }
 };
@@ -134,6 +136,7 @@ exports.forgotPassword = async (req, res) => {
       token 
     });
   } catch (err) {
+    console.log(err)
     res.status(500).json({
       error: err.message
     });
@@ -162,6 +165,7 @@ exports.resetPassword = async (req, res) => {
     });
 
   } catch (err) {
+    console.log(err)
     res.status(500).json({ error: err.message });
   }
 };
