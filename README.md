@@ -65,6 +65,7 @@ CREATE TABLE users (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+userprofile - 
 
 
 1️⃣ Role Table – CRUD Explanation
@@ -180,3 +181,205 @@ User not found → Email or password incorrect
 Password mismatch → Invalid credentials
 User inactive → User is inactive
 Token expired → Unauthorized
+
+------------------------------------user_perfile----------
+
+
+USER PROFILE & SOCIAL GRAPH – API FEATURES
+
+GET    /api/users/me - fetch your profile details
+PUT    /api/users/me - edit your profile
+GET    /api/users/5 - 
+POST   /api/users/follow/:id
+POST   /api/users/unfollow/:id
+POST   /api/users/block/:id
+
+CREATE TABLE user_profiles (
+    user_id BIGINT PRIMARY KEY REFERENCES users(id),
+    username VARCHAR(50) UNIQUE NOT NULL,
+    bio TEXT,
+    profile_image TEXT,
+    cover_image TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+1️⃣ GET /api/users/me
+✅ Feature
+
+Fetch logged-in user’s own profile
+This is used for:
+Profile screen
+Settings page
+Auto-fill edit profile form
+
+🔁 Internal Flow
+JWT token is validated
+Extract user_id from token
+Fetch user + profile data
+Return combined response
+
+🗄️ Tables Used
+
+users
+user_profiles
+user_followers (optional – counts)
+
+📤 Sample Response
+{
+  "id": 12,
+  "email": "user@mail.com",
+  "username": "ajit_dev",
+  "bio": "Backend Engineer",
+  "profile_image": "https://cdn/app/profile.jpg",
+  "followers": 120,
+  "following": 98
+}
+
+🔐 Security
+Requires JWT
+User can access only their own data
+2️⃣ PUT /api/users/me
+✅ Feature
+Update logged-in user’s profile
+Used for:
+Edit profile
+Change bio, images, username
+
+🔁 Internal Flow
+Authenticate user
+Validate input (username uniqueness)
+Update user_profiles
+Update updated_at
+
+🗄️ Tables Used
+user_profiles
+
+📥 Request Body
+{
+  "username": "ajit_backend",
+  "bio": "Senior Node.js Developer",
+  "profile_image": "https://cdn/new.jpg"
+}
+
+🔐 Security
+JWT required
+Only owner can update profile
+Rate limit to prevent abuse
+
+3️⃣ GET /api/users/:id
+✅ Feature
+
+View another user’s public profile
+Used for:
+Viewing other users
+Profile screen on search
+Followers list click
+
+🔁 Internal Flow
+Validate :id
+Check block status
+Fetch public profile
+Hide private fields
+
+🗄️ Tables Used
+user_profiles
+user_blocks
+user_followers
+
+📤 Response (Public)
+{
+  "user_id": 45,
+  "username": "rahul",
+  "bio": "Photographer",
+  "profile_image": "https://cdn/pic.jpg",
+  "is_following": true
+}
+
+🔐 Security
+Public API (JWT optional)
+Respect privacy & block rules
+
+4️⃣ POST /api/users/follow/:id
+✅ Feature
+Follow another user
+Used for:
+Building social graph
+Feed personalization
+
+🔁 Internal Flow
+Authenticate user
+Prevent self-follow
+Check if already followed
+Insert into user_followers
+
+
+🗄️ Tables Used
+user_followers
+
+
+
+📌 Example Insert
+INSERT INTO user_followers (follower_id, following_id)
+VALUES (1, 45);
+
+🔐 Security
+JWT required
+Prevent duplicate follows
+
+5️⃣ POST /api/users/unfollow/:id
+✅ Feature
+Unfollow a user
+
+Used for:
+Removing connections
+Feed recalculation
+
+🔁 Internal Flow
+Authenticate user
+Validate follow relationship
+Delete record
+
+🗄️ Tables Used
+user_followers
+
+🔐 Security
+JWT required
+Only follower can unfollow
+
+6️⃣ POST /api/users/block/:id
+✅ Feature
+Block a user
+
+Used for:
+Safety
+Abuse prevention
+Privacy control
+
+🔁 Internal Flow
+Authenticate user
+Insert into user_blocks
+Remove follow relationships
+Hide content both ways
+
+🗄️ Tables Used
+user_blocks
+user_followers
+
+📌 Example Logic
+DELETE FROM user_followers
+WHERE (follower_id = me AND following_id = blocked)
+   OR (follower_id = blocked AND following_id = me);
+
+🔐 Security
+JWT required
+Permanent until unblock
+
+
+“These APIs together build the social identity layer of the application.”
+
+GET /me → Who am I
+PUT /me → Edit myself
+GET /:id → Who is this person
+follow → Connect
+unfollow → Disconnect
+block → Protect myself
