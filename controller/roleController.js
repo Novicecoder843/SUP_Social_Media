@@ -10,6 +10,8 @@ exports.createRole = async (req, res) => {
       data: role,
     });
   } catch (error) {
+        console.log(err)
+
     res.status(500).json({ success: false, error: error.message });
   }
 };
@@ -22,6 +24,8 @@ exports.getAllRoles = async (req, res) => {
       data: roles,
     });
   } catch (error) {
+        console.log(err)
+
     res.status(500).json({ success: false, error: error.message });
   }
 };
@@ -42,6 +46,8 @@ exports.updateRole = async (req, res) => {
       data: updatedRole,
     });
   } catch (error) {
+        console.log(err)
+
     res.status(500).json({ success: false, error: error.message });
   }
 };
@@ -60,6 +66,7 @@ exports.deleteRole = async (req, res) => {
       message: "Role deleted successfully",
     });
   } catch (error) {
+    console.log(err)
     res.status(500).json({ success: false, error: error.message });
   }
 };

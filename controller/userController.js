@@ -61,6 +61,7 @@ exports.registerUser = async (req, res) => {
     const user = await UserModel.createUser(name, email, password, role_id);
     res.status(201).json({ success: true, data: user });
   } catch (err) {
+    console.log(err)
     res.status(500).json({ success: false, error: err.message });
   }
 };
@@ -68,11 +69,15 @@ exports.registerUser = async (req, res) => {
 exports.getAllUsers = async (req, res) => {
   try {
     const users = await UserModel.getUsers();
-    res.json({ success: true, data: users });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-};
+    if (!users|| users.length === 0) {
+      return res.status(404).json({ success: false, message: "No users found" });
+      }
+        return res.status(200).json({ success: true, data: users });
+      }catch (err) {
+        console.log(err)
+        return res.status(500).json({ success: false, error: err.message });
+      }
+    };
 
 exports.updateUser = async (req, res) => {
   try {
@@ -86,6 +91,8 @@ exports.updateUser = async (req, res) => {
 
     res.json({ success: true, data: user });
   } catch (err) {
+        console.log(err)
+
     res.status(500).json({ success: false, error: err.message });
   }
 };
@@ -101,6 +108,8 @@ exports.deleteUser = async (req, res) => {
 
     res.json({ success: true, message: "User deleted successfully" });
   } catch (err) {
+        console.log(err)
+
     res.status(500).json({ success: false, error: err.message });
   }
 };
