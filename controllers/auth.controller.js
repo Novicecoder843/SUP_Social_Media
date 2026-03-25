@@ -84,23 +84,17 @@ exports.resetPassword = async (req, res) => {
 
     const { token, password } = req.body;
 
-    const user = await pool.query(
-      "SELECT * FROM users WHERE reset_token=$1",
-      [token]
-    );
+    const data =
+      await authService.resetPassword(
+        token,
+        password
+      );
 
-    if (user.rows.length === 0) {
-      return res.json({ error: "Invalid token" });
-    }
-
-    await pool.query(
-      "UPDATE users SET password=$1, reset_token=NULL WHERE reset_token=$2",
-      [password, token]
-    );
-
-    res.status(200).json({ message: "Password reset success" });
+    res.json(data);
 
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({
+      error: err.message,
+    });
   }
 };

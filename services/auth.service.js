@@ -161,40 +161,32 @@ exports.forgotPassword = async (email) => {
 
   return { message: "Email sent" };
 };
-exports.resetPassword = async (token, password) => {
+exports.resetPassword = async (
+  token,
+  password
+) => {
 
-  const data = await pool.query(
-    `SELECT * FROM password_resets
-     WHERE token=$1 AND is_used=false`,
+  const user = await pool.query(
+    "SELECT * FROM users WHERE reset_token=$1",
     [token]
   );
 
-  if (data.rows.length === 0) {
+  if (user.rows.length === 0) {
     throw new Error("Invalid token");
   }
 
-  const userId = data.rows[0].user_id;
-
-  const hashed = await hashPassword(password);
-
-  await pool.query(
-    "UPDATE users SET password=$1 WHERE id=$2",
-    [hashed, userId]
-  );
+  const hashed =
+    await hashPassword(password);
 
   await pool.query(
-    "UPDATE password_resets SET is_used=true WHERE token=$1",
-    [token]
+    `UPDATE users
+     SET password=$1,
+         reset_token=NULL
+     WHERE reset_token=$2`,
+    [hashed, token]
   );
 
-  return { message: "Password updated" };
-};
-exports.verifyEmail = async (userId) => {
-
-  await pool.query(
-    "UPDATE users SET is_email_verified=true WHERE id=$1",
-    [userId]
-  );
-
-  return { message: "Email verified" };
+  return {
+    message: "Password reset success",
+  };
 };
