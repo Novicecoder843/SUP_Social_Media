@@ -1,24 +1,21 @@
 require(`dotenv`).config();
 const express = require("express");
-require(`dotenv`).config();
 
  const bodyParser = require('body-parser')
  //const pool = require("./config/db");
  const userRoutes = require("./routes/userRoutes")
+ const roleRoutes = require("./routes/roleRoutes");
+ const authRoutes = require("./routes/authRoutes");
+
  const app = express();
  
 app.use(express.json());
 app.use(bodyParser.json());
 
-app.use("/api", userRoutes);
 
-app.use("api", require("./routes/authRoutes"));
-
-const roleRoutes = require("./routes/roleRoutes");
-app.use("/api" , roleRoutes);
-
-const authRoutes = require("./routes/authRoutes");
-app.use("/api" , authRoutes);
+app.use("/api/roles" , roleRoutes);
+app.use("/api/auth" , authRoutes);
+app.use("/api/users", userRoutes);
 
 const PORT = 3000;
 

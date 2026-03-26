@@ -13,9 +13,13 @@ exports.registerUser = async (req, res) => {
 exports.getAllUsers = async (req, res) => {
   try {
     const users = await UserModel.getUsers();
-    res.json({ success: true, data: users });
+    if (!users || users.length === 0) {
+      return res.status(400).json({ success: false, message: "No users found" });
+    }
+    return res.status(200).json({ success: true, data: users });
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    console.log(err)
+    return res.status(500).json({ success: false, error: message });
   }
 };
 
@@ -47,5 +51,88 @@ exports.deleteUser = async (req, res) => {
     res.json({ success: true, message: "User deleted successfully" });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+exports.getMyProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    console.log(userId)
+    const result = await UserModel.getMe(userId);
+    console.log(result, 'resu;ttttt')
+
+    if (!result) {
+      return res.status(404).json({ message: "profile not found" });
+    }
+
+    return res.status(200).json({ data: result, success: true, message: "profile fetched successfully" });
+
+  } catch (err) {
+    console.log(err)
+    res.status(500).json({ data: [], success: false, message: "Internal server error" });
+    return
+  }
+};
+
+
+exports.updateMyProfile = async (req, res) => {
+  try {
+    const user_id = req.user.id;
+    console.log("userId:", user_id);
+
+    console.log("Body:", req.body);
+
+    const { username, email, bio, profile_image } = req.body;
+
+    const result = await UserModel.updateMe(user_id, username, email, bio, profile_image);
+    
+
+    console.log("DB Result:", result);
+
+    if (!result) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: result,
+      message: "Profile updates successfully"
+    });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error"
+    });
+  }
+};
+
+exports.getUserProfileByUsername = async (req, res) => {
+  try {
+    const username = req.params.username;
+    const currentUserId = req.user.id;
+
+    console.log("Username:", username);
+
+    const user = await UserModel.getUserByUsername(username, currentUserId);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: user
+    });
+
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error"
+    });
   }
 };
