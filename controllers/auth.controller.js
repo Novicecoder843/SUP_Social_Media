@@ -16,7 +16,6 @@ exports.register = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
-
 exports.login = async (req, res) => {
   try {
 
@@ -47,8 +46,6 @@ exports.refresh = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
-
-
 exports.logout = async (req, res) => {
   try {
 
@@ -77,8 +74,6 @@ exports.forgotPassword = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
-
-
 exports.resetPassword = async (req, res) => {
   try {
 
@@ -89,6 +84,22 @@ exports.resetPassword = async (req, res) => {
         token,
         password
       );
+
+    res.json(data);
+
+  } catch (err) {
+    res.status(500).json({
+      error: err.message,
+    });
+  }
+};
+exports.verifyEmail = async (req, res) => {
+  try {
+
+    const { token } = req.query;
+
+    const data =
+      await authService.verifyEmail(token);
 
     res.json(data);
 
