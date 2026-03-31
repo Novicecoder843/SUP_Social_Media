@@ -15,3 +15,11 @@ router.post("/follow/:id", authMiddleware, userController.follow);
 router.post("/unfollow/:id", authMiddleware, userController.unfollow);
 router.post("/block/:id", authMiddleware, userController.block);
 module.exports = router;
+
+const upload = require("../middlewares/upload.middleware");
+router.post(
+  "/upload-profile",
+  authMiddleware,
+  upload.single("image"),
+  userController.updateProfileImage
+);

@@ -69,3 +69,22 @@ exports.block = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+exports.updateProfileImage = async (req, res) => {
+  try {
+
+    console.log("FILE:", req.file);
+
+   if(!req.file){
+    return res.status(400).json({ error: "No file uploaded" });
+   }
+   const imageUrl = req.file.location;
+
+    res.json({
+      message: "Profile image updated",
+      image: imageUrl,
+    });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
