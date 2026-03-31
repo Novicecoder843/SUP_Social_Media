@@ -6,6 +6,9 @@ exports.findByEmail = async (email) => {
   return result.rows[0];
 };
 
+// models/userModel.js
+
+
 exports.setResetToken = async (email, token, expires) => {
   const query = `
     UPDATE users

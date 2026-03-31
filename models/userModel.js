@@ -17,7 +17,7 @@ const db = require("../config/db");
 
 exports.createUser = async (name, email, password, role_id) => {
   const query = `
-    INSERT INTO users (name, email, password, role_id)
+    INSERT INTO public.users (name, email, password, role_id)
     VALUES ($1, $2, $3, $4)
     RETURNING id, name, email, role_id
   `;
@@ -28,7 +28,7 @@ exports.createUser = async (name, email, password, role_id) => {
 exports.getUsers = async () => {
   const query = `
     SELECT users.id, users.name, users.email, roles.name AS role
-    FROM users
+    FROM public.users
     JOIN roles ON users.role_id = roles.id
   `;
   const result = await db.query(query);
@@ -37,7 +37,7 @@ exports.getUsers = async () => {
 
 exports.updateUser = async (id, name, email, role_id) => {
   const query = `
-    UPDATE users
+    UPDATE public.users
     SET name = $1, email = $2, role_id = $3
     WHERE id = $4
     RETURNING id, name, email, role_id
@@ -47,7 +47,7 @@ exports.updateUser = async (id, name, email, role_id) => {
 };
 
 exports.deleteUser = async (id) => {
-  const query = `DELETE FROM users WHERE id = $1 RETURNING *`;
+  const query = `DELETE FROM public.users WHERE id = $1 RETURNING *`;
   const result = await db.query(query, [id]);
   return result.rows[0];
 };
@@ -133,4 +133,12 @@ exports.getUserByUsername = async (username, currentUserId) => {
     console.log(error);
     throw error;
   }
+};
+
+exports.findUserByEmail = async (email) => {
+  const query = `SELECT * FROM users WHERE email = $1`;
+  const values = [email];
+
+  const result = await db.query(query, values);
+  return result;
 };
