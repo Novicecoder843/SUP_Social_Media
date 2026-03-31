@@ -11,6 +11,7 @@ exports.register = async (req, res) => {
   try {
     const { name, email, password, role_id } = req.body;
 
+
     // Check role exists
     const role = await db.query(
       `SELECT id FROM roles WHERE id = $1 AND status = true`,
@@ -39,10 +40,13 @@ exports.register = async (req, res) => {
 
     res.status(201).json({
       message: "User registered successfully",
-      user: user.rows[0]
+      user: user
     });
+
   } catch (err) {
+    console.log(err)
     res.status(500).json({ error: err.message });
+
   }
 };
 /* Login API */
@@ -91,6 +95,7 @@ exports.login = async (req, res) => {
       }
     });
   } catch (err) {
+        console.log(err)
     res.status(500).json({ error: err.message });
   }
 };
@@ -101,6 +106,7 @@ exports.logout = async (rqe, res) => {
       message: "Logout successful"
     });
   } catch (err) {
+        console.log(err)
     res.status(500).json({
       error: err.message
     });
@@ -134,6 +140,7 @@ exports.forgotPassword = async (req, res) => {
       token 
     });
   } catch (err) {
+        console.log(err)
     res.status(500).json({
       error: err.message
     });
@@ -162,6 +169,7 @@ exports.resetPassword = async (req, res) => {
     });
 
   } catch (err) {
+        console.log(err)
     res.status(500).json({ error: err.message });
   }
 };
