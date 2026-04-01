@@ -6,6 +6,8 @@ const postRoutes = require('./routes/post.routes');
 const app = express();
 const likeRoutes = require('./routes/like.routes');
 const commentRoutes = require('./routes/comment.routes');
+const hashtagRoutes = require('./routes/hashtag.routes');
+
 app.use(express.json());
 app.use('/api', likeRoutes);
 app.use('/api', commentRoutes);
@@ -31,8 +33,9 @@ app.use((err, req, res, next) => {
 });
 app.use('/uploads', express.static('uploads'));
 app.use('/api/posts', postRoutes);
-
+app.use('/api', hashtagRoutes);
 module.exports = app;
+
 
 
 

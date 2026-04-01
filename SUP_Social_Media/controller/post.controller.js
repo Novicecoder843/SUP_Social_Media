@@ -1,26 +1,5 @@
 const Post = require('../models/post.model');
-
-// exports.createPost = async (req, res) => {
-//   try {
-//     const { content, visibility } = req.body;
-
-//     const post = await Post.create(
-//       req.user.id,   // from JWT middleware
-//       content,
-//       visibility || 'public'
-//     );
-
-//     res.status(201).json(post);
-//   } catch (err) {
-//     res.status(500).json({ error: err.message });
-//   }
-// };
-
-// exports.getPost = async (req, res) => {
-//   const post = await Post.getById(req.params.id);
-//   if (!post) return res.status(404).json({ error: "Post not found" });
-//   res.json(post);
-// };
+const Hashtag = require('../models/hashtag.model');
 
 
 exports.createPost = async (req, res) => {
@@ -59,6 +38,16 @@ exports.createPost = async (req, res) => {
         : 'video';
 
       await Post.addMedia(newPost.id, file.filename, type);
+    }
+
+    // 🔥 3. HASHTAG LOGIC (ADD HERE)
+    if (content) {
+      const tags = Hashtag.extractTags(content);
+
+      for (let tag of tags) {
+        const tagId = await Hashtag.getOrCreate(tag);
+        await Hashtag.linkPost(newPost.id, tagId);
+      }
     }
 
     res.status(201).json({
