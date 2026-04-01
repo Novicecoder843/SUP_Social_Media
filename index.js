@@ -30,6 +30,7 @@ app.use("/api/roles", roleRoutes);
 app.use("/api/posts", postRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/files", fileRoutes);
+app.use("/uploads", express.static("uploads"));
 
 
 const PORT = 3000;
