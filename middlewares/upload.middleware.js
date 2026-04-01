@@ -16,8 +16,9 @@ const upload = multer({
     bucket: process.env.AWS_BUCKET_NAME,
     contentType: multerS3.AUTO_CONTENT_TYPE,
     key: (req, file, cb) => {
-      cb(null, Date.now() + "-" + file.originalname);
-    },
+      const fileName = `profile/${req.user.id}/${Date.now()}-${file.originalname}`;
+      cb(null, fileName);
+    }
   }),
 });
 

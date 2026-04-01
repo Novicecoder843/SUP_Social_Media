@@ -1,35 +1,47 @@
 const pool = require("../config/db");
+const { getImageUrl } = require("../utils/s3url");
 exports.getMe = async (userId) => {
   const result = await pool.query(
-    `SELECT u.id, u.email, p.username, p.bio, p.profile_image
-     FROM users u
-     LEFT JOIN user_profiles p ON u.id = p.user_id
-     WHERE u.id = $1`,
-    [userId]
-  );
-  const followers = await pool.query(
-    "SELECT COUNT(*) FROM user_followers WHERE following_id=$1",
-    [userId]
-  );
-  const following = await pool.query(
-    "SELECT COUNT(*) FROM user_followers WHERE follower_id=$1",
+    `
+    SELECT 
+      u.id,
+      u.email,
+      p.username,
+      p.bio,
+      p.profile_image,
+
+      -- followers count
+      (SELECT COUNT(*) 
+       FROM user_followers 
+       WHERE following_id = u.id) AS followers,
+
+      -- following count
+      (SELECT COUNT(*) 
+       FROM user_followers 
+       WHERE follower_id = u.id) AS following
+
+    FROM users u
+    LEFT JOIN user_profiles p ON u.id = p.user_id
+    WHERE u.id = $1
+    `,
     [userId]
   );
 
+  const user = result.rows[0];
+
   return {
-    ...result.rows[0],
-    followers: parseInt(followers.rows[0].count),
-    following: parseInt(following.rows[0].count),
+    ...user,
+    profile_image: getImageUrl(user.profile_image),
+    followers: parseInt(user.followers),
+    following: parseInt(user.following),
   };
 };
 
 
-// ✅ 2. UPDATE PROFILE
 exports.updateMe = async (userId, data) => {
 
   const { username, bio, profile_image } = data;
 
-  // check username unique
   const check = await pool.query(
     "SELECT * FROM user_profiles WHERE username=$1 AND user_id != $2",
     [username, userId]
@@ -54,11 +66,8 @@ exports.updateMe = async (userId, data) => {
   return { message: "Profile updated" };
 };
 
-
-// ✅ 3. GET USER BY ID
 exports.getUserById = async (myId, userId) => {
 
-  // check block
   const blocked = await pool.query(
     `SELECT * FROM user_blocks
      WHERE (blocker_id=$1 AND blocked_id=$2)
@@ -76,21 +85,21 @@ exports.getUserById = async (myId, userId) => {
     [userId]
   );
 
-  // check following
   const follow = await pool.query(
     `SELECT * FROM user_followers
      WHERE follower_id=$1 AND following_id=$2`,
     [myId, userId]
   );
 
-  return {
-    ...result.rows[0],
-    is_following: follow.rows.length > 0,
-  };
+ const user = result.rows[0];
+
+return {
+  ...user,
+  profile_image: getImageUrl(user.profile_image), // ✅ ADD THIS
+  is_following: follow.rows.length > 0,
+};
 };
 
-
-// ✅ 4. FOLLOW
 exports.follow = async (myId, userId) => {
 
   if (myId == userId) {
@@ -107,8 +116,6 @@ exports.follow = async (myId, userId) => {
   return { message: "Followed" };
 };
 
-
-// ✅ 5. UNFOLLOW
 exports.unfollow = async (myId, userId) => {
 
   await pool.query(
@@ -120,8 +127,6 @@ exports.unfollow = async (myId, userId) => {
   return { message: "Unfollowed" };
 };
 
-
-// ✅ 6. BLOCK
 exports.block = async (myId, userId) => {
 
   await pool.query(
@@ -130,8 +135,6 @@ exports.block = async (myId, userId) => {
      ON CONFLICT DO NOTHING`,
     [myId, userId]
   );
-
-  // remove follow both ways
   await pool.query(
     `DELETE FROM user_followers
      WHERE (follower_id=$1 AND following_id=$2)
