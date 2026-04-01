@@ -26,15 +26,15 @@ exports.getMe = async (userId) => {
     `,
     [userId]
   );
+const user = result.rows[0];
 
-  const user = result.rows[0];
-
-  return {
-    ...user,
-    profile_image: getImageUrl(user.profile_image),
-    followers: parseInt(user.followers),
-    following: parseInt(user.following),
-  };
+return {
+  ...user,
+  profile_image: getImageUrl(user.profile_image), 
+  followers: parseInt(followers.rows[0].count),
+  following: parseInt(following.rows[0].count),
+};
+};
 };
 
 
@@ -95,7 +95,7 @@ exports.getUserById = async (myId, userId) => {
 
 return {
   ...user,
-  profile_image: getImageUrl(user.profile_image), // ✅ ADD THIS
+  profile_image: getImageUrl(user.profile_image), 
   is_following: follow.rows.length > 0,
 };
 };
