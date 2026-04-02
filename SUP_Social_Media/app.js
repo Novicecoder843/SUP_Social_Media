@@ -9,6 +9,7 @@ const commentRoutes = require('./routes/comment.routes');
 const hashtagRoutes = require('./routes/hashtag.routes');
 const mentionRoutes = require('./routes/mention.routes');
 const savedRoutes = require('./routes/saved.routes');
+const shareRoutes = require('./routes/share.routes');
 app.use(express.json());
 app.use('/api', likeRoutes);
 app.use('/api', commentRoutes);
@@ -36,8 +37,11 @@ app.use('/uploads', express.static('uploads'));
 app.use('/api/posts', postRoutes);
 app.use('/api', mentionRoutes);
 app.use('/api', savedRoutes);
+app.use('/api', shareRoutes);
 app.use('/api', hashtagRoutes);
 module.exports = app;
+
+
 
 
 
