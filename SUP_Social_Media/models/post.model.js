@@ -42,7 +42,7 @@ class Post {
     );
   }
 
-  static async getById(id) {
+  static async getById(id,postId) {
     const post = await db.query(
       `SELECT * FROM auth.posts
        WHERE id=$1 AND is_deleted=false`,
@@ -50,6 +50,19 @@ class Post {
     );
 
     if (!post.rows.length) return null;
+
+// Add mentions
+    const mentionRes = await db.query(
+  `SELECT u.id, u.email
+   FROM auth.post_mentions pm
+   JOIN auth.users u ON u.id = pm.mentioned_user_id
+   WHERE pm.post_id = $1`,
+  [postId]
+);
+
+    post.mentions = mentionRes.rows;
+
+
 
     const media = await db.query(
       `SELECT media_url, media_type
@@ -74,6 +87,7 @@ class Post {
     );
     return result.rows[0];
   }
+
 
   static async delete(id) {
     await db.query(
@@ -105,6 +119,7 @@ class Post {
     return result.rows;
   }
 }
+
 
   
 

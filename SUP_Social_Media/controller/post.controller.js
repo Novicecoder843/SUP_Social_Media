@@ -1,6 +1,6 @@
 const Post = require('../models/post.model');
 const Hashtag = require('../models/hashtag.model');
-
+const Mention = require('../models/mention.model');
 
 exports.createPost = async (req, res) => {
   try {
@@ -40,6 +40,18 @@ exports.createPost = async (req, res) => {
       await Post.addMedia(newPost.id, file.filename, type);
     }
 
+      // MENTION LOGIC (ADD HERE)
+    if (content) {
+      const usernames = Mention.extractMentions(content);
+
+      for (let username of usernames) {
+        const user = await Mention.getUserByUsername(username);
+
+        if (user) {
+          await Mention.addMention(newPost.id, user.id);
+        }
+      }
+    }
     // 🔥 3. HASHTAG LOGIC (ADD HERE)
     if (content) {
       const tags = Hashtag.extractTags(content);
