@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Chat</title>
+</head>
+
+<body>
+
+  <h2>Chat</h2>
+
+  <input id="token" placeholder="Paste JWT Token" />
+  <br><br>
+
+  <input id="receiver" placeholder="Receiver ID" />
+  <br><br>
+
+  <div id="chatBox" style="height:300px;border:1px solid"></div>
+
+  <input id="message" placeholder="Message" />
+  <button onclick="connect()">Connect</button>
+  <button onclick="send()">Send</button>
+
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+
+  <script>
+    let socket;
+    let isConnected = false;
+
+    function connect() {
+      const token = document.getElementById("token").value;
+
+      if (!token) {
+        alert("Enter token");
+        return;
+      }
+      if (socket) {
+        socket.disconnect(); // 🔥 important
+      }
+
+      socket = io("http://localhost:3001", {
+        auth: { token },
+        transports: ["websocket"]
+      });
+
+
+      socket.onAny((event, ...args) => {
+        console.log("📡 FRONTEND EVENT:", event, args);
+      });
+
+      socket.on("connect", () => {
+        console.log("✅ Connected", socket.id);
+        isConnected = true;
+      });
+
+      socket.on("connect_error", (err) => {
+        console.log("❌ Connection Error:", err.message);
+      });
+
+      socket.on("receive_message", msg => {
+        addMsg("Friend", msg.message);
+      });
+
+      socket.on("message_sent", msg => {
+        addMsg("Me", msg.message);
+      });
+
+      socket.on("error_message", err => {
+        alert(err.message);
+      });
+
+      socket.on("message_delivered", id => {
+        console.log("✔✔ Delivered:", id);
+      });
+
+      socket.on("message_seen", () => {
+        console.log("👁 Seen");
+      });
+
+      socket.on("typing", user => {
+        document.getElementById("status").innerText =
+          "User typing...";
+      });
+
+      socket.on("stop_typing", () => {
+        document.getElementById("status").innerText = "";
+      });
+
+      socket.on("user_online", id => {
+        console.log("🟢 Online:", id);
+      });
+
+      socket.on("user_offline", data => {
+        console.log("🔴 Offline:", data);
+      });
+    }
+
+    function send() {
+
+      console.log("📤 send button clicked  Sending...msg");
+
+
+      if (!isConnected) {
+        alert("Wait for connection first");
+        return;
+      }
+
+
+      const receiver_id = parseInt(document.getElementById("receiver").value);
+      const message = document.getElementById("message").value;
+
+      if (!receiver_id || !message) {
+        alert("Enter receiver and message");
+        return;
+      }
+      console.log("📤 sending:", { receiver_id, message });
+
+      socket.emit("send_message", { receiver_id, message });
+
+
+
+    }
+
+
+
+    function typing() {
+      socket.emit("typing", {
+        receiver_id: document.getElementById("receiver").value
+      });
+    }
+
+    function stopTyping() {
+      socket.emit("stop_typing", {
+        receiver_id: document.getElementById("receiver").value
+      });
+    }
+
+    function addMsg(user, msg) {
+      document.getElementById("chatBox").innerHTML +=
+        `<p><b>${user}:</b> ${msg}</p>`;
+    }
+  </script>
+
+</body>
+
+</html>
