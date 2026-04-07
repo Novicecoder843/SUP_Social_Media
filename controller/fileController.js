@@ -5,7 +5,7 @@ exports.uploadFile = async (req, res) => {
         if (req.file) {
             console.log("File size:", req.file.size);
         }
-        
+
         if (!req.file) {
             return res.status(400).json({
                 success: false, message: "Only image files (jpeg, jpg, png) are allowed",

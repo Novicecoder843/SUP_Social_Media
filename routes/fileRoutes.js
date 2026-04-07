@@ -14,7 +14,7 @@ router.post("/upload", (req, res) => {
         if(err.code === "LIMIT_FILE_SIZE") {
           return res.status(400).json({
             success: false,
-            message: "File size must be less than 2MB",
+            message: "File size must be less than 5MB",
           });
         }
       return res.status(400).json({
