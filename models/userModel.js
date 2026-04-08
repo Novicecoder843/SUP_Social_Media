@@ -78,33 +78,53 @@ exports.getMe = async (userId) => {
   }
 };
 
-exports.updateMe = async (user_id, username, email, bio, profile_image, background_image) => {
-try{
+exports.updateMe = async (
+  user_id,
+  username,
+  email,
+  bio,
+  profile_image,
+  background_image
+) => {
+  try {
 
-   await db.query(
-    `UPDATE users
-    SET name = COALESCE($1, name), email = COALESCE($2, email)
-    WHERE id = $3`,
-    [username, email, user_id]
-  );
+    // ✅ Update users table
+    await db.query(
+      `UPDATE users
+       SET 
+         name = COALESCE($1, name),
+         email = COALESCE($2, email)
+       WHERE id = $3`,
+      [username, email, user_id]
+    );
 
-  const result = await db.query(
-    `INSERT INTO user_profiles (user_id,username, bio, profile_image, background_image)
-    VALUES ($1, COALESCE($2, (SELECT name FROM users WHERE id = $1)), $3, $4, $5)
-    ON CONFLICT (user_id)
-    DO UPDATE SET
-      username = COALESCE(EXCLUDED.username, user_profiles.username),
-      bio = COALESCE(EXCLUDED.bio, user_profiles.bio),
-      profile_image = COALESCE(EXCLUDED.profile_image, user_profiles.profile_image)
-    RETURNING *`,
-    [user_id, username,bio, profile_image, background_image]
-  );
+    // ✅ Insert / Update profile
+    const result = await db.query(
+      `INSERT INTO user_profiles 
+        (user_id, username, bio, profile_image, background_image)
+       VALUES (
+         $1,
+         COALESCE($2, (SELECT name FROM users WHERE id = $1)),
+         $3,
+         $4,
+         $5
+       )
+       ON CONFLICT (user_id)
+       DO UPDATE SET
+         username = COALESCE(EXCLUDED.username, user_profiles.username),
+         bio = COALESCE(EXCLUDED.bio, user_profiles.bio),
+         profile_image = COALESCE(EXCLUDED.profile_image, user_profiles.profile_image),
+         background_image = COALESCE(EXCLUDED.background_image, user_profiles.background_image)
+       RETURNING *`,
+      [user_id, username, bio, profile_image, background_image]
+    );
 
-return result.rows[0];
-}catch(error) {
-  console.log(error);
-  throw error;
-} 
+    return result.rows[0];
+
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
 };
 exports.getUserByUsername = async (username, currentUserId) => {
   try{
