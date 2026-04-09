@@ -58,20 +58,87 @@ exports.updateProfileImage = async (req, res) => {
     if (!req.file) {
       return res.status(400).json({ error: "No file uploaded" });
     }
-    const imagePath = req.file.key;
-   await pool.query(
-  `INSERT INTO user_profiles(user_id, profile_image)
-   VALUES($1,$2)
-   ON CONFLICT (user_id)
-   DO UPDATE SET profile_image=$2`,
-  [req.user.id, imagePath]
-);
-const imageUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${imagePath}`;
-    res.json({
-      message: "Profile image updated",
-      image: imageUrl,
-    });
 
+    const data = await userService.updateProfileImage(
+      req.user.id,
+      req.file.key
+    );
+
+    res.json(data);
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.createPost = async (req, res) => {
+  try {
+    const imagePath = req.file?.key;
+    const { caption } = req.body;
+
+    const data = await userService.createPost(
+      req.user.id,
+      imagePath,
+      caption
+    );
+
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+exports.likePost = async (req, res) => {
+  try {
+    const data = await userService.likePost(
+      req.user.id,
+      req.params.postId
+    );
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+exports.unlikePost = async (req, res) => {
+  try {
+    const data = await userService.unlikePost(
+      req.user.id,
+      req.params.postId
+    );
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+exports.commentPost = async (req, res) => {
+  try {
+    const data = await userService.commentPost(
+      req.user.id,
+      req.params.postId,
+      req.body.comment
+    );
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+exports.deletePost = async (req, res) => {
+  try {
+    const data = await userService.deletePost(
+      req.user.id,
+      req.params.postId
+    );
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+exports.sharePost = async (req, res) => {
+  try {
+    const data = await userService.sharePost(
+      req.user.id,
+      req.params.postId
+    );
+    res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

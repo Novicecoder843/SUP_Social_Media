@@ -99,6 +99,23 @@ return {
   is_following: follow.rows.length > 0,
 };
 };
+exports.updateProfileImage = async (userId, imagePath) => {
+
+  await pool.query(
+    `INSERT INTO user_profiles(user_id, profile_image)
+     VALUES($1,$2)
+     ON CONFLICT (user_id)
+     DO UPDATE SET profile_image=$2`,
+    [userId, imagePath]
+  );
+
+  const imageUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${imagePath}`;
+
+  return {
+    message: "Profile image updated",
+    image: imageUrl,
+  };
+};
 
 exports.follow = async (myId, userId) => {
 
@@ -143,4 +160,94 @@ exports.block = async (myId, userId) => {
   );
 
   return { message: "User blocked" };
+};
+exports.createPost = async (userId, image, caption) => {
+
+  const result = await pool.query(
+    `INSERT INTO posts(user_id, image, caption)
+     VALUES($1,$2,$3) RETURNING *`,
+    [userId, image, caption]
+  );
+
+  return {
+    message: "Post created",
+    post: result.rows[0],
+  };
+};
+exports.likePost = async (userId, postId) => {
+
+  await pool.query(
+    `INSERT INTO post_likes(user_id, post_id)
+     VALUES($1,$2)
+     ON CONFLICT DO NOTHING`,
+    [userId, postId]
+  );
+
+  return { message: "Liked" };
+};
+exports.unlikePost = async (userId, postId) => {
+
+  await pool.query(
+    `DELETE FROM post_likes
+     WHERE user_id=$1 AND post_id=$2`,
+    [userId, postId]
+  );
+
+  return { message: "Unliked" };
+};
+exports.commentPost = async (userId, postId, comment) => {
+
+  
+  const post = await pool.query(
+    "SELECT id FROM posts WHERE id=$1",
+    [postId]
+  );
+
+  if (post.rows.length === 0) {
+    throw new Error("Post not found");
+  }
+  await pool.query(
+    `INSERT INTO post_comments(user_id, post_id, comment)
+     VALUES($1,$2,$3)`,
+    [userId, postId, comment]
+  );
+
+  return { message: "Comment added" };
+};
+exports.deletePost = async (userId, postId) => {
+
+ 
+  await pool.query(
+    `DELETE FROM post_comments WHERE post_id=$1`,
+    [postId]
+  );
+
+ 
+  await pool.query(
+    `DELETE FROM post_likes WHERE post_id=$1`,
+    [postId]
+  );
+
+  await pool.query(
+    `DELETE FROM post_shares WHERE post_id=$1`,
+    [postId]
+  );
+
+
+  await pool.query(
+    `DELETE FROM posts WHERE id=$1 AND user_id=$2`,
+    [postId, userId]
+  );
+
+  return { message: "Post deleted successfully" };
+};
+exports.sharePost = async (userId, postId) => {
+
+  await pool.query(
+    `INSERT INTO post_shares(user_id, post_id)
+     VALUES($1,$2)`,
+    [userId, postId]
+  );
+
+  return { message: "Post shared" };
 };

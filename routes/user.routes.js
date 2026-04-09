@@ -30,4 +30,11 @@ router.post(
   userController.updateProfileImage
 );
 
+router.post("/post", authMiddleware, upload.single("image"), userController.createPost);
+router.post("/like/:postId", authMiddleware, userController.likePost);
+router.post("/unlike/:postId", authMiddleware, userController.unlikePost);
+router.post("/comment/:postId", authMiddleware, userController.commentPost);
+router.delete("/post/:postId", authMiddleware, userController.deletePost);
+router.post("/share/:postId", authMiddleware, userController.sharePost);
+router.get("/:id", userController.getUserById);
 module.exports = router;
