@@ -31,8 +31,8 @@ const user = result.rows[0];
 return {
   ...user,
   profile_image: getImageUrl(user.profile_image), 
-  followers: parseInt(followers.rows[0].count),
-  following: parseInt(following.rows[0].count),
+  followers: parseInt(user.followers),
+  following: parseInt(user.following),
 };
 };
 
