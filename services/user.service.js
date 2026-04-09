@@ -35,7 +35,7 @@ return {
   following: parseInt(following.rows[0].count),
 };
 };
-};
+
 
 
 exports.updateMe = async (userId, data) => {
