@@ -72,7 +72,19 @@ const options = {
             example: 1,
           },
         },
-      },
+      
+
+       PostGenericId: {
+    in: 'path',
+    name: 'id',
+    required: true,
+    schema: {
+      type: 'integer',
+      example: 1,
+      default: 1,
+    },
+  },
+},
 
       //////////////////////////////////////////////////////
       // 📦 SCHEMAS (🔥 FIXED POSITION)
