@@ -6,13 +6,15 @@ exports.getPostAnalytics = async (req, res) => {
 
     const data = await Analytics.getPostAnalytics(postId);
 
-    res.json({
+    res.status(200).json({
       message: "Post analytics",
       data
     });
 
   } catch (err) {
     console.error("ANALYTICS ERROR:", err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({
+      error: err.message
+    });
   }
 };

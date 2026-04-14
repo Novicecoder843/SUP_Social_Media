@@ -25,11 +25,11 @@ class Analytics {
     );
 
     return {
-      likes: Number(likes.rows[0].count),
-      comments: Number(comments.rows[0].count),
-      shares: Number(shares.rows[0].count),
-      saves: Number(saves.rows[0].count),
-      reach: 0 // optional (not tracked yet)
+      likes: parseInt(likes.rows[0].count),
+      comments: parseInt(comments.rows[0].count),
+      shares: parseInt(shares.rows[0].count),
+      saves: parseInt(saves.rows[0].count),
+      reach: 0 // optional (can calculate later)
     };
   }
 

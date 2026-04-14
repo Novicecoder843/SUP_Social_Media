@@ -1,47 +1,105 @@
+// const express = require('express');
+// require('dotenv').config();
+// const multer = require('multer');
+// const swaggerUi = require('swagger-ui-express');
+// const swaggerSpec = require('./config/swagger');
+
+// const roleRoutes = require('./routes/role.routes');
+// const postRoutes = require('./routes/post.routes');
+// const app = express();
+// const likeRoutes = require('./routes/like.routes');
+// const commentRoutes = require('./routes/comment.routes');
+// const hashtagRoutes = require('./routes/hashtag.routes');
+// const mentionRoutes = require('./routes/mention.routes');
+// const savedRoutes = require('./routes/saved.routes');
+// const shareRoutes = require('./routes/share.routes');
+// app.use(express.json());
+// app.use('/api', likeRoutes);
+// app.use('/api', commentRoutes);
+
+// app.use('/api/roles', roleRoutes);
+// app.use("/api/auth", require("./routes/auth.routes"));
+// app.use("/api/users", require("./routes/user.routes"));
+// app.use("/uploads", express.static("uploads"));
+// app.use((err, req, res, next) => {
+//   if (err instanceof multer.MulterError) {
+//     if (err.code === "LIMIT_FILE_SIZE") {
+//       return res.status(400).json({
+//         message: "File size must be less than 2MB"
+//       });
+//     }
+//   }
+
+//   if (err.message.includes("Only images")) {
+//     return res.status(400).json({ message: err.message });
+//   }
+
+//   next(err);
+// });
+// app.use('/uploads', express.static('uploads'));
+// app.use('/api/posts', postRoutes);
+// app.use('/api', mentionRoutes);
+// app.use('/api', savedRoutes);
+// app.use('/api', shareRoutes);
+// app.use('/api', hashtagRoutes);
+// app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+// module.exports = app;
+
 const express = require('express');
-require('dotenv').config();
+const dotenv = require('dotenv');
+const multer = require('multer');
 
-const roleRoutes = require('./routes/role.routes');
-const postRoutes = require('./routes/post.routes');
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./config/swagger');
+
+dotenv.config();
+
 const app = express();
-const likeRoutes = require('./routes/like.routes');
-const commentRoutes = require('./routes/comment.routes');
-const hashtagRoutes = require('./routes/hashtag.routes');
-const mentionRoutes = require('./routes/mention.routes');
-const savedRoutes = require('./routes/saved.routes');
-const shareRoutes = require('./routes/share.routes');
-app.use(express.json());
-app.use('/api', likeRoutes);
-app.use('/api', commentRoutes);
 
-app.use('/api/roles', roleRoutes);
-app.use("/api/auth", require("./routes/auth.routes"));
-app.use("/api/users", require("./routes/user.routes"));
-app.use("/uploads", express.static("uploads"));
+app.use(express.json());
+app.get('/', (req, res) => {
+  res.send('🚀 API is running successfully');
+});
+
+// ✅ ROUTES
+app.use('/api/posts', require('./routes/post.routes'));
+app.use('/api/auth', require('./routes/auth.routes'));
+app.use('/api/users', require('./routes/user.routes'));
+app.use('/api/roles', require('./routes/role.routes'));
+
+app.use('/api', require('./routes/like.routes'));
+app.use('/api', require('./routes/comment.routes'));
+app.use('/api', require('./routes/mention.routes'));
+app.use('/api', require('./routes/saved.routes'));
+app.use('/api', require('./routes/share.routes'));
+app.use('/api', require('./routes/hashtag.routes'));
+
+// ✅ STATIC
+app.use('/uploads', express.static('uploads'));
+
+// ✅ ERROR HANDLER
 app.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {
-    if (err.code === "LIMIT_FILE_SIZE") {
-      return res.status(400).json({
-        message: "File size must be less than 2MB"
-      });
-    }
+    return res.status(400).json({ message: err.message });
   }
 
-  if (err.message.includes("Only images")) {
+  if (err.message) {
     return res.status(400).json({ message: err.message });
   }
 
   next(err);
 });
-app.use('/uploads', express.static('uploads'));
-app.use('/api/posts', postRoutes);
-app.use('/api', mentionRoutes);
-app.use('/api', savedRoutes);
-app.use('/api', shareRoutes);
-app.use('/api', hashtagRoutes);
+
+// ✅ SWAGGER
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  swaggerOptions: {
+    persistAuthorization: true, // 🔥 keeps token saved
+  }
+}));
+
 module.exports = app;
-
-
 
 
 
