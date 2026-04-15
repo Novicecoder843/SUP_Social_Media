@@ -1,73 +1,176 @@
-const chatService = require("../models/chatModel");
 
-const onlineUsers = new Map();
+
+const jwt = require("jsonwebtoken");
+const chatModel = require("../models/chatModel");
+
+const onlineUsers = {};   // { userId: [socketIds] }
+const activeUsers = {};   // { userId: [socketIds] }
 
 module.exports = (io) => {
 
-  io.on("connection", (socket) => {
-    console.log("Connected:", socket.id);
+  io.on("connection", async (socket) => {
+    console.log("🔌 Connected:", socket.id);
 
-    // JOIN
-    socket.on("join", (userId) => {
-      onlineUsers.set(userId, socket.id);
-      io.emit("onlineUsers", Array.from(onlineUsers.keys()));
+    let userId;
+
+    // 🔐 AUTH
+    try {
+      const token = socket.handshake.auth.token;
+      const user = jwt.verify(token, process.env.JWT_SECRET);
+
+      userId = Number(user.id);
+      socket.user = { id: userId };
+
+      if (!onlineUsers[userId]) onlineUsers[userId] = [];
+      onlineUsers[userId].push(socket.id);
+
+      await chatModel.setOnline(userId);
+      io.emit("user_online", userId);
+
+    } catch (err) {
+      console.log("❌ AUTH ERROR:", err.message);
+      return socket.disconnect();
+    }
+
+    // 🟢 JOIN CHAT
+    socket.on("join_chat", ({ userId }) => {
+      if (!activeUsers[userId]) activeUsers[userId] = [];
+      activeUsers[userId].push(socket.id);
     });
 
-    // SEND MESSAGE
-    socket.on("sendMessage", async (data) => {
-      try {
-        const newMessage = await chatService.createMessage(data);
+    // 📩 SEND UNDELIVERED
+    try {
+      const undelivered = await chatModel.getUndeliveredMessages(userId);
 
-        const receiverSocket = onlineUsers.get(data.receiver_id);
+      undelivered.forEach(msg => {
+        socket.emit("receive_message", msg);
 
-        if (receiverSocket) {
-          io.to(receiverSocket).emit("receiveMessage", newMessage);
+        const senderSockets = onlineUsers[msg.sender_id];
+        if (senderSockets) {
+          senderSockets.forEach(id => {
+            io.to(id).emit("message_delivered", {
+              message_id: msg.id
+            });
+          });
         }
+      });
 
-        socket.emit("messageSent", newMessage);
+      await chatModel.markAllDelivered(userId);
+
+    } catch (err) {
+      console.log("❌ UNDELIVERED ERROR:", err.message);
+    }
+
+
+    // 🟢 TYPING
+    socket.on("typing", ({ receiver_id }) => {
+      const receiverSocket = onlineUsers[receiver_id];
+      if (receiverSocket) {
+        io.to(receiverSocket).emit("typing", socket.user.id);
+      }
+    });
+
+    socket.on("stop_typing", ({ receiver_id }) => {
+      const receiverSocket = onlineUsers[receiver_id];
+      if (receiverSocket) {
+        io.to(receiverSocket).emit("stop_typing", socket.user.id);
+      }
+    });
+
+    // 📤 SEND MESSAGE
+    socket.on("send_message", async ({ receiver_id, message }) => {
+      if (!receiver_id || !message) return;
+
+      try {
+        const sender_id = socket.user.id;
+
+        const saved = await chatModel.createMessage(
+          sender_id,
+          receiver_id,
+          message
+        );
+
+        // ✔ SENT
+        socket.emit("message_sent", saved);
+
+        const receiverSockets = onlineUsers[receiver_id];
+        const activeSockets = activeUsers[receiver_id];
+
+        if (receiverSockets && activeSockets) {
+          receiverSockets.forEach(id => {
+            if (id !== socket.id) { // ✅ avoid sending back to sender
+              io.to(id).emit("receive_message", saved);
+            }
+          });
+
+          // ✔✔ DELIVERED
+          socket.emit("message_delivered", {
+            message_id: saved.id
+          });
+
+          await chatModel.markDelivered(saved.id);
+        }
 
       } catch (err) {
-        console.error(err);
+        console.log("❌ SEND ERROR:", err.message);
       }
     });
 
-    // TYPING
-    socket.on("typing", ({ sender_id, receiver_id }) => {
-      const receiverSocket = onlineUsers.get(receiver_id);
-      if (receiverSocket) {
-        io.to(receiverSocket).emit("typing", { sender_id });
-      }
-    });
 
-    // STOP TYPING
-    socket.on("stopTyping", ({ sender_id, receiver_id }) => {
-      const receiverSocket = onlineUsers.get(receiver_id);
-      if (receiverSocket) {
-        io.to(receiverSocket).emit("stopTyping", { sender_id });
-      }
-    });
 
-    // SEEN
-    socket.on("seen", async ({ sender_id, receiver_id }) => {
-      await chatService.markSeen(sender_id, receiver_id);
+    socket.on("seen", async ({ message_id, sender_id }) => {
+      try {
+        console.log("👀 Seen event:", message_id, sender_id);
 
-      const senderSocket = onlineUsers.get(sender_id);
-
-      if (senderSocket) {
-        io.to(senderSocket).emit("seenUpdate", { receiver_id });
-      }
-    });
-
-    // DISCONNECT
-    socket.on("disconnect", () => {
-      for (let [userId, sockId] of onlineUsers.entries()) {
-        if (sockId === socket.id) {
-          onlineUsers.delete(userId);
-          break;
+        if (!message_id || !sender_id) {
+          console.log("❌ Invalid seen data");
+          return;
         }
+
+        await chatModel.markAsSeen(message_id);
+
+        const senderSockets = onlineUsers[sender_id]; // ✅ FIX
+
+        if (senderSockets) {
+          senderSockets.forEach(id => {
+            io.to(id).emit("message_seen", {
+              message_id
+            });
+          });
+        }
+
+      } catch (err) {
+        console.log("❌ SEEN ERROR:", err.message);
+      }
+    });
+
+    // 🔴 DISCONNECT
+    socket.on("disconnect", async () => {
+      if (!userId) return;
+
+      onlineUsers[userId] = (onlineUsers[userId] || []).filter(
+        id => id !== socket.id
+      );
+
+      if (onlineUsers[userId].length === 0) {
+        delete onlineUsers[userId];
+
+        await chatModel.setOffline(userId);
+        io.emit("user_offline", {
+          userId,
+          last_seen: new Date()
+        });
       }
 
-      io.emit("onlineUsers", Array.from(onlineUsers.keys()));
+      activeUsers[userId] = (activeUsers[userId] || []).filter(
+        id => id !== socket.id
+      );
+
+      if (activeUsers[userId].length === 0) {
+        delete activeUsers[userId];
+      }
+
+      console.log("🔴 Disconnected:", userId);
     });
 
   });

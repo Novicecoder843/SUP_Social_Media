@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Chat</title>
+
+    <style>
+        body {
+            font-family: Arial;
+            background: #f5f5f5;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 400px;
+            margin-top: 20px;
+        }
+
+        #chatBox {
+            height: 400px;
+            border: 1px solid #ccc;
+            background: white;
+            padding: 10px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .msg {
+            max-width: 65%;
+            padding: 10px;
+            margin: 5px;
+            border-radius: 10px;
+            word-wrap: break-word;
+        }
+
+        .me {
+            align-self: flex-end;
+            /* ✅ YOU (right side) */
+            background: #4CAF50;
+            color: white;
+        }
+
+        .friend {
+            align-self: flex-start;
+            /* ✅ OTHER (left side) */
+            background: #e0e0e0;
+        }
+
+        input,
+        button {
+            margin-top: 5px;
+            padding: 8px;
+            width: 100%;
+        }
+
+        #status {
+            margin: 5px 0;
+            font-size: 12px;
+            color: green;
+        }
+
+        .time {
+            font-size: 10px;
+            color: gray;
+        }
+
+        .status {
+            font-size: 10px;
+            margin-left: 5px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h2>Chat</h2>
+
+        <input id="token" placeholder="Paste JWT Token" />
+        <input id="receiver" placeholder="Receiver ID" />
+
+        <div id="status"></div>
+
+        <div id="chatBox"></div>
+
+        <input id="message" placeholder="Message" oninput="typing()" onblur="stopTyping()" />
+
+        <button onclick="connect()">Connect</button>
+        <button onclick="send()">Send</button>
+    </div>
+
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+
+    <script>
+        let socket;
+        let myUserId;
+        let messageQueue = [];
+
+        // 🔐 Decode JWT
+        function parseJwt(token) {
+            try {
+                return JSON.parse(atob(token.split('.')[1]));
+            } catch {
+                return null;
+            }
+        }
+
+        // 🔌 CONNECT
+        function connect() {
+            const token = document.getElementById("token").value;
+
+            if (!token) return alert("Enter token");
+
+            const decoded = parseJwt(token);
+            myUserId = Number(decoded.id);
+
+            if (socket) socket.disconnect();
+
+            socket = io("http://localhost:3000", { auth: { token } });
+
+            socket.on("connect", () => {
+                document.getElementById("status").innerText = "Connected ✅";
+
+                // 🔥 IMPORTANT
+                socket.emit("join_chat", { userId: myUserId });
+
+                sendQueuedMessages();
+                loadOldMessages();
+            });
+
+            socket.on("receive_message", msg => {
+
+                // ✅ STOP duplicate for sender
+                if (msg.sender_id === myUserId) return;
+
+                renderMessage(msg);
+
+                // 👁 AUTO SEEN (only for received messages)
+                socket.emit("seen", {
+                    message_id: msg.id,
+                    sender_id: msg.sender_id
+                });
+            });
+
+            socket.on("message_sent", msg => renderMessage(msg));
+
+            socket.on("message_delivered", data => {
+                const el = document.getElementById("msg-" + data.message_id);
+                if (el) el.innerText = "✔✔";
+            });
+
+            socket.on("message_seen", data => {
+                const el = document.getElementById("msg-" + data.message_id);
+                if (el) {
+                    el.innerText = "👁";
+                    el.style.color = "blue";
+                }
+            });
+
+            socket.on("typing", () => {
+                document.getElementById("status").innerText = "Typing...";
+            });
+
+            socket.on("stop_typing", () => {
+                document.getElementById("status").innerText = "connected ✅";
+            });
+        }
+
+        // // 🔥 CORE FIX (LEFT / RIGHT LOGIC)
+        // function renderMessage(msg) {
+        //     const type = msg.sender_id === myUserId ? "friend" : "me";
+
+        //     addMsg(msg.message, type);
+        // }
+
+        // 🔥 UPDATED addMsg
+        function addMsg(message, type) {
+            const div = document.createElement("div");
+            div.className = "msg " + type;
+            div.innerText = message;
+
+            const chatBox = document.getElementById("chatBox");
+            chatBox.appendChild(div);
+
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        // typing
+        function typing() {
+            if (!socket) return;
+
+            socket.emit("typing", {
+                receiver_id: Number(document.getElementById("receiver").value)
+            });
+        }
+
+        function stopTyping() {
+            if (!socket) return;
+
+            socket.emit("stop_typing", {
+                receiver_id: Number(document.getElementById("receiver").value)
+            });
+        }
+
+        // 📤 SEND
+        function send() {
+            const receiver_id = Number(document.getElementById("receiver").value);
+            const message = document.getElementById("message").value;
+
+            if (!receiver_id || !message) {
+                return alert("Enter receiver and message");
+            }
+
+            // ❌ OFFLINE
+            if (!navigator.onLine || !socket || !socket.connected) {
+                const tempMsg = {
+                    id: "temp-" + Date.now(),
+                    sender_id: myUserId,
+                    message,
+                    created_at: new Date(),
+                    isTemp: true
+                };
+
+                messageQueue.push({ receiver_id, message });
+                renderMessage(tempMsg);
+
+                document.getElementById("status").innerText = "📥 Saved offline";
+                document.getElementById("message").value = "";
+                return;
+            }
+
+            // ✅ ONLINE
+            socket.emit("send_message", { receiver_id, message });
+            document.getElementById("message").value = "";
+        }
+
+        // 🔁 SEND QUEUE
+        function sendQueuedMessages() {
+            if (!socket || !socket.connected) return;
+
+            while (messageQueue.length > 0) {
+                socket.emit("send_message", messageQueue.shift());
+            }
+        }
+
+        // 💬 RENDER MESSAGE (FINAL CLEAN)
+        function renderMessage(msg) {
+            const type = msg.sender_id === myUserId ? "me" : "friend";
+
+            const div = document.createElement("div");
+            div.className = "msg " + type;
+
+            const time = formatTime(msg.created_at);
+
+            div.innerHTML = `
+    ${msg.message}
+    <div style="text-align:right">
+      <span class="time">${time}</span>
+      ${type === "me" ? `
+        <span class="status" id="msg-${msg.id}">
+          ${msg.isTemp ? "⏳" : "✔"}
+        </span>
+      ` : ""}
+    </div>
+  `;
+
+            document.getElementById("chatBox").appendChild(div);
+            document.getElementById("chatBox").scrollTop =
+                document.getElementById("chatBox").scrollHeight;
+        }
+
+        // ⏰ TIME FORMAT
+        function formatTime(date) {
+            return new Date(date).toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        // 🟢 TYPING
+        function typing() {
+            if (!socket) return;
+
+            socket.emit("typing", {
+                receiver_id: Number(document.getElementById("receiver").value)
+            });
+        }
+
+        function stopTyping() {
+            if (!socket) return;
+
+            socket.emit("stop_typing", {
+                receiver_id: Number(document.getElementById("receiver").value)
+            });
+        }
+
+        async function loadOldMessages() {
+            const receiver_id = Number(document.getElementById("receiver").value);
+            const token = document.getElementById("token").value;
+
+            const res = await fetch(
+                `http://localhost:3000/api/chats/conversation/${receiver_id}`, // ✅ FIXED
+                {
+                    headers: {
+                        Authorization: "Bearer " + token
+                    }
+                }
+            );
+
+            const data = await res.json();
+
+            console.log("📦 messages:", data);
+
+            const messages = Array.isArray(data)
+                ? data
+                : data.messages || data.data || [];
+
+            document.getElementById("chatBox").innerHTML = "";
+
+            messages.forEach(msg => {
+                renderMessage(msg);
+            });
+        }
+
+        // 🌐 NETWORK
+        window.addEventListener("offline", () => {
+            document.getElementById("status").innerText = "❌ Offline";
+        });
+
+        window.addEventListener("online", () => {
+            document.getElementById("status").innerText = "🌐 Back Online";
+
+            if (socket) socket.connect();
+
+            setTimeout(sendQueuedMessages, 1000);
+        });
+    </script>
+
+</body>
+
+</html>

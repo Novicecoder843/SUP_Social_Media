@@ -1,4 +1,5 @@
 require("dotenv").config();
+const cors = require("cors");
 const express = require("express");
 const http = require("http");
 const bodyParser = require("body-parser");
@@ -6,21 +7,38 @@ const roleRoutes = require("./routes/roleRouts");
 const authRouter =  require("./routes/authRouters");
 const hastagRouter =  require("./routes/hastagRouter");
 const chatRouter = require("./routes/chatRoutes")
-const { setSocket } = require("./config/socket");
+const chatSocket  = require("./utlis/chatSoket");
+const { Server } = require("socket.io");
 
 const app = express();
+app.use(cors());
 app.use(express.json());
 
 app.use(bodyParser.json());
 
 
+app.use(express.static("fronted"));
+
 const server = http.createServer(app);
 
-// init socket
-const io = setSocket(server);
+// ✅ socket setup
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  }
+});
 
-// attach socket events
-require("./utlis/chatSoket")(io);
+
+// ✅ attach socket logic (ONLY ONE PLACE)
+const onlineUsers = chatSocket(io);
+
+
+// ✅ make available in controllers
+app.set("onlineUsers", onlineUsers);
+app.set("io", io);
+
+
 
 
 // app.use("/api/users", userRoutes);
@@ -31,6 +49,6 @@ app.use("/api/chats", chatRouter );
 app.use("/uploads", express.static("uploads"));
 
 
-app.listen(3000, () => {
+server.listen(3000, () => {
   console.log("Server running on port http://localhost:3000 ");
 });
