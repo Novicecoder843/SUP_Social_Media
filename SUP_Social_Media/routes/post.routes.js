@@ -90,7 +90,7 @@ router.get('/users/:id/posts', controller.getUserPosts);
 // router.get('/users/:id/posts', controller.getUserPosts);
 
 
-// // Then dynamic routes
+// // // Then dynamic routes
 /**
  * @swagger
  * /api/posts/{id}:
@@ -108,8 +108,8 @@ router.get('/users/:id/posts', controller.getUserPosts);
  *               id: 1
  *               content: "Hello world"
  */
-router.get('/:id', controller.getPost);
-// router.get('/:id', controller.getPost);
+ router.get('/:id', controller.getPost);
+// // router.get('/:id', controller.getPost);
 /**
  * @swagger
  * /api/posts/{id}:
@@ -144,7 +144,7 @@ router.put('/:id', controller.updatePost);
  */
 router.delete('/:id', controller.deletePost);
 // router.delete('/:id', controller.deletePost);
-// //  🔟 Analytics
+// // //  🔟 Analytics
 /**
  * @swagger
  * /api/posts/{postId}/analytics:
@@ -166,9 +166,9 @@ router.delete('/:id', controller.deletePost);
  */
 router.get('/:postId/analytics', verifyToken, analyticsCtrl.getPostAnalytics);
 
-// router.get('/:postId/analytics', verifyToken, analyticsCtrl.getPostAnalytics);
+// // router.get('/:postId/analytics', verifyToken, analyticsCtrl.getPostAnalytics);
 
-// // 🚨 Report post
+// 🚨 Report post
 /**
  * @swagger
  * /api/posts/{postId}/report:
@@ -192,6 +192,6 @@ router.get('/:postId/analytics', verifyToken, analyticsCtrl.getPostAnalytics);
  *               message: Report submitted
  */
 router.post('/:postId/report', verifyToken, reportCtrl.reportPost);
-//  router.post('/:postId/report', verifyToken, reportCtrl.reportPost);
+//router.post('/:postId/report', verifyToken, reportCtrl.reportPost);
 module.exports = router;
 
