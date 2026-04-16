@@ -9,6 +9,10 @@ const profileRoutes = require("./routes/profile");
 const app = express();
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// uploads
+app.use("/uploads", express.static("uploads"));
 
 // Auth Routes
 app.use("/api/auth", authRoutes);

@@ -1,11 +1,31 @@
 const profileModel = require("../service/profileModel");
 
-//  Create profile
+// CREATE PROFILE 
 const createProfile = async (req, res) => {
-  const { username, bio, profile_image } = req.body; // ✅ unified field
-  const user_id = req.user.id;
-
   try {
+    const user_id = req.user.id;
+
+    console.log("BODY:", req.body);
+    console.log("FILE:", req.file);
+
+    const username = req.body?.username;
+    const bio = req.body?.bio;
+
+    const profile_image = req.file ? req.file.path : null;
+
+    // Validation
+    if (!username) {
+      return res.status(400).json({ message: "Username is required" });
+    }
+
+    // Check username exists
+    const existingUsername = await profileModel.findByUsername(username);
+
+    if (existingUsername) {
+      return res.status(400).json({ message: "Username already exists" });
+    }
+
+    // Create profile
     const profile = await profileModel.createProfile(
       user_id,
       username,
@@ -14,43 +34,57 @@ const createProfile = async (req, res) => {
     );
 
     res.json({
-      message: "Profile created",
+      message: "Profile created successfully",
       profile
     });
 
   } catch (error) {
-    console.error("CREATE PROFILE ERROR:", error); // ✅ debug
-    res.status(500).send("Server error");
+    console.error("CREATE PROFILE ERROR:", error);
+    res.status(500).json({ error: error.message });
   }
 };
 
-
-//  Get profile
+// GET PROFILE
 const getProfile = async (req, res) => {
-  const user_id = req.user.id;
-
   try {
-    const profile = await profileModel.getProfile(user_id);
+    const user_id = req.user.id;
 
-    if (!profile) {
-      return res.status(404).json({ message: "Profile not found" });
-    }
+    const profile = await profileModel.getProfile(user_id);
 
     res.json(profile);
 
   } catch (error) {
-    console.error("GET PROFILE ERROR:", error); // ✅ debug
-    res.status(500).send("Server error");
+    console.error("GET PROFILE ERROR:", error);
+    res.status(500).json({ error: error.message });
   }
 };
 
-
-//  Update profile
+// UPDATE PROFILE
 const updateProfile = async (req, res) => {
-  const user_id = req.user.id;
-  const { username, bio, profile_image } = req.body;
-
   try {
+    const user_id = req.user.id;
+
+    console.log("BODY:", req.body);
+    console.log("FILE:", req.file);
+
+    const username = req.body?.username;
+    const bio = req.body?.bio;
+
+    const profile_image = req.file ? req.file.path : null;
+
+    // Validation
+    if (!username) {
+      return res.status(400).json({ message: "Username is required" });
+    }
+
+    // Check username exists (exclude current user)
+    const existingUsername = await profileModel.findByUsername(username);
+
+    if (existingUsername && existingUsername.user_id != user_id) {
+      return res.status(400).json({ message: "Username already exists" });
+    }
+
+    //  Update profile
     const profile = await profileModel.updateProfile(
       user_id,
       username,
@@ -58,23 +92,16 @@ const updateProfile = async (req, res) => {
       profile_image
     );
 
-    if (!profile) {
-      return res.status(404).json({
-        message: "Profile not found. Please create profile first."
-      });
-    }
-
     res.json({
-      message: "Profile updated",
+      message: "Profile updated successfully",
       profile
     });
 
   } catch (error) {
-    console.error("UPDATE PROFILE ERROR:", error); // ✅ debug
-    res.status(500).send("Server error");
+    console.error("UPDATE PROFILE ERROR:", error);
+    res.status(500).json({ error: error.message });
   }
 };
-
 
 module.exports = {
   createProfile,
