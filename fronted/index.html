@@ -79,15 +79,17 @@
         <h2>Chat</h2>
 
         <input id="token" placeholder="Paste JWT Token" />
-        <input id="receiver" placeholder="Receiver ID" />
+        <input id="receiver" placeholder="Receiver ID (Single Chat)" />
+        <input id="groupId" placeholder="Group ID (Group Chat)" />
 
         <div id="status"></div>
 
         <div id="chatBox"></div>
+        <button onclick="connect()">Connect</button> <button onclick="joinGroup()">Join Group</button>
 
         <input id="message" placeholder="Message" oninput="typing()" onblur="stopTyping()" />
 
-        <button onclick="connect()">Connect</button>
+
         <button onclick="send()">Send</button>
     </div>
 
@@ -97,6 +99,7 @@
         let socket;
         let myUserId;
         let messageQueue = [];
+        let currentChatUserId = null;
 
         // 🔐 Decode JWT
         function parseJwt(token) {
@@ -129,19 +132,28 @@
                 sendQueuedMessages();
                 loadOldMessages();
             });
-
+            // 👤 SINGLE CHAT
             socket.on("receive_message", msg => {
+                console.log("📩 SINGLE MSG:", msg);
 
-                // ✅ STOP duplicate for sender
-                if (msg.sender_id === myUserId) return;
+                // ✅ Only show if it's current chat
+                if (
+                    msg.sender_id === currentChatUserId ||
+                    msg.receiver_id === currentChatUserId
+                ) {
+                    renderMessage(msg);
+                }
 
-                renderMessage(msg);
-
-                // 👁 AUTO SEEN (only for received messages)
+                // 👁 seen
                 socket.emit("seen", {
                     message_id: msg.id,
                     sender_id: msg.sender_id
                 });
+            });
+
+            // 👥 GROUP CHAT
+            socket.on("receive_group_message", msg => {
+                renderMessage(msg);
             });
 
             socket.on("message_sent", msg => renderMessage(msg));
@@ -168,12 +180,16 @@
             });
         }
 
-        // // 🔥 CORE FIX (LEFT / RIGHT LOGIC)
-        // function renderMessage(msg) {
-        //     const type = msg.sender_id === myUserId ? "friend" : "me";
+        // 👥 JOIN GROUP
+        function joinGroup() {
+            const group_id = Number(document.getElementById("groupId").value);
+            if (!group_id) return alert("Enter group ID");
 
-        //     addMsg(msg.message, type);
-        // }
+            socket.emit("join_group", { group_id });
+            setStatus("Joined Group " + group_id);
+
+            loadGroupMessages();
+        }
 
         // 🔥 UPDATED addMsg
         function addMsg(message, type) {
@@ -207,10 +223,25 @@
         // 📤 SEND
         function send() {
             const receiver_id = Number(document.getElementById("receiver").value);
+            const group_id = Number(document.getElementById("groupId").value);
             const message = document.getElementById("message").value;
+            // ✅ Check message first
+            if (!message) {
+                alert("Enter message");
+                return;
+            }
 
-            if (!receiver_id || !message) {
-                return alert("Enter receiver and message");
+            // 👥 GROUP CHAT
+            if (group_id) {
+                socket.emit("send_group_message", { group_id, message });
+                document.getElementById("message").value = "";
+                return;
+            }
+
+            // 👤 SINGLE CHAT
+            if (!receiver_id) {
+                alert("Enter receiver ID");
+                return;
             }
 
             // ❌ OFFLINE
@@ -271,12 +302,48 @@
                 document.getElementById("chatBox").scrollHeight;
         }
 
+        // ⏳ TEMP MESSAGE
+        function renderTempMessage(message) {
+            renderMessage({
+                id: "temp-" + Date.now(),
+                sender_id: myUserId,
+                message,
+                created_at: new Date()
+            });
+        }
+
+
+        // 🔽 SCROLL
+        function scrollBottom() {
+            const chat = document.getElementById("chatBox");
+            chat.scrollTop = chat.scrollHeight;
+        }
+
         // ⏰ TIME FORMAT
         function formatTime(date) {
             return new Date(date).toLocaleTimeString([], {
                 hour: '2-digit',
                 minute: '2-digit'
             });
+        }
+
+        // 🧹 CLEAR
+        function clearChat() {
+            document.getElementById("chatBox").innerHTML = "";
+        }
+
+        // 📡 STATUS
+        function setStatus(text) {
+            document.getElementById("status").innerText = text;
+        }
+
+        // ✔ UPDATE STATUS
+        function updateStatus(id, text, color = "") {
+            const el = document.getElementById("msg-" + id);
+            if (el) {
+                el.innerText = text;
+                if (color) el.style.color = color;
+            }
         }
 
         // 🟢 TYPING
@@ -298,7 +365,11 @@
 
         async function loadOldMessages() {
             const receiver_id = Number(document.getElementById("receiver").value);
+            currentChatUserId = receiver_id;
+            console.log("🔥 RECEIVER:", receiver_id);
+            currentChatUserId = receiver_id; // ✅ MUST
             const token = document.getElementById("token").value;
+
 
             const res = await fetch(
                 `http://localhost:3000/api/chats/conversation/${receiver_id}`, // ✅ FIXED
@@ -313,16 +384,38 @@
 
             console.log("📦 messages:", data);
 
-            const messages = Array.isArray(data)
-                ? data
-                : data.messages || data.data || [];
-
-            document.getElementById("chatBox").innerHTML = "";
-
+            const messages = data.data || data.messages || data || [];
+            clearChat();
             messages.forEach(msg => {
                 renderMessage(msg);
             });
         }
+
+        // 📜 LOAD GROUP CHAT
+        async function loadGroupMessages() {
+            const group_id = Number(document.getElementById("groupId").value);
+            const token = document.getElementById("token").value;
+
+            try {
+                const res = await fetch(
+                    `http://127.0.0.1:3000/api/chats/group/${group_id}`,
+                    { headers: { Authorization: "Bearer " + token } }
+                );
+                const data = await res.json();
+                if (!res.ok) throw new Error("API error");
+
+                const messages = Array.isArray(data)
+                    ? data
+                    : data.data || data.messages || [];
+                console.log("📦 GROUP DATA:", data);
+                clearChat();
+                messages.forEach(renderMessage);
+
+            } catch (err) {
+                console.log("❌ Group load error:", err.message);
+            }
+        }
+
 
         // 🌐 NETWORK
         window.addEventListener("offline", () => {

@@ -1,62 +1,9 @@
-// const pool = require("../config/db");
-
-
-// const chatService = require("../models/chatModel");
-
-// exports.sendMessage = async (req, res) => {
-//   try {
-//     const sender_id = req.user.id;
-//     const { receiver_id, message, parent_message_id } = req.body;
-
-//     const newMessage = await chatService.createMessage({
-//       sender_id,
-//       receiver_id,
-//       message,
-//       parent_message_id,
-//     });
-
-//     res.json({ success: true, data: newMessage });
-
-//   } catch (err) {
-//     res.status(500).json({ error: "Send failed" });
-//   }
-// };
-
-
-// exports.getConversation = async (req, res) => {
-//   try {
-//     const user1 = req.user.id;
-//     const user2 = req.params.user2;
-
-//     const chats = await chatService.getConversation(user1, user2);
-
-//     res.json({ success: true, data: chats });
-
-//   } catch (err) {
-//     res.status(500).json({ error: "Fetch failed" });
-//   }
-// };
-
-
-// exports.markSeen = async (req, res) => {
-//   try {
-//     const receiver_id = req.user.id;
-//     const sender_id = req.params.senderId;
-
-//     await chatService.markSeen(sender_id, receiver_id);
-
-//     res.json({ success: true, message: "Seen updated" });
-
-//   } catch (err) {
-//     res.status(500).json({ error: "Seen failed" });
-//   }
-// };
 
 
 const chatModel = require("../models/chatModel");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-
+const db = require("../config/db")
 
 
 
@@ -64,7 +11,7 @@ exports.sendMessage = async (req, res) => {
   const onlineUsers = req.app.get("onlineUsers");
 
   try {
-    
+
     const sender_id = req.user.id;
 
     const { receiver_id, message } = req.body;
@@ -115,18 +62,58 @@ exports.getConversation = async (req, res) => {
   }
 };
 
-// exports.markAsSeen = async (req, res) => {
-//   try {
-//     const receiver = req.user.id;
-//     const sender = req.params.senderId;
 
-//     const updated = await chatModel.markAsSeen(sender, receiver);
 
-//     res.json({
-//       success: true,
-//       message:"Messages marked as seen",
-//     });
-//   } catch (err) {
-//     res.status(500).json({ error: err.message });
-//   }
-// };
+
+exports.createGroup = async (req, res) => {
+  try {
+    const { name, members = [] } = req.body; // ✅ FIX
+    const userId = req.user.id;
+
+    const result = await db.query(
+      `INSERT INTO user_schema.groups (name, created_by)
+       VALUES ($1, $2)
+       RETURNING *`,
+      [name, userId]
+    );
+
+    const group = result.rows[0];
+
+    // ✅ add creator
+    await db.query(
+      `INSERT INTO user_schema.group_members (group_id, user_id)
+       VALUES ($1, $2)`,
+      [group.id, userId]
+    );
+
+    // ✅ add members (safe now)
+    for (const m of members) {
+      await db.query(
+        `INSERT INTO user_schema.group_members (group_id, user_id)
+         VALUES ($1, $2)`,
+        [group.id, m]
+      );
+    }
+
+    res.json(group);
+
+  } catch (err) {
+    console.log("❌ CREATE GROUP ERROR:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
+exports.getGroupMessages = async (req, res) => {
+  try {
+    const { groupId } = req.params;
+
+    const messages = await chatModel.getGroupMessages(groupId);
+
+    res.json(messages);
+
+  } catch (err) {
+    console.log("❌ GROUP FETCH ERROR:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+};

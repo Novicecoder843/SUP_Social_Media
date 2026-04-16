@@ -98,3 +98,44 @@ exports.markAllDelivered = async (userId) => {
     [userId]
   );
 };
+
+
+
+exports.createGroupMessage = async (group_id, sender_id, message) => {
+  const result = await db.query(
+    `
+    INSERT INTO user_schema.group_messages (group_id, sender_id, message)
+    VALUES ($1, $2, $3)
+    RETURNING id, group_id, sender_id, message, created_at
+    `,
+    [group_id, sender_id, message]
+  );
+
+  const msg = result.rows[0];
+
+  // 🔥 JOIN USER NAME
+  const user = await db.query(
+    `SELECT full_name FROM user_schema.userstable WHERE id = $1`,
+    [sender_id]
+  );
+
+  msg.sender_name = user.rows[0]?.full_name || "Unknown";
+
+  return msg;
+};
+
+
+
+exports.getGroupMessages = async (groupId) => {
+  const result = await db.query(
+    `SELECT gm.*, u.full_name AS sender_name
+FROM user_schema.group_messages gm
+JOIN user_schema.userstable u
+ON gm.sender_id = u.id
+WHERE gm.group_id = $1
+ORDER BY gm.created_at ASC`,
+    [groupId]
+  );
+
+  return result.rows;
+};

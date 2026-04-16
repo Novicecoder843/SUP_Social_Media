@@ -38,6 +38,13 @@ module.exports = (io) => {
       activeUsers[userId].push(socket.id);
     });
 
+    // 🟣 JOIN GROUP (ADD THIS)
+    socket.on("join_group", ({ group_id }) => {
+      socket.join(`group_${group_id}`);
+
+      console.log(`👥 User ${socket.user.id} joined group_${group_id}`);
+    });
+
     // 📩 SEND UNDELIVERED
     try {
       const undelivered = await chatModel.getUndeliveredMessages(userId);
@@ -117,6 +124,28 @@ module.exports = (io) => {
     });
 
 
+    socket.on("send_group_message", async ({ group_id, message }) => {
+      if (!group_id || !message) return;
+
+      try {
+        const sender_id = socket.user.id;
+
+        // 💾 SAVE TO DB (create this function)
+        const saved = await chatModel.createGroupMessage(
+          group_id,
+          sender_id,
+          message
+        );
+           console.log("💾 GROUP SAVED:", saved);
+        // 📤 SEND TO ALL IN GROUP
+        io.to(`group_${group_id}`).emit("receive_group_message", saved);
+          console.log("📤 EMITTED TO:", `group_${group_id}`);
+      } catch (err) {
+        console.log("❌ GROUP SEND ERROR:", err.message);
+      }
+    });
+
+  
 
     socket.on("seen", async ({ message_id, sender_id }) => {
       try {
