@@ -1,4 +1,8 @@
+const express = require("express");
 const router = require("express").Router();
+
+const chatroutes = require("./chat.routes");
+router.use("/chat", chatroutes);
 
 router.get("/", (req, res) => {
   res.json({ message: "API Working" });
