@@ -12,3 +12,14 @@ pool.query("SELECT NOW()")
 .then(() => console.log("DB connected successfully"))
 .catch(err => console.error("DB error:", err.message));
 module.exports = pool;
+
+const query = async (text, params) => {
+  console.log("Executing Query:", text);
+  console.log("With values:", params);
+  const result = await pool.query(text, params);
+  return result;
+};
+
+module.exports = {
+  query,
+};

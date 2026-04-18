@@ -1,23 +1,21 @@
-//const express = require("express");
-//const router = express.Router();
-//const controller = require("../controller/userController");
 
-// router.post("/createUsers", controller.createUsers);
-// router.get("/fatchAllUser", controller.fatchAllUser);
-// router.get("/fatchUser/:id", controller.fatchUserById);
-// router.put("/updateUser/:id", controller.updateUser);
-// router.delete("/deleteUser/:id", controller.deleteUser);
-
-//module.exports = router;
 
 const express = require("express");
 const router = express.Router();
-// const auth = require("../controllers/userController");
+const auth = require("../middleware/authMiddleware");
 const userController = require("../controller/userController");
+const followController = require("../controller/followController");
+const blockController = require("../controller/blockController");
 
 router.post("/register", userController.registerUser);
-router.get("/users", userController.getAllUsers);
-router.put("/users/:id", userController.updateUser);
-router.delete("/users/:id", userController.deleteUser);
+router.get("/getusers", userController.getAllUsers);
+router.put("/updateusers/:id", userController.updateUser);
+router.delete("/deleteusers/:id", userController.deleteUser);
+
+router.get("/me", auth, userController.getMyProfile);
+
+router.post("/:id/follow", auth, followController.followUnfollow);
+router.get("/:username", auth, userController.getUserProfileByUsername);
+router.post("/:id/block", auth, blockController.blockUnblockUser);
 
 module.exports = router;

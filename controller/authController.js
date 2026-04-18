@@ -6,7 +6,6 @@ const db = require("../config/db");
 const jwtConfig = require("../config/jwt");
 const { sendLoginEmail } = require("../utils/sendEmail");
 
-
 exports.register = async (req, res) => {
   try {
     const { name, email, password, role_id } = req.body;
@@ -21,7 +20,7 @@ exports.register = async (req, res) => {
     }
 
     // Check email exists
-    const existingUser = await userModel.findUserByEmail(email);
+    const existingUser = await userModel.findByEmail(email);
     if (existingUser.rows.length) {
       return res.status(400).json({ message: "Email already exists" });
     }
@@ -39,7 +38,7 @@ exports.register = async (req, res) => {
 
     res.status(201).json({
       message: "User registered successfully",
-      user: user.rows[0]
+      user: user
     });
   } catch (err) {
     console.log(err)
@@ -75,7 +74,7 @@ exports.login = async (req, res) => {
     // Generate JWT
     const token = jwt.sign(
       {
-        sub: user.id,
+        userid: user.id,
         role: user.role_id
       },
       jwtConfig.secret,
@@ -137,7 +136,6 @@ exports.forgotPassword = async (req, res) => {
     });
   } catch (err) {
     console.log(err)
-        console.log(err)
     res.status(500).json({
       error: err.message
     });

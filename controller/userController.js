@@ -1,63 +1,10 @@
-// const User = require("../models/userModels");
-
-// /* CREATE USER */
-// exports.createUsers = async (req, res) => {
-//   try {
-//     const result = await User.create(req.body);
-//     res.status(201).json(result.rows[0]);
-//   } catch (err) {
-//     res.status(500).json({ error: err.message });
-//   }
-// };
-
-// /* FETCH ALL USERS */
-// exports.fatchAllUser = async (req, res) => {
-//   try {
-//     const result = await User.findAll();
-//     res.json(result.rows);
-//   } catch (err) {
-//     res.status(500).json({ error: err.message });
-//   }
-// };
-
-// /* FETCH USER BY ID */
-// exports.fatchUserById = async (req, res) => {
-//   try {
-//     const result = await User.findById(req.params.id);
-//     if (result.rows.length === 0) {
-//       return res.status(404).json({ message: "User not found" });
-//     }
-//     res.json(result.rows[0]);
-//   } catch (err) {
-//     res.status(500).json({ error: err.message });
-//   }
-// };
-
-// /* UPDATE USER */
-// exports.updateUser = async (req, res) => {
-//   try {
-//     const result = await User.updateById(req.params.id, req.body);
-//     res.json(result.rows[0]);
-//   } catch (err) {
-//     res.status(500).json({ error: err.message });
-//   }
-// };
-
-// /* DELETE USER */
-// exports.deleteUser = async (req, res) => {
-//   try {
-//     await User.deleteById(req.params.id);
-//     res.json({ message: "User deleted successfully" });
-//   } catch (err) {
-//     res.status(500).json({ error: err.message });
-//   }
-// };
-
 const UserModel = require("../models/userModel");
 
 exports.registerUser = async (req, res) => {
   try {
     const { name, email, password, role_id } = req.body;
+
+    
     const user = await UserModel.createUser(name, email, password, role_id);
     res.status(201).json({ success: true, data: user });
   } catch (err) {
@@ -111,5 +58,112 @@ exports.deleteUser = async (req, res) => {
         console.log(err)
 
     res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+exports.getMyProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+console.log(userId)
+    const result = await UserModel.getMe(userId);
+    console.log(result,'resu;ttttt')
+
+    if(!result){  
+            return res.status(404).json({ message: "profile not found" });
+    }
+
+            return res.status(200).json({ data: result,success:true,message:"profile fetched successfully"});
+
+  } catch (err) {
+    console.log(err)
+    res.status(500).json({ data: [],success:false,message:"Internal server error"});
+    return
+  }
+};
+
+
+exports.updateMyProfile = async (req, res) => {
+  try {
+    console.log("Content-Type:", req.header["Content-type"]);
+    const user_id = req.user.id;
+    console.log("userId:", user_id);
+
+    console.log("Body:", req.body);
+
+    console.log("Files:", req.files);
+
+    const { username, email, bio, } = req.body || {};
+
+    if(!username) {
+      return res.status(400).json({
+        success: false,
+        message: "Username is required"
+      });
+    }
+
+    let profile_image = null;
+    let background_image = null;
+
+    if (req.files?.background_image) {
+      profile_image = req.files.profiles_image[0].filename;
+    }
+
+    if(req.files?.background_image) {
+      background_image = req.files.background_image[0].filename;
+    }
+
+   const result = await UserModel.updateMe(user_id, username, email, bio, profile_image, background_image);
+
+   console.log("DB Result:", result);
+
+   if (!result) {
+    return res.status(404).json({
+      success: false, 
+      message: "User not found"
+    });
+   }
+
+   return res.status(200).json({
+    success:true,
+    data: result,
+    message: "Profile updates successfully"
+   });
+  } catch (err) {
+    console.log(err);
+
+    if (err.code === "LIMIT_FILE_SIZE") {
+      return res.status(400).json({ success: false, message: "File size must be less than 5MB"});
+    }
+    return res.status(500).json({ 
+      success: false, 
+      message: "Internal server error"
+    });
+  }
+  };
+
+exports.getUserProfileByUsername = async (req, res) => {
+  try {
+    const username = req.params.username;
+    const currentUserId = req.user.id;
+
+    console.log("Username:", username);
+
+    const user = await UserModel.getUserByUsername(username, currentUserId);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: user
+    });
+
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error"
+    });
   }
 };
