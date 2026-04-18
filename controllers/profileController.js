@@ -70,7 +70,7 @@ const updateProfile = async (req, res) => {
     const username = req.body?.username;
     const bio = req.body?.bio;
 
-    const profile_image = req.file ? req.file.path : null;
+    const profile_image = req.file ? req.file.location : null;
 
     // Validation
     if (!username) {

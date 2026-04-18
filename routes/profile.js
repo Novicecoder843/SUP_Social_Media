@@ -12,6 +12,6 @@ router.post("/", authMiddleware, upload.single("profile_image"), profileControll
 router.get("/", authMiddleware, profileController.getProfile);
 
 // Update profile
-router.put("/", upload.single("profile_image"),  authMiddleware, profileController.updateProfile);
+router.put("/", upload.single("profile_image"),   authMiddleware, profileController.updateProfile);
 
 module.exports = router;

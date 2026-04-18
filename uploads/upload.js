@@ -1,15 +1,21 @@
 const multer = require("multer");
+const multerS3 = require("multer-s3");
+const s3 = require("../middleware/s3");
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "uploads/");
-  },
-  filename: (req, file, cb) => {
-    const uniqueName = Date.now() + "-" + file.originalname;
-    cb(null, uniqueName);
+const upload = multer({
+  storage: multerS3({
+    s3: s3,
+    bucket: process.env.AWS_BUCKET_NAME,
+    contentDisposition: "inline",
+    contentType: multerS3.AUTO_CONTENT_TYPE,
+    key: function (req, file, cb) {
+      const fileName = Date.now() + "-" + file.originalname;
+      cb(null, "profile-images/" + fileName);
+    }
+  }),
+  limits: {
+    fileSize: 1 * 1024 * 1024 // 1MB limit
   }
 });
-
-const upload = multer({ storage });
 
 module.exports = upload;
