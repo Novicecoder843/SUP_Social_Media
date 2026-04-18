@@ -1,5 +1,5 @@
 /* Register API */
-const bcrypt = require("bcrypt");
+ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const userModel = require("../models/userModel");
 const db = require("../config/db");
@@ -9,7 +9,7 @@ const { sendLoginEmail } = require("../utils/sendEmail");
 
 exports.register = async (req, res) => {
   try {
-    const { name, email, password, role_id } = req.body;
+    const { username, email, password, role_id } = req.body;
 
     // Check role exists
     const role = await db.query(
@@ -31,7 +31,7 @@ exports.register = async (req, res) => {
 
     // Create user
     const user = await userModel.createUser(
-      name,
+      username,
       email,
       hashedPassword,
       role_id
@@ -39,7 +39,7 @@ exports.register = async (req, res) => {
 
     res.status(201).json({
       message: "User registered successfully",
-      user: user.rows[0]
+      user: user
     });
   } catch (err) {
     console.log (err)
@@ -51,7 +51,6 @@ const AuthModel = require("../models/authModel");
 
 exports.login = async (req, res) => {
   try {
-
     const { email, password } = req.body;
 
     if (!email || !password) {
@@ -69,6 +68,8 @@ exports.login = async (req, res) => {
     if (user.password !== password) {
       return res.status(401).json({ message: "Invalid password" });
     }
+
+
     // 📧 SEND EMAIL TO LOGGED-IN USER
        sendLoginEmail(user.email, user.name)
       .catch(err => console.error("Login email failed:", err.message));
@@ -169,4 +170,4 @@ exports.resetPassword = async (req, res) => {
     console.log (err)
     res.status(500).json({ error: err.message });
   }
-};
+}; 

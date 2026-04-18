@@ -77,13 +77,29 @@ exports.getMyProfile = async (req, res) => {
 
 exports.updateMyProfile = async (req, res) => {
   try {
+    console,log("Content-Type:", req.header["content-type"]);
     const user_id = req.user.id;
     console.log("userId:", user_id);
 
     console.log("Body:", req.body);
+    console.log("files:", req.body);
 
-    const { username, email, bio, profile_image } = req.body;
+    const { username, email, bio } = req.body;
+    if(!username){
+      return res.status(400).json({
+        success: false,
+        message: "username is required"
 
+      });
+    }
+let profile_image = null;
+let background_image = null;
+if (req.files?.profile_image){
+  profile_image = req.files.profile_image[0].filename;
+}
+if(req.files?.background_image){
+  background_image = req.files.background_image[0].filename;
+}
     const result = await UserModel.updateMe(user_id, username, email, bio, profile_image);
     
 
@@ -125,11 +141,15 @@ exports.getUserProfileByUsername = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      data: user
+      data: result,
+      message: "profile updates successfully"
     });
 
   } catch (err) {
     console.log(err);
+    if(err.code === "LIMIT_FILE_SIZE"){
+      return res.status(400).json({success: false, message: "file size must be less than 5MB"});
+    }
     return res.status(500).json({
       success: false,
       message: "Internal server error"
