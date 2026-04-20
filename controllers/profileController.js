@@ -11,7 +11,7 @@ const createProfile = async (req, res) => {
     const username = req.body?.username;
     const bio = req.body?.bio;
 
-    const profile_image = req.file ? req.file.path : null;
+    const profile_image = req.file ? req.file.key : null;
 
     // Validation
     if (!username) {
@@ -46,12 +46,27 @@ const createProfile = async (req, res) => {
 
 // GET PROFILE
 const getProfile = async (req, res) => {
-  try {
-    const user_id = req.user.id;
+  const user_id = req.user.id;
 
+  try {
     const profile = await profileModel.getProfile(user_id);
 
-    res.json(profile);
+    if (!profile) {
+      return res.status(404).json({ message: "Profile not found" });
+    }
+
+    if (profile.profile_image) {
+      // If already full URL (old data), don't change
+      if (!profile.profile_image.startsWith("http")) {
+        profile.profile_image =
+          process.env.AWS_BASE_URL + "/" + profile.profile_image;
+      }
+    }
+
+    res.json({
+      message: "Profile fetched successfully",
+      profile
+    });
 
   } catch (error) {
     console.error("GET PROFILE ERROR:", error);
@@ -70,7 +85,7 @@ const updateProfile = async (req, res) => {
     const username = req.body?.username;
     const bio = req.body?.bio;
 
-    const profile_image = req.file ? req.file.location : null;
+    const profile_image = req.file ? req.file.key : undefined;
 
     // Validation
     if (!username) {

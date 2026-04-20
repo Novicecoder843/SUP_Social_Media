@@ -9,8 +9,11 @@ const upload = multer({
     contentDisposition: "inline",
     contentType: multerS3.AUTO_CONTENT_TYPE,
     key: function (req, file, cb) {
-      const fileName = Date.now() + "-" + file.originalname;
-      cb(null, "profile-images/" + fileName);
+  const fileName = Date.now().toString() + "-" + file.originalname;
+
+  const fullPath = `profile-images/${fileName}`;
+
+  cb(null, fullPath);
     }
   }),
   limits: {
