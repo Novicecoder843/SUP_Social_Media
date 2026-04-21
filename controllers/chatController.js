@@ -52,9 +52,9 @@ exports.sendMessage = async (req, res) => {
 exports.getConversation = async (req, res) => {
   try {
     const user1 = req.user.id;
-    const user2 = req.params.user2;
+    const receiver_id = req.params.receiver_id;
 
-    const chats = await chatModel.getConversation(user1, user2);
+    const chats = await chatModel.getConversation(user1, receiver_id);
 
     res.json({ success: true, data: chats });
   } catch (err) {
@@ -104,16 +104,48 @@ exports.createGroup = async (req, res) => {
 };
 
 
-exports.getGroupMessages = async (req, res) => {
-  try {
-    const { groupId } = req.params;
+// exports.getGroupMessages = async (req, res) => {
+//   try {
+//     const { groupId } = req.params;
 
+//     const messages = await chatModel.getGroupMessages(groupId);
+
+//     res.json(messages);
+
+//   } catch (err) {
+//     console.log("❌ GROUP FETCH ERROR:", err.message);
+//     res.status(500).json({ error: err.message });
+//   }
+// };
+
+// 📜 GET GROUP MESSAGES
+exports.getGroupMessages = async (req, res) => {
+  const groupId = Number(req.params.groupId);
+
+  if (!groupId) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid group ID"
+    });
+  }
+
+  try {
     const messages = await chatModel.getGroupMessages(groupId);
 
-    res.json(messages);
+    console.log("📦 GROUP MESSAGES:", messages); // DEBUG
 
-  } catch (err) {
-    console.log("❌ GROUP FETCH ERROR:", err.message);
-    res.status(500).json({ error: err.message });
+    return res.status(200).json({
+      success: true,
+      count: messages.length,
+      data: messages   // 🔥 IMPORTANT (frontend expects this)
+    });
+
+  } catch (error) {
+    console.error("❌ ERROR FETCHING GROUP MESSAGES:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Server Error"
+    });
   }
 };
