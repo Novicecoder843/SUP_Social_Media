@@ -18,8 +18,9 @@ router.put("/users/:id", userController.updateUser);
 router.delete("/users/:id", userController.deleteUser);
 
 router.get("/me", auth, userController.getMyProfile); 
+   
 
-router.put("/update/", auth, upload.fields([ {name: "profile_image", maxCount: 1 },
+router.put("/me", auth, upload.fields([ {name: "profile_image", maxCount: 1 },
     {name: "background_image", maxcount: 1 }
 ]), userController.updateMyProfile);
    

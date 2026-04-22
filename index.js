@@ -1,5 +1,6 @@
 require(`dotenv`).config();
 const express = require("express");
+const path = require("path");
 
  const bodyParser = require('body-parser')
  //const pool = require("./config/db");
@@ -10,11 +11,10 @@ const express = require("express");
  const fileRoutes = require("./routes/fileRoutes");
 
 
+
+
  const app = express();
- 
-// app.use(express.json());
-app.use(bodyParser.json());
-app.use(express.json());
+ app.use(express.json());
 
     app.use((req, res, next) =>{
         console.log("Request Method:", req.method);
@@ -33,7 +33,7 @@ app.use("/api/auth" , authRoutes);
 app.use("/api/users", userRoutes);
 // app.use("/api/posts" ,postRoutes);
 app.use("/api/files" , fileRoutes);
-// app.use("/uploads", express.static("uploads"));
+app.use("/uploads", express.static("uploads"));
 
 
 const PORT = 3000;
@@ -41,3 +41,4 @@ const PORT = 3000;
  app.listen(PORT, () => {
      console.log(`Server started at http://localhost:${PORT}`);
  });
+  

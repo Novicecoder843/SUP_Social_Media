@@ -64,38 +64,40 @@ exports.getMe = async (userId) => {
 };
 
 exports.updateMe = async (
-  user_id, 
-  username, 
-  email, 
-  bio, 
-  profile_image
-)  => {
+  user_id,
+  username,
+  email,
+  bio,
+  profile_image,
+  background_image
+) => {
   try {
 
     await db.query(
-      `UPDATE users
-    SET = COALESCE($1, name),
-    email = COALESCE($2, name),
-    WHERE id = $3`,
+      `UPDATE public.users
+    SET
+     name = COALESCE($1, name),
+     email = COALESCE($2, email)
+      WHERE id = $3`,
       [username, email, user_id]
     );
-
+    
     const result = await db.query(
-      `INSERT INTO user_profiles
-       (user_id,username, bio, profile_image, background_image)
+          `INSERT INTO user_profiles
+       (user_id, username, bio, profile_image, background_image)
     VALUES (
     $1, 
-    COALESOE($2, (SELECT name FROM users WHERE id = $1)),
+    COALESCE($2, (SELECT name FROM users WHERE id = $1)),
     $3,
-    $4
+    $4,
     $5
     )
     ON CONFLICT (user_id)
     DO UPDATE SET
-     username = COALESCE(EXCLUDED.username, user_profile.username),
-     bio = COALESCE(EXCLUDED.bio, user_profile.bio),
-     profile_image = COALESCE(EXCLUDED.profile_image, user_profile.profile_image),
-    background_image= COALESCE(EXCLUDED.background_image, user_profile.background_image)
+     username = COALESCE(EXCLUDED.username, user_profiles.username),
+     bio = COALESCE(EXCLUDED.bio, user_profiles.bio),
+     profile_image = COALESCE(EXCLUDED.profile_image, user_profiles.profile_image),
+     background_image = COALESCE(EXCLUDED.background_image, user_profiles.background_image)
     RETURNING *`,
       [user_id, username, bio, profile_image, background_image]
     );
@@ -108,8 +110,8 @@ exports.updateMe = async (
 };
 
 exports.getUserByUsername = async (username, currentUserId) => {
-  try{
-  const query = `
+  try {
+    const query = `
     SELECT 
       u.id,
       u.username,
@@ -135,11 +137,11 @@ exports.getUserByUsername = async (username, currentUserId) => {
     console.log(error);
     throw error;
   }
-}; 
+};
 
 exports.findUserByEmail = async (email) => {
   const query = `SELECT * FROM users WHERE email = $1`;
-  const values =[email];
+  const values = [email];
 
   const result = await db.query(query, values);
   return result;
