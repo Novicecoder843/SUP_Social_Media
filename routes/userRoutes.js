@@ -10,6 +10,7 @@ const userController = require("../controller/userController");
 const followController = require("../controller/followController");
 const blockController = require("../controller/blockController");
 const upload = require("../config/multer");
+const uploads = require("../middleware/uploadS3");
 
 router.post("/register", userController.registerUser);
 router.get("/users", userController.getAllUsers);
@@ -17,7 +18,7 @@ router.put("/users/:id", userController.updateUser);
 router.delete("/users/:id", userController.deleteUser);
 
 router.get("/me", auth, userController.getMyProfile);
-router.put("/me", auth, upload.fields([ { name: "profile_image", maxCount: 1 },
+router.put("/me", auth, uploads.fields([ { name: "profile_image", maxCount: 1 },
     { name: "background_image", maxCount: 1 }
 ]), userController.updateMyProfile);
 router.post("/:id/follow", auth, followController.followUnfollow);

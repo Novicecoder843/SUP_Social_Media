@@ -114,18 +114,18 @@ exports.updateMyProfile = async (req, res) => {
     let profile_image = null;
     let background_image = null;
 
-    if (req.files?.background_image) {
-      profile_image = req.files.profile_image[0].filename;
+    if (req.files?.profile_image) {
+      profile_image = req.files.profile_image[0].location;
     }
 
     if(req.files?.background_image) {
-      background_image = req.files.background_image[0].filename;
+      background_image = req.files.background_image[0].location;
     }
 
     const result = await UserModel.updateMe(user_id, username, email, bio, profile_image, background_image);
 
     console.log("DB Result:", result);
-
+    console.log("FILES DEBUG:", JSON.stringify(req.files, null, 2));
     if (!result) {
       return res.status(404).json({
         success: false,
