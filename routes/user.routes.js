@@ -16,6 +16,15 @@ router.put(
   validate(updateProfileSchema),
   userController.updateMe
 );
+const postUpload = require("../middlewares/upload.middleware");
+
+router.post(
+  "/create",
+  authMiddleware,
+  postUpload.array("images", 5),
+  userController.createPost
+);
+router.get("/my-posts", authMiddleware, userController.getMyPosts);
 
 router.get("/:id", userController.getUserById);
 

@@ -1,6 +1,6 @@
 const pool = require("../config/db");
 const userService = require("../services/user.service");
-
+const postService = require("../services/post.service");
 exports.getMe = async (req, res) => {
   try {
     const data = await userService.getMe(req.user.id);
@@ -73,16 +73,27 @@ exports.updateProfileImage = async (req, res) => {
 
 exports.createPost = async (req, res) => {
   try {
-    const imagePath = req.file?.key;
+    const userId = req.user.id;
     const { caption } = req.body;
-
-    const data = await userService.createPost(
-      req.user.id,
-      imagePath,
-      caption
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ error: "Images required" });
+    }
+    const data = await postService.createPost(
+      userId,
+      caption,
+      req.files
     );
-
     res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+exports.getMyPosts = async (req, res) => {
+  try {
+
+    const data = await postService.getUserPosts(req.user.id);
+    res.json(data);
+
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

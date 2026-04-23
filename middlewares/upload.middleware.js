@@ -21,5 +21,17 @@ const upload = multer({
     }
   }),
 });
+const postUpload = multer({
+  storage: multerS3({
+    s3: s3,
+    bucket: process.env.AWS_BUCKET_NAME,
+    contentType: multerS3.AUTO_CONTENT_TYPE,
+
+    key: (req, file, cb) => {
+      const fileName = `posts/${req.user.id}/${Date.now()}-${file.originalname}`;
+      cb(null, fileName);
+    }
+  }),
+});
 
 module.exports = upload;

@@ -7,9 +7,8 @@ const routes = require("./routes");
 const app = express();
 
 app.use(express.json());
-
 app.use("/api", routes);
-//create http server
+
 const server = http.createServer(app);
 const { Server } = require("socket.io");
 const io = new Server(server, {
@@ -18,19 +17,16 @@ const io = new Server(server, {
 global.io = io;
 const onlineUsers = {};
 io.on("connection", (socket) => {
-  console.log("a user connected", socket.id);
-  socket.on("register", (userId) => {
+  console.log("user connected", socket.id );
+  socket.on("join", (userId) => {
+    socket.join(userId);
     onlineUsers[userId] = socket.id;
-});
-socket.on("disconnect", () => {
-  for(let userid in onlineUsers) {
-    if(onlineUsers[userid] === socket.id) {
-      delete onlineUsers[userid];
-      break;
-     }
-    }
+  });
+  socket.on("send_message", (data) => {
+    io.to(data.receiverId).emit("receive_message", data);
   });
 });
+
 global.onlineUsers = onlineUsers;
 
 app.listen(process.env.PORT, () => {
