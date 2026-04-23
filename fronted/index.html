@@ -27,6 +27,33 @@
             border-radius: 8px;
         }
 
+        .message-container {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: 10px;
+        }
+
+        .message-container input {
+            flex: 1;
+        }
+
+        .media-btn {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f7f76e;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+        }
+
+        .media-btn:hover {
+            background: #020409;
+        }
+
         .msg {
             max-width: 70%;
             padding: 10px;
@@ -53,7 +80,7 @@
         button {
             margin-top: 5px;
             padding: 8px;
-            width: 100%;
+            width: 25%;
         }
 
         #status {
@@ -114,10 +141,22 @@
         <div id="chatBox"></div>
         <button onclick="connect()">Connect</button> <button onclick="joinGroup()">Join Group</button>
 
-        <input id="message" placeholder="Message" oninput="typing()" onblur="stopTyping()" />
+        <div class="message-container">
 
+            <label for="media" class="media-btn">
+                📎
+            </label>
 
-        <button onclick="send()">Send</button>
+            <input type="file" id="media" accept="image/*,video/*" hidden />
+
+            <input id="message" placeholder="Type message" oninput="typing()" onblur="stopTyping()" />
+
+            <button onclick="send()">
+                Send
+            </button>
+
+        </div>
+
     </div>
 
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
@@ -310,20 +349,7 @@
                 return;
             }
 
-            // 👥 GROUP CHAT
-            if (group_id) {
-                socket.emit("send_group_message", { group_id, message });
-                document.getElementById("message").value = "";
-                return;
-            }
-
-            // 👤 SINGLE CHAT
-            if (!receiver_id) {
-                alert("Enter receiver ID");
-                return;
-            }
-
-            // ❌ OFFLINE
+             // ❌ OFFLINE
             if (!navigator.onLine || !socket || !socket.connected) {
                 const tempMsg = {
                     id: "temp-" + Date.now(),
@@ -340,6 +366,21 @@
                 document.getElementById("message").value = "";
                 return;
             }
+
+            // 👥 GROUP CHAT
+            if (group_id) {
+                socket.emit("send_group_message", { group_id, message });
+                document.getElementById("message").value = "";
+                return;
+            }
+
+            // 👤 SINGLE CHAT
+            if (!receiver_id) {
+                alert("Enter receiver ID");
+                return;
+            }
+
+           
 
             // ✅ ONLINE
             socket.emit("send_message", { receiver_id, message });
@@ -418,33 +459,6 @@
             });
         }
 
-        // async function loadOldMessages() {
-        //     const receiver_id = Number(document.getElementById("receiver").value);
-        //     currentChatUserId = receiver_id;
-        //     console.log("🔥 RECEIVER:", receiver_id);
-        //     currentChatUserId = receiver_id; // ✅ MUST
-        //     const token = document.getElementById("token").value;
-
-
-        //     const res = await fetch(
-        //         `http://localhost:3000/api/chats/conversation/${receiver_id}`, // ✅ FIXED
-        //         {
-        //             headers: {
-        //                 Authorization: "Bearer " + token
-        //             }
-        //         }
-        //     );
-
-        //     const data = await res.json();
-
-        //     console.log("📦 messages:", data);
-
-        //     const messages = data.data || data.messages || data || [];
-        //     clearChat();
-        //     messages.forEach(msg => {
-        //         renderMessage(msg);
-        //     });
-        // }
 
         async function loadOldMessages() {
             const receiver_id = Number(document.getElementById("receiver").value);
