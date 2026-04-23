@@ -5,7 +5,7 @@ const fs = require("fs");
 
 exports.uploadFile = async (req, res) => {
     try {
-        if (req.file) {
+        if (!req.file) {
             console.log("File size:", req.file.size);
         }
 
@@ -22,33 +22,61 @@ exports.uploadFile = async (req, res) => {
             fs.mkdirSync("uploads");
         }
 
+    //Create filename like 19042026-1302.png
+    const now = new Date();
+    
+    const day = String(now.getDate()).padStart(2, "0");
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const year = now.getFullYear();
+
+    const hours = String(now.getHours()).padStart(2, "0");
+    const minutes = String(now.getMinutes()).padStart(2, "0");
+
+    const fileName = `${day}${month}${year}-${hours}${minutes}.png`;
+    
+    const filePath = "uploads/" + req. file. filename;
+
+
        
 // New file path
 const newFileName = Date.now() + ".png";
 console.log("New File Name:", newFileName);
 const newFilePath = path.join("uploads", newFileName);
 
-// //Convert image format
-// await sharp(req.file.path)
-// .png()
-// .toFile(newFilePath);
+//Convert image format
+await sharp(req.file.path)
+.png()
+.toFile(newFilePath);
 
-// //Delete original file
-// fs.unlinkSync(req.file.path);
+//Delete original file
+fs.unlinkSync(req.file.path);
 
-//Update file object before saving to DB
+// Update file object before saving to DB
+const baseUrl =
+`${req.protocol}://${req.get("host")}`;
+const fullUrl = `${baseUrl}/${newFilePath}`;
+
 const updateFile =  {
     filename: newFileName,
-    path: newFilePath,
+    path: fullUrl,
     mimetype: "image/png",
     size: req.file.size,
 };
 
+console.log("FULL URL:", fullUrl);
+console.log("UPDATE OBJECT:",updateFile);
+
 // Save file info in DB
 const savedFile = await fileModel.saveFile(updateFile);
 
+// const baseUrl =
+// `${req.protocol}://${req.get("host")}`;
+// const fullUrl = `${baseUrl}/${newFilePath}`;
+
 res.status(201).json({
-    success: true, message: "File uploaded & saved to DB", data: savedFile,
+    success: true, message: "File uploaded & saved to DB",
+    profile_image: fullUrl, 
+    data: savedFile,
 });
 
     } catch (error) {

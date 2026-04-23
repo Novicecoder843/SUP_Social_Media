@@ -42,7 +42,7 @@ exports.updateUser = async (id, name, email, role_id) => {
   const query = `
     UPDATE users
     SET name = $1, email = $2, role_id = $3
-    WHERE id = $4
+    WHERE id = $4 
     RETURNING id, name, email, role_id
   `;
   const result = await db.query(query, [name, email, role_id, id]);
@@ -104,9 +104,9 @@ try{
 
   //Insert / Update profile
   const result = await db.query(
-    `INSERT INTO user_profiles 
+    `INSERT INTO public.user_profiles 
        (user_id, username, bio, profile_image, background_image)
-    VALUES 
+    VALUES (
        $1,
        COALESCE($2, (SELECT name FROM users WHERE id = $1)),
        $3,
@@ -116,9 +116,9 @@ try{
     ON CONFLICT (user_id)
     DO UPDATE SET
     username = COALESCE(EXCLUDED.username, user_profiles.username),
-      bio = COALESCE(EXCLUDED.bio, user_profiles.bio),
-      profile_image =COALESCE(EXCLUDED.profile_image, user_profiles.profile_image),
-      background_image = COALESCE(EXCLUDED.background_image, user_profiles.background_image)
+    bio = COALESCE(EXCLUDED.bio, user_profiles.bio),
+    profile_image =COALESCE(EXCLUDED.profile_image, user_profiles.profile_image),
+    background_image = COALESCE(EXCLUDED.background_image, user_profiles.background_image)
     RETURNING *`,
     [user_id, username, bio, profile_image, background_image]
   );

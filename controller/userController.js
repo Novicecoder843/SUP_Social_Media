@@ -16,6 +16,18 @@ exports.registerUser = async (req, res) => {
 exports.getAllUsers = async (req, res) => {
   try {
     const users = await UserModel.getUsers();
+
+
+    const baseUrl = `${req.protocol}://${req.get("host")}`;
+
+const updatedUsers = users.map(user => {
+  if (user.profile_image && !user.profile_image.startsWith("http")) {
+    user.profile_image = `${baseUrl}/${user.profile_image}`;
+  }
+  return user;
+});
+
+
     if (!users|| users.length === 0) {
       return res.status(404).json({ success: false, message: "No users found" });
       }
@@ -64,16 +76,28 @@ exports.deleteUser = async (req, res) => {
 exports.getMyProfile = async (req, res) => {
   try {
     const userId = req.user.id;
-console.log(userId)
-    const result = await UserModel.getMe(userId);
-    console.log(result,'resu;ttttt')
+console.log(userId);
 
-    if(!result){  
-            return res.status(404).json({ message: "profile not found" });
-    }
 
-            return res.status(200).json({ data: result,success:true,message:"profile fetched successfully"});
+const result = await UserModel.getMe(userId);
 
+const baseUrl = `${req.protocol}://${req.get("host")}`;
+
+if (result.profile_image && !result.profile_image.startsWith("http")) {
+  result.profile_image = `${baseUrl}/${result.profile_image}`;
+}
+
+if (result.background_image && !result.background_image.startsWith("http")) {
+  result.background_image = `${baseUrl}/${result.background_image}`;
+}
+
+return res.status(200).json({
+  data: result,
+  success: true,
+  message: "profile fetched successfully"
+});
+
+    
   } catch (err) {
     console.log(err)
     res.status(500).json({ data: [],success:false,message:"Internal server error"});
@@ -104,15 +128,22 @@ exports.updateMyProfile = async (req, res) => {
     let profile_image = null;
     let background_image = null;
 
-    if (req.files?.background_image) {
-      profile_image = req.files.profiles_image[0].filename;
+    if (req.files?.profile_image) {
+      profile_image = req.files.profile_image[0].filename;
     }
 
     if(req.files?.background_image) {
       background_image = req.files.background_image[0].filename;
     }
 
-   const result = await UserModel.updateMe(user_id, username, email, bio, profile_image, background_image);
+    const baseUrl =
+    `${req.protocol}://${req.get("host")}`;
+
+    let modify_prfl_image = profile_image ? `uploads/${profile_image}`: null;
+    let modify_background_image = background_image ? `uploads/${background_image}`: null;
+
+  
+   const result = await UserModel.updateMe(user_id, username, email, bio, modify_prfl_image, modify_background_image);
 
    console.log("DB Result:", result);
 
@@ -156,7 +187,7 @@ exports.getUserProfileByUsername = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      data: user
+      data: updatedUsers
     });
 
   } catch (err) {
