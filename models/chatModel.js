@@ -139,3 +139,27 @@ ORDER BY gm.created_at ASC`,
 
   return result.rows;
 };
+
+
+exports.deleteMessage = async (messageId) => {
+
+  const query = `
+        DELETE FROM user_schema.chats
+        WHERE id = $1
+    `;
+
+  await db.query(query, [messageId]);
+};
+
+exports.deleteForEveryone = async (messageId) => {
+
+  const query = `
+        UPDATE user_schema.chats
+        SET
+            is_deleted = TRUE,
+            message = 'This message was deleted'
+        WHERE id = $1
+    `;
+
+  await db.query(query, [messageId]);
+};

@@ -82,7 +82,33 @@
         <input id="token" placeholder="Paste JWT Token" />
         <input id="receiver" placeholder="Receiver ID (Single Chat)" oninput="handleReceiver()" />
         <input id="groupId" placeholder="Group ID (Group Chat)" />
+        <div id="contextMenu" style="
+        display:none;
+        position:absolute;
+        background:white;
+        border:1px solid #ccc;
+        padding:5px;
+        border-radius:5px;
+        box-shadow:0 2px 10px rgba(0,0,0,0.2);
+        z-index:1000;
+    ">
 
+            <div onclick="handleDelete()" style="
+            cursor:pointer;
+            color:red;
+            padding:5px;
+        ">
+                Delete for me
+            </div>
+            <div onclick="deleteForEveryone()" style="
+            padding:5px;
+            cursor:pointer;
+            color:red;
+        ">
+                Delete for everyone
+            </div>
+
+        </div>
         <div id="status"></div>
 
         <div id="chatBox"></div>
@@ -142,7 +168,10 @@
                     msg.sender_id === currentChatUserId ||
                     msg.receiver_id === currentChatUserId
                 ) {
-                    renderMessage(msg);
+                    renderMessage({
+                        ...msg,
+                        sender_id: Number(msg.sender_id)
+                    });
                 } else {
                     console.log("📢 Other chat:", msg.sender_id);
                 }
@@ -156,9 +185,13 @@
 
             // 👥 GROUP CHAT
             socket.on("receive_group_message", msg => {
-                renderMessage(msg);
+                console.log("📩 GROUP:", msg);
+                renderMessage({
+                    ...msg,
+                    sender_id: Number(msg.sender_id)
+                });
             });
-
+            // renderMessage
             socket.on("message_sent", msg => renderMessage(msg));
 
             socket.on("message_delivered", data => {
@@ -173,6 +206,36 @@
                     el.style.color = "blue";
                 }
             });
+
+            socket.on("message_deleted", data => {
+
+                const el = document.getElementById(
+                    "chat-" + data.message_id
+                );
+
+                if (el) {
+                    el.remove();
+                }
+            });
+
+            socket.on(
+                "message_deleted_everyone",
+                data => {
+
+                    const el = document.getElementById(
+                        "chat-" + data.message_id
+                    );
+
+                    if (el) {
+
+                        el.innerHTML = `
+                <i>
+                    This message was deleted
+                </i>
+            `;
+                    }
+                }
+            );
 
             socket.on("typing", () => setStatus("Typing..."));
             socket.on("stop_typing", () => setStatus("Connected ✅"));
@@ -438,13 +501,14 @@
             const token = document.getElementById("token").value;
 
             try {
+                console.log("📦 RAW GROUP API:");
                 const res = await fetch(
                     `http://localhost:3000/api/chats/group/${group_id}`,
                     { headers: { Authorization: "Bearer " + token } }
                 );
                 if (!res.ok) throw new Error("API error");
 
-                console.log("📦 RAW GROUP API:", data);
+
 
                 const data = await res.json();
 
@@ -452,6 +516,7 @@
                     ? data
                     : data.data || data.messages || [];
 
+                console.log("📦 RAW GROUP API:", messages);
                 clearChat();
                 messages.forEach(msg => {
                     msg.sender_id = Number(msg.sender_id);
@@ -467,9 +532,25 @@
         }
 
         function renderMessage(msg) {
-            const type = msg.sender_id === myUserId ? "me" : "friend";
+            const type =
+                Number(msg.sender_id) === Number(myUserId)
+                    ? "me"
+                    : "friend";
+
 
             const div = document.createElement("div");
+            div.id = "chat-" + msg.id;
+
+            div.addEventListener("contextmenu", (e) => {
+
+                e.preventDefault();
+
+                showContextMenu(
+                    e.pageX,
+                    e.pageY,
+                    msg.id
+                );
+            });
             div.className = "msg " + type;
 
             const time = formatTime(msg.created_at);
@@ -496,6 +577,64 @@
         // 🌐 NETWORK
         window.addEventListener("offline", () => {
             document.getElementById("status").innerText = "❌ Offline";
+        });
+
+        let selectedMessageId = null;
+
+        function showContextMenu(x, y, messageId) {
+
+            selectedMessageId = messageId;
+
+            const menu = document.getElementById("contextMenu");
+
+            menu.style.display = "block";
+
+            menu.style.left = x + "px";
+
+            menu.style.top = y + "px";
+        }
+
+
+        function deleteForEveryone() {
+
+            if (!socket || !socket.connected) {
+
+                console.log("❌ Socket not connected");
+
+                return;
+            }
+
+            if (!selectedMessageId) return;
+
+            socket.emit("delete_for_everyone", {
+                message_id: selectedMessageId
+            });
+
+            document.getElementById(
+                "contextMenu"
+            ).style.display = "none";
+        }
+
+        function handleDelete() {
+            if (!socket || !socket.connected) {
+
+                console.log("❌ Socket not connected");
+
+                return;
+            }
+
+            if (!selectedMessageId) return;
+
+            socket.emit("delete_message", {
+                message_id: selectedMessageId
+            });
+
+            document.getElementById("contextMenu").style.display = "none";
+        }
+
+        document.addEventListener("click", () => {
+
+            document.getElementById("contextMenu").style.display = "none";
         });
 
         window.addEventListener("online", () => {

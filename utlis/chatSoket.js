@@ -136,16 +136,16 @@ module.exports = (io) => {
           sender_id,
           message
         );
-           console.log("💾 GROUP SAVED:", saved);
+        console.log("💾 GROUP SAVED:", saved);
         // 📤 SEND TO ALL IN GROUP
         io.to(`group_${group_id}`).emit("receive_group_message", saved);
-          console.log("📤 EMITTED TO:", `group_${group_id}`);
+        console.log("📤 EMITTED TO:", `group_${group_id}`);
       } catch (err) {
         console.log("❌ GROUP SEND ERROR:", err.message);
       }
     });
 
-  
+
 
     socket.on("seen", async ({ message_id, sender_id }) => {
       try {
@@ -173,6 +173,44 @@ module.exports = (io) => {
       }
     });
 
+    socket.on("delete_message", async ({ message_id }) => {
+
+      try {
+
+        await chatModel.deleteMessage(message_id);
+
+        io.emit("message_deleted", {
+          message_id
+        });
+
+        console.log("🗑 Deleted:", message_id);
+
+      } catch (err) {
+
+        console.log("❌ DELETE ERROR:", err.message);
+      }
+    });
+
+    socket.on("delete_for_everyone", async ({ message_id }) => {
+
+    try {
+
+        await chatModel.deleteForEveryone(message_id);
+
+        io.emit("message_deleted_everyone", {
+            message_id
+        });
+
+        console.log("🗑 Deleted for everyone:", message_id);
+
+    } catch (err) {
+
+        console.log(
+            "❌ DELETE EVERYONE ERROR:",
+            err.message
+        );
+    }
+});
     // 🔴 DISCONNECT
     socket.on("disconnect", async () => {
       if (!userId) return;

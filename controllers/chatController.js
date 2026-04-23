@@ -121,6 +121,7 @@ exports.createGroup = async (req, res) => {
 // 📜 GET GROUP MESSAGES
 exports.getGroupMessages = async (req, res) => {
   const groupId = Number(req.params.groupId);
+  console.log("groupId");
 
   if (!groupId) {
     return res.status(400).json({
@@ -132,12 +133,12 @@ exports.getGroupMessages = async (req, res) => {
   try {
     const messages = await chatModel.getGroupMessages(groupId);
 
-    console.log("📦 GROUP MESSAGES:", messages); // DEBUG
+    console.log("📦 GROUP MESSAGES:", messages);
 
     return res.status(200).json({
       success: true,
       count: messages.length,
-      data: messages   // 🔥 IMPORTANT (frontend expects this)
+      data: messages
     });
 
   } catch (error) {
@@ -146,6 +147,37 @@ exports.getGroupMessages = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Server Error"
+    });
+  }
+};
+
+exports.deleteMessage = async (req, res) => {
+
+  try {
+
+    const messageId = Number(req.params.id);
+
+    if (!messageId) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid message ID"
+      });
+    }
+
+    await chatModel.deleteMessage(messageId);
+
+    res.status(200).json({
+      success: true,
+      message: "Message deleted successfully"
+    });
+
+  } catch (err) {
+
+    console.log("DELETE CONTROLLER ERROR:", err.message);
+
+    res.status(500).json({
+      success: false,
+      message: err.message
     });
   }
 };
