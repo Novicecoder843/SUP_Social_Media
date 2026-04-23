@@ -113,14 +113,22 @@ exports.createPost = async (req, res) => {
     );
 
     // 🔥 SAVE MEDIA (FIXED HERE)
-    for (let file of files) {
-      const type = file.mimetype.startsWith('image') ? 'image' : 'video';
+    // for (let file of files) {
+    //   const type = file.mimetype.startsWith('image') ? 'image' : 'video';
 
-      // ✅ IMPORTANT CHANGE
-      const mediaUrl = file.location;   // 🔥 S3 URL
+    //   // ✅ IMPORTANT CHANGE
+    //   const mediaUrl = file.location;   // 🔥 S3 URL
 
-      await Post.addMedia(newPost.id, mediaUrl, type);
-    }
+    //   await Post.addMedia(newPost.id, mediaUrl, type);
+    // }
+
+for (let file of files) {
+  const type = file.mimetype.startsWith('image') ? 'image' : 'video';
+
+  // ✅ store only path
+  await Post.addMedia(newPost.id, file.key, type);
+}
+
 
     res.status(201).json({
       message: "Post created",

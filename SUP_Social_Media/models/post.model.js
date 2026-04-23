@@ -168,6 +168,10 @@ class Post {
 
     const post = postRes.rows[0];
 
+    // 🔥 BASE URL (S3)
+  const baseUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/`;
+
+
     // 🔥 MEDIA
     const mediaRes = await db.query(
       `SELECT media_url, media_type
@@ -175,6 +179,11 @@ class Post {
        WHERE post_id=$1`,
       [id]
     );
+
+     post.media = mediaRes.rows.map(m => ({
+    media_type: m.media_type,
+    media_url: baseUrl + m.media_url   // 🔥 convert path → full URL
+  }));
 
     post.media = mediaRes.rows;
 
@@ -231,6 +240,7 @@ class Post {
     );
 
     const posts = result.rows;
+    const baseUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/`;
 
     // 🔥 attach media to each post
     for (let post of posts) {
@@ -241,6 +251,12 @@ class Post {
         [post.id]
       );
 
+      // 🔥 PATH → FULL URL
+    post.media = mediaRes.rows.map(m => ({
+      media_type: m.media_type,
+      media_url: baseUrl + m.media_url
+    }));
+  
       post.media = mediaRes.rows;
     }
 
@@ -260,6 +276,8 @@ class Post {
     );
 
     const posts = result.rows;
+    const baseUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/`;
+
 
     for (let post of posts) {
       const mediaRes = await db.query(
@@ -268,6 +286,13 @@ class Post {
          WHERE post_id=$1`,
         [post.id]
       );
+
+    // 🔥 PATH → FULL URL
+    post.media = mediaRes.rows.map(m => ({
+      media_type: m.media_type,
+      media_url: baseUrl + m.media_url
+    }));
+  
 
       post.media = mediaRes.rows;
     }
