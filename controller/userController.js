@@ -56,21 +56,6 @@ exports.deleteUser = async (req, res) => {
   }
 };
 
-// exports.getMyProfile = async (req, res) => {
-//   try {
-//     const userId = req.user.id;
-
-//     const result = await UserModel.getMe(userId);
-//     if(result.rows.length === 0)
-//       return res.status(404).json({ message: "profile not found" });
-
-//     res.json(result.rows[0]);
-
-// } catch (err) {
-//   res.status(500).json({ error: err.message });
-// }
-// };
-
 exports.getMyProfile = async (req, res) => {
   try {
     const userId = req.user.id;
