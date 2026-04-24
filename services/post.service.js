@@ -1,5 +1,6 @@
 
 const pool = require("../config/db");
+const { getImageUrl } = require("../utils/s3url");
 exports.createPost = async (userId, caption, files) => {
   const post = await pool.query(
     `INSERT INTO posts(user_id, caption)
@@ -27,8 +28,12 @@ exports.getUserPosts = async (userId) => {
     `,
     [userId]
   );
-  return result.rows;
+ return result.rows.map(post => ({
+    ...post,
+    image_url: getImageUrl(post.image_url)
+  }));
 };
+
 exports.getFeed = async (userId) => {
   const result = await pool.query(
     `
