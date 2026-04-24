@@ -169,3 +169,25 @@ exports.getPostById = async (postId, userId) => {
     comment_list: comments 
  };
 };
+exports.savePost = async (userId, postId) => {
+  await pool.query(
+    `
+    INSERT INTO saved_posts(user_id, post_id)
+    VALUES($1,$2)
+    ON CONFLICT DO NOTHING
+    `,
+    [userId, postId]
+  );
+  return { message: "Post saved" };
+};
+exports.unsavePost = async (userId, postId) => {
+  await pool.query(
+    `
+    DELETE FROM saved_posts
+    WHERE user_id=$1 AND post_id=$2
+    `,
+    [userId, postId]
+  );
+
+  return { message: "Post removed" };
+};
