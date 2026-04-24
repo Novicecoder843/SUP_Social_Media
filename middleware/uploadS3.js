@@ -58,7 +58,7 @@ try {
     },
   });
 
-  console.log("AWS S3 v3 initialized");
+  // console.log("AWS S3 v3 initialized");
 
   const upload = multer({
     storage: multerS3({
@@ -68,9 +68,10 @@ try {
       contentType: multerS3.AUTO_CONTENT_TYPE,
 
       key: (req, file, cb) => {
-        const fileName = Date.now() + "-" + file.originalname;
+        const fileName = file.originalname;
+        console.log("DEBUG KEY FUNCTION RUNNING"); 
         console.log("Uploading file:", fileName);
-        cb(null, fileName);
+        cb(null,  Date.now() + "-" + file.originalname);
       },
     }),
 

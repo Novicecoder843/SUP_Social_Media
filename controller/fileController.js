@@ -1,5 +1,5 @@
 const fileModel = require("../models/fileModel");
-const sharp = require("sharp");
+// const sharp = require("sharp");
 
 exports.uploadFile = async (req, res) => {
     try {
@@ -15,29 +15,41 @@ exports.uploadFile = async (req, res) => {
       
        console.log("Original file size:", req.file.size);
        
+       console.log("Uploaded file:", req.file);
 // New file path
-const newFileName = Date.now() + ".png";
-const newFilePath = Path2D.join("uploads", newFileName);
+const newFileName = Data.now() + "-" + req.file.originalname;
+const newFilePath = Path.join("uploads", newFileName);
 
-//Convert image format
-await sharp(req.file.path)
-.png()
-.toFile(newFilePath);
+// //Convert image format
+// await sharp(req.file.path)
+// .png()
+// .toFile(newFilePath);
 
 //Delete original file
 const fs = require("fs");
-fs.unlinkSync(req.file.path);
+// fs.unlinkSync(req.file.path);
 
-//Update file object before saving to DB
-const updateFile =  {
-    filename: newFileName,
-    path: newFilePath,
-    mimetype: "image/png",
-    size: req.file.size,
-};
+// //Update file object before saving to DB
+// const updateFile =  {
+//     filename: newFileName,
+//     path: newFilePath,
+//     mimetype: "image/png",
+//     size: req.file.size,
+// };
+const fileUrl = `https://${process.env.AWS_BUCKET_NAME}.s3
+.${process.env.AWS_REGION}.amazonaws.com/
+${req.file.key}`;
 
+const fileData = {
+      filename: req.file.originalname,
+      s3_filename: req.file.key,
+      url: req.file.location, // ✅ S3 URL
+      mimetype: req.file.mimetype,
+      size: req.file.size,
+    };
+    console.log(process.env.S3_BASE_URL);
 // Save file info in DB
-const savedFile = await fileModel.saveFile(req.file);
+const savedFile = await fileModel.saveFile(fileData);
 
 res.status(201).json({
     success: true, message: "File uploaded & saved to DB", data: savedFile,

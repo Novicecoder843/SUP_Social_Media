@@ -81,6 +81,11 @@ exports.getMyProfile = async (req, res) => {
     if (!result) {
       return res.status(404).json({ message: "profile not found" });
     }
+    const fileUrl = result.profile_image
+      ? `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${result.profile_image}`
+      : null;
+
+    result.profile_image = fileUrl;
 
     return res.status(200).json({ data: result, success: true, message: "profile fetched successfully" });
 
@@ -115,11 +120,11 @@ exports.updateMyProfile = async (req, res) => {
     let background_image = null;
 
     if (req.files?.profile_image) {
-      profile_image = req.files.profile_image[0].location;
+      profile_image = req.files.profile_image[0].key;
     }
 
     if(req.files?.background_image) {
-      background_image = req.files.background_image[0].location;
+      background_image = req.files.background_image[0].key;
     }
 
     const result = await UserModel.updateMe(user_id, username, email, bio, profile_image, background_image);
