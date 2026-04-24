@@ -27,7 +27,8 @@ router.get(
 router.get("/me", authMiddleware, (req, res) => {
   res.json({
     message: "User data",
-    user: req.user
+    user: req.user,
+    sucess:true,
   });
 });
 

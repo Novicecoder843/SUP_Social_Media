@@ -56,7 +56,6 @@ const getProfile = async (req, res) => {
     }
 
     if (profile.profile_image) {
-      // If already full URL (old data), don't change
       if (!profile.profile_image.startsWith("http")) {
         profile.profile_image =
           process.env.AWS_BASE_URL + "/" + profile.profile_image;

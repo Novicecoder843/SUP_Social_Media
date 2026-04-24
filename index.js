@@ -4,7 +4,8 @@ const express = require("express");
 
 const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/users");
-const profileRoutes = require("./routes/profile");   
+const profileRoutes = require("./routes/profile");
+const postRoutes = require("./routes/post");
 
 const app = express();
 
@@ -22,6 +23,9 @@ app.use("/api/users", userRoutes);
 
 // Profile Routes
 app.use("/api/profile", profileRoutes);   
+
+// POST Routes
+app.use("/api/posts", postRoutes);
 
 // Test route
 app.get("/", (req, res) => {
