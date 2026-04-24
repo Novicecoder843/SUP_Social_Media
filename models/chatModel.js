@@ -15,12 +15,12 @@ exports.setOnline = async (userId) => {
 
 
 
-exports.createMessage = async (sender, receiver, message) => {
+exports.createMessage = async (sender, receiver, message , media_url = null) => {
   try {
     const result = await db.query(
-      `INSERT INTO user_schema.chats(sender_id, receiver_id, message)
-       VALUES ($1, $2, $3) RETURNING *`,
-      [sender, receiver, message]
+      `INSERT INTO user_schema.chats(sender_id, receiver_id, message,media_url)
+       VALUES ($1, $2, $3,$4) RETURNING *`,
+      [sender, receiver, message,media_url]
     );
 
     return result.rows[0];
@@ -101,14 +101,14 @@ exports.markAllDelivered = async (userId) => {
 
 
 
-exports.createGroupMessage = async (group_id, sender_id, message) => {
+exports.createGroupMessage = async (group_id, sender_id, message,media_url = null) => {
   const result = await db.query(
     `
-    INSERT INTO user_schema.group_messages (group_id, sender_id, message)
-    VALUES ($1, $2, $3)
+    INSERT INTO user_schema.group_messages (group_id, sender_id, message ,media_url)
+    VALUES ($1, $2, $3,$4)
     RETURNING id, group_id, sender_id, message, created_at
     `,
-    [group_id, sender_id, message]
+    [group_id, sender_id, message,media_url]
   );
 
   const msg = result.rows[0];

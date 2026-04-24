@@ -151,9 +151,7 @@
 
             <input id="message" placeholder="Type message" oninput="typing()" onblur="stopTyping()" />
 
-            <button onclick="send()">
-                Send
-            </button>
+            <button type="button" onclick="send(event)">send</button>
 
         </div>
 
@@ -195,7 +193,7 @@
                 // 🔥 IMPORTANT
                 socket.emit("join_chat", { userId: myUserId });
 
-                sendQueuedMessages();
+                // sendQueuedMessages();
                 if (currentChatUserId) loadOldMessages();
             });
             // 👤 SINGLE CHAT
@@ -339,38 +337,100 @@
         }
 
         // 📤 SEND
-        function send() {
-            const receiver_id = Number(document.getElementById("receiver").value);
-            const group_id = Number(document.getElementById("groupId").value);
-            const message = document.getElementById("message").value;
+        async function send(event) {
+            if (event) {
+                event.preventDefault();
+            }
+            // const receiver_id = Number(document.getElementById("receiver").value);
+            // const group_id = Number(document.getElementById("groupId").value);
+            const receiverValue = document.getElementById("receiver").value.trim();
+            const groupValue = document.getElementById("groupId").value.trim();
+
+            const receiver_id = receiverValue ? Number(receiverValue) : null;
+            const group_id = groupValue ? Number(groupValue) : null;
+            const message = document.getElementById("message").value.trim();
+            const token = document.getElementById("token").value;
+            const file = document.getElementById("media").files[0];
+            let media_url = null;
+            // ✅ upload media
+            if (file) {
+
+                try {
+
+                    const formData = new FormData();
+
+                    formData.append("media", file);
+
+                    const uploadRes = await fetch(
+                        "http://127.0.0.1:3000/api/chats/upload",
+                        {
+                            method: "POST",
+
+                            headers: {
+                                Authorization:
+                                    "Bearer " + token
+                            },
+
+                            body: formData
+                        }
+                    );
+
+                    const uploadData =
+                        await uploadRes.json();
+                    console.log("UPLOAD RESPONSE:", uploadData);
+
+                    media_url = uploadData.path;
+
+                    console.log(
+                        "✅ Uploaded:",
+                        media_url
+                    );
+
+                } catch (err) {
+
+                    console.log(
+                        "❌ Upload Error:",
+                        err.message
+                    );
+
+                    return;
+                }
+            }
             // ✅ Check message first
-            if (!message) {
-                alert("Enter message");
+            if (!message && !media_url) {
+                alert("Enter message or select media");
                 return;
             }
 
-             // ❌ OFFLINE
+            // ❌ OFFLINE
             if (!navigator.onLine || !socket || !socket.connected) {
                 const tempMsg = {
                     id: "temp-" + Date.now(),
                     sender_id: myUserId,
                     message,
+                    media_url,
                     created_at: new Date(),
                     isTemp: true
                 };
 
-                messageQueue.push({ receiver_id, message });
-                renderMessage(tempMsg);
 
+                renderMessage(tempMsg);
+                //  messageQueue.push({ receiver_id, group_id, message, media_url });
                 document.getElementById("status").innerText = "📥 Saved offline";
-                document.getElementById("message").value = "";
+                clearInputs();
                 return;
             }
 
+            const payload = {
+                receiver_id,
+                message,
+                media_url
+            };
+
             // 👥 GROUP CHAT
             if (group_id) {
-                socket.emit("send_group_message", { group_id, message });
-                document.getElementById("message").value = "";
+                socket.emit("send_group_message", { group_id, message, media_url });
+                clearInputs();
                 return;
             }
 
@@ -379,13 +439,37 @@
                 alert("Enter receiver ID");
                 return;
             }
+            // ✅ SINGLE SEND
 
-           
+            // ✅ SINGLE SEND
+            socket.emit(
+                "send_message",
+                {
+                    receiver_id,
+                    message,
+                    media_url
+                }
+            );
 
-            // ✅ ONLINE
-            socket.emit("send_message", { receiver_id, message });
-            document.getElementById("message").value = "";
+
+
+            clearInputs();
+
         }
+
+        function clearInputs() {
+
+            document.getElementById(
+                "message"
+            ).value = "";
+
+            document.getElementById(
+                "media"
+            ).value = "";
+        }
+
+
+
 
         // 🔁 SEND QUEUE
         function sendQueuedMessages() {
@@ -554,7 +638,8 @@
 
             const div = document.createElement("div");
             div.id = "chat-" + msg.id;
-
+            div.className = "msg " + type;
+            // ✅ right click menu
             div.addEventListener("contextmenu", (e) => {
 
                 e.preventDefault();
@@ -565,13 +650,64 @@
                     msg.id
                 );
             });
-            div.className = "msg " + type;
+
 
             const time = formatTime(msg.created_at);
 
+            // ✅ media support
+            let mediaHTML = "";
+
+            if (msg.media_url) {
+
+                const mediaPath =
+                    `http://localhost:3000${msg.media_url}`;
+
+                const isVideo =
+                    /\.(mp4|webm|ogg)$/i
+                        .test(msg.media_url);
+
+                if (isVideo) {
+
+                    mediaHTML = `
+                <video
+                    controls
+                    width="200"
+                    style="
+                        border-radius:10px;
+                        margin-bottom:5px;
+                    "
+                >
+                    <source
+                        src="${mediaPath}"
+                    />
+                </video>
+            `;
+                }
+                else {
+
+                    mediaHTML = `
+                <img
+                    src="${mediaPath}"
+                    width="200"
+                    style="
+                        border-radius:10px;
+                        margin-bottom:5px;
+                    "
+                />
+            `;
+                }
+            }
+
+            // ✅ deleted message support
+            const messageText =
+                msg.is_deleted
+                    ? `<i>This message was deleted</i>`
+                    : (msg.message || "");
+
             div.innerHTML = `
               ${msg.sender_name ? `<b>${msg.sender_name}</b><br>` : ""}
-    ${msg.message}
+    ${mediaHTML}
+    ${messageText}
      <div style="text-align:right">
       <span class="time">${time}</span>
       ${type === "me" ? `
@@ -657,6 +793,15 @@
             if (socket) socket.connect();
 
             setTimeout(sendQueuedMessages, 1000);
+        });
+
+        document.getElementById("message").addEventListener("keydown", function (e) {
+
+            if (e.key === "Enter") {
+                e.preventDefault();
+                send();
+            }
+
         });
     </script>
 

@@ -14,9 +14,9 @@ exports.sendMessage = async (req, res) => {
 
     const sender_id = req.user.id;
 
-    const { receiver_id, message } = req.body;
+    const { receiver_id, message, media_url } = req.body;
 
-    if (!receiver_id || !message) {
+    if (!receiver_id || (!message && !media_url)) {
       return res.status(400).json({
         success: false,
         message: "receiver_id and message are required",
@@ -26,7 +26,8 @@ exports.sendMessage = async (req, res) => {
     const chat = await chatModel.createMessage(
       sender_id,
       receiver_id,
-      message
+      message || "",
+      media_url || null
     );
 
     // Emit via socket

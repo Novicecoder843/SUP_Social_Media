@@ -85,8 +85,8 @@ module.exports = (io) => {
     });
 
     // 📤 SEND MESSAGE
-    socket.on("send_message", async ({ receiver_id, message }) => {
-      if (!receiver_id || !message) return;
+    socket.on("send_message", async ({ receiver_id, message ,media_url}) => {
+      if (!receiver_id ||  (!message && !media_url)) return;
 
       try {
         const sender_id = socket.user.id;
@@ -94,7 +94,8 @@ module.exports = (io) => {
         const saved = await chatModel.createMessage(
           sender_id,
           receiver_id,
-          message
+          message || "",
+          media_url || null
         );
 
         // ✔ SENT
@@ -124,7 +125,7 @@ module.exports = (io) => {
     });
 
 
-    socket.on("send_group_message", async ({ group_id, message }) => {
+    socket.on("send_group_message", async ({ group_id, message ,media_url }) => {
       if (!group_id || !message) return;
 
       try {
@@ -134,7 +135,8 @@ module.exports = (io) => {
         const saved = await chatModel.createGroupMessage(
           group_id,
           sender_id,
-          message
+          message,
+          media_url
         );
         console.log("💾 GROUP SAVED:", saved);
         // 📤 SEND TO ALL IN GROUP
