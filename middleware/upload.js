@@ -9,7 +9,7 @@ const upload = multer({
     contentType: multerS3.AUTO_CONTENT_TYPE,
     key: (req, file, cb) => {
       const fileName = Date.now() + "-" + file.originalname;
-      cb(null, fileName);
+      cb(null, `uploads/${fileName}`);
     },
   }),
 });
