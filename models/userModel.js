@@ -1,4 +1,5 @@
 const db = require("../config/db");
+const pool = require("../config/db");
 
 exports.createUser = async (username, email, password, role_id) => {
   const query = `
@@ -71,42 +72,27 @@ exports.updateMe = async (
   profile_image,
   background_image
 ) => {
-  try {
-
-    await db.query(
-      `UPDATE public.users
+  const query = `
+    UPDATE public.user_profiles
     SET
-     name = COALESCE($1, name),
-     email = COALESCE($2, email)
-      WHERE id = $3`,
-      [username, email, user_id]
-    );
-    
-    const result = await db.query(
-          `INSERT INTO user_profiles
-       (user_id, username, bio, profile_image, background_image)
-    VALUES (
-    $1, 
-    COALESCE($2, (SELECT name FROM users WHERE id = $1)),
-    $3,
-    $4,
-    $5
-    )
-    ON CONFLICT (user_id)
-    DO UPDATE SET
-     username = COALESCE(EXCLUDED.username, user_profiles.username),
-     bio = COALESCE(EXCLUDED.bio, user_profiles.bio),
-     profile_image = COALESCE(EXCLUDED.profile_image, user_profiles.profile_image),
-     background_image = COALESCE(EXCLUDED.background_image, user_profiles.background_image)
-    RETURNING *`,
-      [user_id, username, bio, profile_image, background_image]
-    );
+      username = $1,
+      bio = $2,
+      profile_image = $3,
+      background_image = $4
+    WHERE user_id = $5
+    RETURNING *;
+  `;
 
-    return result.rows[0];
-  } catch (error) {
-    console.log(error);
-    throw error;
-  }
+  const values = [
+    username,
+    bio,
+    profile_image,
+    background_image,
+    user_id
+  ];
+
+  const result = await pool.query(query, values);
+  return result.rows[0];
 };
 
 exports.getUserByUsername = async (username, currentUserId) => {
