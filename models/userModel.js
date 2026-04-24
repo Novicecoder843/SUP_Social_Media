@@ -65,7 +65,7 @@ exports.getMe = async (userId) => {
       u.username,
       up.bio,
       up.profile_image,
-
+      up.background_image,
       (SELECT COUNT(*) FROM user_followers WHERE user_id = u.id) AS followers,
       (SELECT COUNT(*) FROM user_followers WHERE follower_id = u.id) AS following
     FROM users u

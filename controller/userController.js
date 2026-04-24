@@ -1,3 +1,4 @@
+// const uploadToS3 = require("../config/uploadTos3");
 const UserModel = require("../models/userModel");
 
 exports.registerUser = async (req, res) => {
@@ -17,21 +18,20 @@ exports.getAllUsers = async (req, res) => {
   try {
     const users = await UserModel.getUsers();
 
-
-    const baseUrl = `${req.protocol}://${req.get("host")}`;
-
 const updatedUsers = users.map(user => {
-  if (user.profile_image && !user.profile_image.startsWith("http")) {
-    user.profile_image = `${baseUrl}/${user.profile_image}`;
+  
+  if (user.profile_image) {
+ user.profile_image.split(".com/") [1];
   }
   return user;
+
 });
 
 
     if (!users|| users.length === 0) {
       return res.status(404).json({ success: false, message: "No users found" });
       }
-        return res.status(200).json({ success: true, data: users });
+        return res.status(200).json({ success: true, data: updatedUsers });
       }catch (err) {
         console.log(err)
         return res.status(500).json({ success: false, error: err.message });
@@ -81,15 +81,33 @@ console.log(userId);
 
 const result = await UserModel.getMe(userId);
 
-const baseUrl = `${req.protocol}://${req.get("host")}`;
+console.log(result)
 
-if (result.profile_image && !result.profile_image.startsWith("http")) {
-  result.profile_image = `${baseUrl}/${result.profile_image}`;
+// if (result.profile_image && !result.profile_image.startsWith("http")) {
+//   result.profile_image = `${baseUrl}/${result.profile_image}`;
+// }
+
+// if (result.background_image && !result.background_image.startsWith("http")) {
+//   result.background_image = `${baseUrl}/${result.background_image}`;
+// }
+
+// if (result.profile_image) {
+//   result.profile_image = result.profile_image.split(".com/") [1];
+// }
+
+// if (result.background_image) {
+//   result.background_image = result.background_image.split(".com/") [1];
+// }
+
+
+if (result?.profile_image) {
+  result.profile_image = `${process.env.BASE_URL}` + result.profile_image;
 }
 
-if (result.background_image && !result.background_image.startsWith("http")) {
-  result.background_image = `${baseUrl}/${result.background_image}`;
+if (result?.background_image) {
+  result.background_image =  `${process.env.BASE_URL}` + result.background_image;
 }
+
 
 return res.status(200).json({
   data: result,
@@ -125,22 +143,45 @@ exports.updateMyProfile = async (req, res) => {
       });
     }
 
-    let profile_image = null;
-    let background_image = null;
+    // let profile_image = null;
+    // let background_image = null;
 
-    if (req.files?.profile_image) {
-      profile_image = req.files.profile_image[0].filename;
-    }
+    // if (req.files?.profile_image) {
+    //   profile_image = req.files.profile_image[0].location;
+    // }
+    //   // await uploadToS3(file.path,file.originalname);
+    //   // profile_image = file.originalname;
+      
+    // if(req.files?.background_image){
+    //     background_image =
+    //     req.files.background_image[0].location;
+    // }
+    //     background_image = file.originalname;
+    //   }
+    //   profile_image = req.files.profile_image[0].originalname;
+    //   console.log(profile_image,'profile_image profile_image')
+    // }
+    // if (req.files?.background_image && req.files.background_image.length > 0) {
 
-    if(req.files?.background_image) {
-      background_image = req.files.background_image[0].filename;
-    }
+    //  background_image = req.files.background_image[0].originalname;
 
-    const baseUrl =
-    `${req.protocol}://${req.get("host")}`;
+    let profile_image = undefined;
+let background_image = undefined;
 
-    let modify_prfl_image = profile_image ? `uploads/${profile_image}`: null;
-    let modify_background_image = background_image ? `uploads/${background_image}`: null;
+if (req.files?.profile_image && req.files.profile_image.length > 0) {
+  profile_image = req.files.profile_image[0].key;
+}
+
+if (req.files?.background_image && req.files.background_image.length > 0) {
+  background_image = req.files.background_image[0].key;
+}
+    
+
+    // const baseUrl =
+    // `${req.protocol}://${req.get("host")}`;
+
+    let modify_prfl_image = profile_image;
+    let modify_background_image = background_image;
 
   
    const result = await UserModel.updateMe(user_id, username, email, bio, modify_prfl_image, modify_background_image);
@@ -153,6 +194,18 @@ exports.updateMyProfile = async (req, res) => {
       message: "User not found"
     });
    }
+
+
+const BASE_URL = "https://rashmi-p-123.s3.ap-south-1.amazonaws.com/";
+
+if (result.profile_image) {
+  result.profile_image = BASE_URL + result.profile_image;
+}
+
+if (result.background_image) {
+  result.background_image = BASE_URL + result.background_image;
+}
+
 
    return res.status(200).json({
     success:true,
@@ -187,7 +240,7 @@ exports.getUserProfileByUsername = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      data: updatedUsers
+      data: user
     });
 
   } catch (err) {
