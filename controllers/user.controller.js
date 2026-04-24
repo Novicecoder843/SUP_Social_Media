@@ -1,4 +1,5 @@
 const pool = require("../config/db");
+const { getImageUrl } = require("../utils/s3url");
 const userService = require("../services/user.service");
 const postService = require("../services/post.service");
 exports.getMe = async (req, res) => {
@@ -78,13 +79,24 @@ exports.createPost = async (req, res) => {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ error: "Images required" });
     }
-    const data = await postService.createPost(
+    const safeCaption = caption || "";
+    const post = await postService.createPost(
       userId,
-      caption,
+      safeCaption,
       req.files
     );
-    res.json(data);
+    const images = req.files.map(file => getImageUrl(file.key));
+    res.json({
+      message: "Post created successfully",
+      post: {
+        id: post.postId,
+        caption: safeCaption,
+        images,
+        created_at: new Date()
+      }
+    });
   } catch (err) {
+    console.error("CREATE POST ERROR:", err); 
     res.status(500).json({ error: err.message });
   }
 };
@@ -132,6 +144,28 @@ exports.commentPost = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+exports.addComment = async (req, res) => {
+  try {
+    const { postId, comment, parentId } = req.body;
+    const data = await postService.addComment(
+      req.user.id,
+      postId,
+      comment,
+      parentId
+    );
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+exports.getComments = async (req, res) => {
+  try {
+    const data = await postService.getCommentsByPost(req.params.postId);
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
 exports.deletePost = async (req, res) => {
   try {
     const data = await userService.deletePost(
@@ -146,6 +180,56 @@ exports.deletePost = async (req, res) => {
 exports.sharePost = async (req, res) => {
   try {
     const data = await userService.sharePost(
+      req.user.id,
+      req.params.postId
+    );
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+exports.getPostById = async (req, res) => {
+  try {
+    const data = await postService.getPostById(
+      req.params.id,
+      req.user.id
+    );
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+exports.addComment = async (req, res) => {
+  try {
+    const { postId, comment, parentId } = req.body;
+
+    const data = await postService.addComment(
+      req.user.id,
+      postId,
+      comment,
+      parentId
+    );
+
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+exports.savePost = async (req, res) => {
+  try {
+    const data = await postService.savePost(
+      req.user.id,
+      req.params.postId
+    );
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.unsavePost = async (req, res) => {
+  try {
+    const data = await postService.unsavePost(
       req.user.id,
       req.params.postId
     );

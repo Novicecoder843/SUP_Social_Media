@@ -17,17 +17,26 @@ router.put(
   userController.updateMe
 );
 const postUpload = require("../middlewares/upload.middleware");
-
+// POSTS
 router.post(
-  "/create",
+  "/posts/create",
   authMiddleware,
   postUpload.array("images", 5),
   userController.createPost
 );
-router.get("/my-posts", authMiddleware, userController.getMyPosts);
+
+router.get("/posts/my", authMiddleware, userController.getMyPosts);
+router.get("/posts/:id", authMiddleware, userController.getPostById);
+
+router.post("/posts/comment", authMiddleware, userController.addComment);
+router.get("/posts/:postId/comments", userController.getComments);
+
+router.post("/posts/save/:postId", authMiddleware, userController.savePost);
+router.delete("/posts/save/:postId", authMiddleware, userController.unsavePost);
+
+router.get("/profile/:id", userController.getUserById);
 
 router.get("/:id", userController.getUserById);
-
 router.post("/follow/:id", authMiddleware, userController.follow);
 router.post("/unfollow/:id", authMiddleware, userController.unfollow);
 router.post("/block/:id", authMiddleware, userController.block);

@@ -73,10 +73,99 @@ exports.commentPost = async (userId, postId, comment) => {
 
   return { message: "Comment added" };
 };
+exports.addComment = async (userId, postId, comment, parentId = null) => {
+  await pool.query(
+    `
+    INSERT INTO comments(user_id, post_id, comment, parent_id)
+    VALUES($1,$2,$3,$4)
+    `,
+    [userId, postId, comment, parentId]
+  );
+
+  return { message: "Comment added" };
+};
+exports.getCommentsByPost = async (postId) => {
+  const result = await pool.query(
+    `
+    SELECT c.*, u.email
+    FROM comments c
+    JOIN users u ON u.id = c.user_id
+    WHERE c.post_id = $1
+    ORDER BY c.created_at ASC
+    `,
+    [postId]
+  );
+
+  const comments = result.rows;
+
+  const map = {};
+  const roots = [];
+
+  // create map
+  comments.forEach(c => {
+    c.replies = [];
+    map[c.id] = c;
+  });
+
+  // attach replies
+  comments.forEach(c => {
+    if (c.parent_id && map[c.parent_id]) {
+      map[c.parent_id].replies.push(c);
+    } else {
+      roots.push(c);
+    }
+  });
+
+  return roots;
+};
 exports.createNotification = async (userId, type, refId) => {
   await pool.query(
     `INSERT INTO notifications(user_id,type,reference_id)
      VALUES($1,$2,$3)`,
     [userId, type, refId]
   );
+};
+exports.getPostById = async (postId, userId) => {
+  const result = await pool.query(
+    `
+    SELECT 
+      p.id,
+      p.caption,
+      p.created_at,
+      u.email,
+     json_agg(DISTINCT pi.image_url) 
+    FILTER (WHERE pi.image_url IS NOT NULL) AS images, 
+      COUNT(DISTINCT l.id) AS likes,
+      COUNT(DISTINCT c.id) AS comments,
+
+      EXISTS (
+        SELECT 1 FROM post_likes 
+        WHERE user_id=$2 AND post_id=p.id
+      ) AS is_liked,
+
+      EXISTS (
+        SELECT 1 FROM saved_posts 
+        WHERE user_id=$2 AND post_id=p.id
+      ) AS is_saved
+
+    FROM posts p
+    JOIN users u ON u.id = p.user_id
+    LEFT JOIN post_images pi ON pi.post_id = p.id
+    LEFT JOIN post_likes l ON l.post_id = p.id
+    LEFT JOIN comments c ON c.post_id = p.id
+
+    WHERE p.id = $1
+    GROUP BY p.id, u.email
+    `,
+    [postId, userId]
+  );
+  const post = result.rows[0];
+   const comments = await exports.getCommentsByPost(postId);
+   return {
+  ...post,
+  images: post.images
+    ? post.images.map(img => getImageUrl(img))
+    : [],
+    comment_list: comments 
+ };
 };
