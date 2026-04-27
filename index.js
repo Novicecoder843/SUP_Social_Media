@@ -6,6 +6,7 @@ const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/users");
 const profileRoutes = require("./routes/profile");
 const postRoutes = require("./routes/post");
+const likeRoutes = require("./routes/like");
 
 const app = express();
 
@@ -26,6 +27,9 @@ app.use("/api/profile", profileRoutes);
 
 // POST Routes
 app.use("/api/posts", postRoutes);
+
+//Like Routes
+app.use("/api/posts", likeRoutes);
 
 // Test route
 app.get("/", (req, res) => {
