@@ -10,28 +10,31 @@ const s3 = new S3Client({
   },
 });
 
-const upload = multer({
+const uploadprofile = multer({
   storage: multerS3({
-    s3: s3,
+    s3,
     bucket: process.env.AWS_BUCKET_NAME,
     contentType: multerS3.AUTO_CONTENT_TYPE,
     key: (req, file, cb) => {
       const fileName = `profile/${req.user.id}/${Date.now()}-${file.originalname}`;
       cb(null, fileName);
-    }
+    },
   }),
 });
-const postUpload = multer({
+const uploadpost = multer({
   storage: multerS3({
-    s3: s3,
+    s3,
     bucket: process.env.AWS_BUCKET_NAME,
     contentType: multerS3.AUTO_CONTENT_TYPE,
 
     key: (req, file, cb) => {
       const fileName = `posts/${req.user.id}/${Date.now()}-${file.originalname}`;
       cb(null, fileName);
-    }
+    },
   }),
 });
 
-module.exports = upload;
+module.exports = {
+  uploadprofile,
+  uploadpost,
+};
