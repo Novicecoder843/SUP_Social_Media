@@ -2,6 +2,9 @@ const pool = require("../config/db");
 const { getImageUrl } = require("../utils/s3url");
 const userService = require("../services/user.service");
 const postService = require("../services/post.service");
+const storyService = require("../services/story.service");
+const { uploadToS3 } = require("../utils/s3url.js") ;
+
 exports.getMe = async (req, res) => {
   try {
     const data = await userService.getMe(req.user.id);
@@ -236,5 +239,57 @@ exports.unsavePost = async (req, res) => {
     res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+};
+
+exports.createReel = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const caption = req.body.caption;
+    const file = req.file;
+
+    const result = await postService.createReel(
+      userId,
+      caption,
+      file
+    );
+
+    res.json(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Error creating reel" });
+  }
+};
+
+exports.getReels = async (req, res) => {
+  try {
+    const reels = await postService.getReels();
+    res.json(reels);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to fetch reels" });
+  }
+};
+
+exports.createStory = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const file = req.file;
+
+    const result = await storyService.createStory(userId, file);
+
+    res.json(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to upload story" });
+  }
+};
+
+exports.getStories = async (req, res) => {
+  try {
+    const stories = await storyService.getStories();
+    res.json(stories);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch stories" });
   }
 };

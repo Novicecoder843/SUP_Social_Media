@@ -4,7 +4,7 @@ const { authMiddleware } = require("../middlewares/auth.middleware");
 const { validate } = require("../middlewares/validate.middleware");
 const { updateProfileSchema } = require("../validators/user.validation");
 const { uploadprofile, uploadpost } = require("../middlewares/upload.middleware");
-
+const storyController = require("../controllers/user.controller");
 router.get("/me", authMiddleware, userController.getMe);
 
 router.put(
@@ -43,7 +43,25 @@ router.post(
   userController.updateProfileImage
 );
 
+router.post(
+  "/reel",
+  authMiddleware,
+  uploadpost.single("video"), 
+  userController.createReel
+);
 
+router.get("/reels", authMiddleware, userController.getReels);
+
+router.post(
+  "/stories",
+  authMiddleware,
+  uploadpost.single("file"),
+  userController.createStory
+);
+
+router.get("/stories", authMiddleware, userController.getStories);
+
+module.exports = router;
 router.post("/like/:postId", authMiddleware, userController.likePost);
 router.post("/unlike/:postId", authMiddleware, userController.unlikePost);
 router.post("/comment/:postId", authMiddleware, userController.commentPost);

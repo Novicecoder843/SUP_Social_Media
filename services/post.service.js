@@ -1,6 +1,7 @@
 
 const pool = require("../config/db");
 const { getImageUrl } = require("../utils/s3url");
+const { getIO } = require("../sockets/socket");
 exports.createPost = async (userId, caption, files) => {
   const post = await pool.query(
     `INSERT INTO posts(user_id, caption)
@@ -16,6 +17,32 @@ exports.createPost = async (userId, caption, files) => {
     );
   }
   return { message: "Post created" };
+};
+exports.createReel = async (userId, caption, file) => {
+  const post = await pool.query(
+    `INSERT INTO posts(user_id, caption, type)
+     VALUES($1,$2,'reel') RETURNING *`,
+    [userId, caption]
+  );
+  const postId = post.rows[0].id;
+  await pool.query(
+    `INSERT INTO post_images(post_id, image_url)
+     VALUES($1,$2)`,
+    [postId, file.key]
+  );
+  return { message: "Reel created" };
+};
+exports.getReels = async () => {
+  const result = await pool.query(
+    `
+    SELECT p.*
+    FROM posts p
+    JOIN users u ON u.id = p.user_id
+    WHERE p.type = 'reel'
+    ORDER BY p.created_at DESC
+    `
+  );
+  return result.rows;
 };
 exports.getUserPosts = async (userId) => {
   const result = await pool.query(
@@ -61,7 +88,24 @@ exports.likePost = async (userId, postId) => {
      ON CONFLICT DO NOTHING`,
     [userId, postId]
   );
+   // get post owner
+  const result = await pool.query(
+    `SELECT user_id FROM posts WHERE id=$1`,
+    [postId]
+  );
 
+  const receiverId = result.rows[0].user_id;
+  await pool.query(
+    `INSERT INTO notifications(user_id, type, reference_id)
+     VALUES($1,$2,$3)`,
+    [receiverId, "like", postId]
+  );
+  const io = getIO();
+  io.to(`user_${receiverId}`).emit("notification", {
+    type: "like",
+    postId,
+    senderId: userId
+  });
   return { message: "Liked" };
 };
 exports.commentPost = async (userId, postId, comment) => {
@@ -70,6 +114,24 @@ exports.commentPost = async (userId, postId, comment) => {
      VALUES($1,$2,$3)`,
     [userId, postId, comment]
   );
+  const result = await pool.query(
+    `SELECT user_id FROM posts WHERE id=$1`,
+    [postId]
+  );
+
+  const receiverId = result.rows[0].user_id;
+  await pool.query(
+    `INSERT INTO notifications(user_id, type, reference_id)
+     VALUES($1,$2,$3)`,
+    [receiverId, "comment", postId]
+  );
+
+  const io = getIO();
+  io.to(`user_${receiverId}`).emit("notification", {
+    type: "comment",
+    postId,
+    senderId: userId
+  });
 
   return { message: "Comment added" };
 };
@@ -118,13 +180,6 @@ exports.getCommentsByPost = async (postId) => {
 
   return roots;
 };
-exports.createNotification = async (userId, type, refId) => {
-  await pool.query(
-    `INSERT INTO notifications(user_id,type,reference_id)
-     VALUES($1,$2,$3)`,
-    [userId, type, refId]
-  );
-};
 exports.getPostById = async (postId, userId) => {
   const result = await pool.query(
     `
@@ -162,10 +217,8 @@ exports.getPostById = async (postId, userId) => {
    const comments = await exports.getCommentsByPost(postId);
    return {
   ...post,
-  images: post.images
-    ? post.images.map(img => getImageUrl(img))
-    : [],
-    comment_list: comments 
+  images: post.images ? post.images.map(img => getImageUrl(img)) : [],
+  comment_list: comments 
  };
 };
 exports.savePost = async (userId, postId) => {
