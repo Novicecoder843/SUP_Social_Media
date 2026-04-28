@@ -9,6 +9,7 @@ const hastagRouter =  require("./routes/hastagRouter");
 const chatRouter = require("./routes/chatRoutes")
 const chatSocket  = require("./utlis/chatSoket");
 const { Server } = require("socket.io");
+const path = require("path");
 
 const app = express();
 app.use(cors());
@@ -46,8 +47,11 @@ app.use("/api/role", roleRoutes);
 app.use("/api/auth", authRouter );
 app.use("/api/hashtags", hastagRouter );
 app.use("/api/chats", chatRouter );
-app.use("/uploads", express.static("uploads"));
-
+// app.use("/uploads", express.static("uploads"));
+app.use(
+    "/uploads",
+    express.static(path.join(__dirname, "uploads"))
+);
 
 server.listen(3000, () => {
   console.log("Server running on port http://localhost:3000 ");

@@ -13,7 +13,7 @@ router.post("/upload", auth, chatUploadmiddle.single("media"), (req, res) => {
     res.json({
         success: true,
         file: req.file.filename,
-        path: `/uploads/${req.file.filename}`
+        path: `/uploads/chat/${req.file.filename}`
     });
 });
 router.get("/conversation/:receiver_id", auth, chatController.getConversation);

@@ -126,7 +126,7 @@ module.exports = (io) => {
 
 
     socket.on("send_group_message", async ({ group_id, message ,media_url }) => {
-      if (!group_id || !message) return;
+     if (!group_id || (!message && !media_url)) return;
 
       try {
         const sender_id = socket.user.id;
