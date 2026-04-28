@@ -8,6 +8,8 @@ const profileRoutes = require("./routes/profile");
 const postRoutes = require("./routes/post");
 const likeRoutes = require("./routes/like");
 const commentRoutes = require("./routes/comment");
+const shareRoutes = require("./routes/share");
+
 
 const app = express();
 
@@ -34,6 +36,9 @@ app.use("/api/posts", likeRoutes);
 
 //Comment Routes
 app.use("/api/posts", commentRoutes);
+
+//Share Routes
+app.use("/api/posts", shareRoutes);
 
 // Test route
 app.get("/", (req, res) => {
