@@ -132,7 +132,6 @@ exports.getPostById = async (postId, userId) => {
       p.id,
       p.caption,
       p.created_at,
-      u.email,
      json_agg(DISTINCT pi.image_url) 
     FILTER (WHERE pi.image_url IS NOT NULL) AS images, 
       COUNT(DISTINCT l.id) AS likes,
