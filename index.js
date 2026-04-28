@@ -7,6 +7,7 @@ const userRoutes = require("./routes/users");
 const profileRoutes = require("./routes/profile");
 const postRoutes = require("./routes/post");
 const likeRoutes = require("./routes/like");
+const commentRoutes = require("./routes/comment");
 
 const app = express();
 
@@ -30,6 +31,9 @@ app.use("/api/posts", postRoutes);
 
 //Like Routes
 app.use("/api/posts", likeRoutes);
+
+//Comment Routes
+app.use("/api/posts", commentRoutes);
 
 // Test route
 app.get("/", (req, res) => {
