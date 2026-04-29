@@ -1,21 +1,57 @@
-const postModel = require("../models/postModel");
+const pool = require("../config/db");
 
-// Create Post
+// CREATE POST
 exports.createPost = async (req, res) => {
   try {
-    const { content, media } = req.body;
     const user_id = req.user.id;
+    const { content } = req.body;
 
-    const post = await postModel.createPost(user_id, content);
+    const result = await pool.query(
+      "INSERT INTO posts (user_id, content) VALUES ($1,$2) RETURNING *",
+      [user_id, content]
+    );
 
-    if (media && media.length) {
-      for (let m of media) {
-        await postModel.addPostMedia(post.id, m.url, m.type);
-      }
-    }
-
-    res.status(201).json(post);
+    res.json(result.rows[0]);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ message: "Error creating post" });
   }
+};
+
+// GET ALL POSTS
+exports.getAllPosts = async (req, res) => {
+  const result = await pool.query("SELECT * FROM posts ORDER BY created_at DESC");
+  res.json(result.rows);
+};
+
+// GET SINGLE POST
+exports.getSinglePost = async (req, res) => {
+  const result = await pool.query("SELECT * FROM posts WHERE id=$1", [req.params.id]);
+  res.json(result.rows[0]);
+};
+
+// UPDATE
+exports.updatePost = async (req, res) => {
+  const { content } = req.body;
+
+  const result = await pool.query(
+    "UPDATE posts SET content=$1, updated_at=NOW() WHERE id=$2 RETURNING *",
+    [content, req.params.id]
+  );
+
+  res.json(result.rows[0]);
+};
+
+// DELETE
+exports.deletePost = async (req, res) => {
+  await pool.query("DELETE FROM posts WHERE id=$1", [req.params.id]);
+  res.json({ message: "Post deleted" });
+};
+
+// USER POSTS
+exports.getUserPosts = async (req, res) => {
+  const result = await pool.query(
+    "SELECT * FROM posts WHERE user_id=$1",
+    [req.params.id]
+  );
+  res.json(result.rows);
 };
