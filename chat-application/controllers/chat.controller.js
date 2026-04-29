@@ -88,3 +88,31 @@ exports.getChat = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+
+
+// ✅ DELIVERED
+exports.markDelivered = async (req, res) => {
+  const data = await Chat.markDelivered(
+    req.params.senderId,
+    req.user.id
+  );
+
+  res.json({
+    success: true,
+    deliveredCount: data.length
+  });
+};
+
+// 👀 SEEN
+exports.markSeen = async (req, res) => {
+  const data = await Chat.markSeen(
+    req.params.senderId,
+    req.user.id
+  );
+
+  res.json({
+    success: true,
+    seenCount: data.length
+  });
+};

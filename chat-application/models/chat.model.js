@@ -48,3 +48,41 @@ exports.delete = async (messageId, userId) => {
     [messageId, userId]
   );
 };
+
+
+
+// ✅ NEW: MARK AS DELIVERED
+//////////////////////////////////////////////////////////
+
+exports.markDelivered = async (senderId, receiverId) => {
+  const result = await db.query(
+    `UPDATE messages
+     SET is_delivered = true
+     WHERE sender_id=$1 
+     AND receiver_id=$2
+     AND is_delivered=false
+     RETURNING id`,
+    [senderId, receiverId]
+  );
+
+  return result.rows;
+};
+
+//////////////////////////////////////////////////////////
+// 👀 NEW: MARK AS SEEN
+//////////////////////////////////////////////////////////
+
+exports.markSeen = async (senderId, receiverId) => {
+  const result = await db.query(
+    `UPDATE messages
+     SET is_seen = true,
+         is_delivered = true
+     WHERE sender_id=$1 
+     AND receiver_id=$2
+     AND is_seen=false
+     RETURNING id`,
+    [senderId, receiverId]
+  );
+
+  return result.rows;
+};

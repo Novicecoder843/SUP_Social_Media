@@ -14,4 +14,10 @@ router.delete("/:messageId", auth, chatController.deleteMessage);
 // 📩 Get chat
 router.get("/:userId", auth, chatController.getChat);
 
+
+router.put("/delivered/:senderId", auth, chatController.markDelivered);
+// seen
+router.put("/seen/:senderId", auth, chatController.markSeen);
+
 module.exports = router;
+
