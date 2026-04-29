@@ -8,10 +8,6 @@ const storyRoutes = require("./routes/user.routes");
 const app = express();
 app.use(express.json());
 app.use("/api", routes);
-
-app.use("/api/posts", postRoutes);
-app.use("/api/stories", storyRoutes);
-
 const server = http.createServer(app);
 const { Server } = require("socket.io");
 const io = new Server(server, {

@@ -60,8 +60,6 @@ router.post(
 );
 
 router.get("/stories", authMiddleware, userController.getStories);
-
-module.exports = router;
 router.post("/like/:postId", authMiddleware, userController.likePost);
 router.post("/unlike/:postId", authMiddleware, userController.unlikePost);
 router.post("/comment/:postId", authMiddleware, userController.commentPost);

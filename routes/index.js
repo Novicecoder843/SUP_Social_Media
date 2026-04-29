@@ -10,6 +10,8 @@ router.use("/auth", authRoutes);
 router.use("/users", userRoutes);
 router.use("/chat", chatroutes);
 router.use("/posts", userRoutes );
+const notificationRoutes = require("./notification.routes");
+router.use("/notifications", notificationRoutes);
 module.exports = router;
 
 
