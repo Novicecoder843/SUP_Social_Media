@@ -1,4 +1,5 @@
 require("dotenv").config();
+require("./cron/storyCleanup");
 const cors = require("cors");
 const express = require("express");
 const http = require("http");
@@ -8,6 +9,7 @@ const authRouter =  require("./routes/authRouters");
 const hastagRouter =  require("./routes/hastagRouter");
 const chatRouter = require("./routes/chatRoutes")
 const chatSocket  = require("./utlis/chatSoket");
+const storyRoutes =require("./routes/storyRouts");
 const { Server } = require("socket.io");
 const path = require("path");
 
@@ -47,6 +49,7 @@ app.use("/api/role", roleRoutes);
 app.use("/api/auth", authRouter );
 app.use("/api/hashtags", hastagRouter );
 app.use("/api/chats", chatRouter );
+app.use("/api/stories",storyRoutes);
 // app.use("/uploads", express.static("uploads"));
 app.use(
     "/uploads",
