@@ -7,11 +7,17 @@
  const userRoutes = require("./routes/userRoutes")
  const roleRoutes = require("./routes/roleRoutes");
 const authRoutes = require("./routes/authRoutes");
-// const postRoutes = require("./routes/postRoutes");
+const postRoutes = require("./routes/postRoutes");
 const fileRoutes = require("./routes/fileRoutes");
-// const newupload = require("./routes/newupload");
+const mediaRoutes = require("./routes/mediaRoutes");
+const likeRoutes = require("./routes/likeRoutes");
+const commentRoutes = require("./routes/commentRoutes");
+const saveRoutes = require("./routes/saveRoutes");
+const shareRoutes = require("./routes/shareRoutes");
+const feedRoutes = require("./routes/feedRoutes");
+const hashtagRoutes = require("./routes/hashtagRoutes");
 
- const app = express();
+const app = express();
  app.use(express.json());
 
   app.use((req, res, next) => {
@@ -29,10 +35,17 @@ const fileRoutes = require("./routes/fileRoutes");
 app.use("/api/roles", roleRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
-// app.use("/api/posts", postRoutes);
-app.use("/api/files", fileRoutes);
+app.use("/api/post", postRoutes);
+app.use("/api/file", fileRoutes);
+app.use("/api/media", mediaRoutes);
+app.use("/api/like", likeRoutes);
+app.use("/api/comment", commentRoutes);
+app.use("/api/save", saveRoutes);
+app.use("/api/posts", shareRoutes);
+app.use("/api/feed", feedRoutes);
+app.use("/api/hashtag", hashtagRoutes);
+
 app.use("/uploads", express.static("uploads"));
-// app.use("/api/auth", newupload);
 
 const PORT = 3000;
 
