@@ -116,3 +116,17 @@ exports.markSeen = async (req, res) => {
     seenCount: data.length
   });
 };
+
+
+
+// Get conversation
+exports.getConversation = async (req, res) => {
+  try {
+    const { user1, user2 } = req.params;
+    const data = await Chat.getConversation(user1, user2);
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+

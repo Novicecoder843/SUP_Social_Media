@@ -86,3 +86,18 @@ exports.markSeen = async (senderId, receiverId) => {
 
   return result.rows;
 };
+
+
+
+
+// Get conversation
+exports.getConversation = async (user1, user2) => {
+  const result = await db.query(
+    `SELECT * FROM messages
+     WHERE (sender_id=$1 AND receiver_id=$2)
+        OR (sender_id=$2 AND receiver_id=$1)
+     ORDER BY created_at ASC`,
+    [user1, user2]
+  );
+  return result.rows;
+};
