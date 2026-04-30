@@ -1,48 +1,33 @@
 const multer = require("multer");
 const path = require("path");
-const fs = require("fs");
 
-//Upload path
-const uploadPath = path.join(__dirname, "../uploads");
-
-//Ensure folder exists
-if(!fs.existsSync(uploadPath)) {
-  fs.mkdirSync(uploadPath, { recursive: true});
-}
-
-// Storage config
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    console.log('hiiiiiiiiiiii')
-    cb(null, "uploads/"); // folder
-  },
-  filename: (req, file, cb) => {
-    cb(null,  path.extname(file.originalname));
-    
-  },
-});
-
-//File filter
+// File filter
 const fileFilter = (req, file, cb) => {
-      console.log('hiiiiiiiiiiii')
-
-  const allowedMimeTypes = ["image/jpeg", "image/png"];
-  const allowedExt = [".jpg", ".jpeg", ".png"];
+  const allowedMimeTypes = [
+    "image/jpeg",
+    "image/png",
+    "image/jpg"
+  ];
 
   const ext = path.extname(file.originalname).toLowerCase();
 
-  if(allowedMimeTypes.includes(file.mimetype) && allowedExt.includes(ext)) {
+  if (
+    allowedMimeTypes.includes(file.mimetype) &&
+    [".jpg", ".jpeg", ".png"].includes(ext)
+  ) {
     cb(null, true);
   } else {
-    cb(new Error("Only JEPG, JPG, PNG files are allowed"), false);
+    cb(new Error("Only JPG, JPEG, PNG files allowed"), false);
   }
-
 };
 
+// Multer config using memory storage
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   fileFilter,
-  limits: { fileSize: 5 * 1024 * 1024 },
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB
+  },
 });
 
 module.exports = upload;

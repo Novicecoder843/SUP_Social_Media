@@ -200,7 +200,7 @@ if (user.background_image && !user.background_image.startsWith("http")) {
 return res.status(200).json({
   success: true,
   data: user
-});
+}); 
 
   } catch (err) {
     console.log(err);
