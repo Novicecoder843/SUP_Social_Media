@@ -12,4 +12,8 @@ router.post(
   mediaController.uploadMedia
 );
 
+router.get("/post/:postId", mediaController.getMediaByPost);
+
+router.delete("/:id", verifyToken, mediaController.deleteMedia);
+
 module.exports = router;

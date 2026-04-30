@@ -1,5 +1,7 @@
 const mediaModel = require("../models/mediaModel");
 
+const db = require("../config/db");
+
 exports.uploadMedia = async (req, res) => {
   try {
     const { post_id } = req.body;
@@ -41,5 +43,53 @@ console.log(req.body)
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Error uploading media" });
+  }
+};
+
+exports.getMediaByPost = async (req, res) => {
+  const { postId } = req.params;
+
+  try {
+    const result = await db.query(
+      "SELECT * FROM post_media WHERE post_id = $1 ORDER BY created_at DESC",
+      [postId]
+    );
+
+    res.status(200).json({
+      message: "Media fetched successfully",
+      data: result.rows,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      message: "Error fetching media",
+    });
+  }
+};
+
+exports.deleteMedia = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Check if media exists
+    const media = await db.query(
+      "SELECT * FROM post_media WHERE id = $1",
+      [id]
+    );
+
+    if (media.rows.length === 0) {
+      return res.status(404).json({ message: "Media not found" });
+    }
+
+    await db.query("DELETE FROM post_media WHERE id = $1", [id]);
+
+    res.status(200).json({
+      message: "Media deleted successfully",
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      message: "Error deleting media",
+    });
   }
 };

@@ -25,8 +25,6 @@ router.put("/:id", verifyToken, postController.updatePost);
 router.delete("/:id", verifyToken, postController.deletePost);
 
 // GET USER POSTS
-router.get("/user/:id/", postController.getUserPosts);
-
 router.get("/users/:id/posts", postController.getUserPosts);
 
 module.exports = router;

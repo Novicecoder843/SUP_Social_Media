@@ -1,4 +1,5 @@
 const pool = require("../config/db");
+const db = require("../config/db");
 
 // LIKE
 exports.likePost = async (req, res) => {
@@ -31,5 +32,26 @@ exports.unlikePost = async (req, res) => {
     res.json({ message: "Post unliked" });
   } catch (err) {
     res.status(500).json({ message: "Error unliking post" });
+  }
+};
+
+exports.getLikesCount = async (req, res) => {
+  const { postId } = req.params;
+
+  try {
+    const result = await db.query(
+      "SELECT COUNT(*) FROM likes WHERE post_id = $1",
+      [postId]
+    );
+
+    res.status(200).json({
+      postId,
+      likes: parseInt(result.rows[0].count),
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      message: "Error fetching likes count",
+    });
   }
 };

@@ -10,4 +10,7 @@ router.post("/posts/:id/like", verifyToken, likeController.likePost);
 // unlike post
 router.delete("/posts/:id/like", verifyToken, likeController.unlikePost);
 
+//  like count
+router.get("/posts/:postId", verifyToken, likeController.getLikesCount);
+
 module.exports = router;

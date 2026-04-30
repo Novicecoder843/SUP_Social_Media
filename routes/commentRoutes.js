@@ -10,6 +10,9 @@ router.post("/posts/:id/comment", verifyToken, commentController.addComment);
 // get comments
 router.get("/posts/:id/comments", commentController.getComments);
 
+//update comment
+router.put("/:commentId", verifyToken, commentController.updateComment);
+
 // delete comment
 router.delete("/comments/:id", verifyToken, commentController.deleteComment);
 

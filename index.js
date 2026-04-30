@@ -14,6 +14,7 @@ const commentRoutes = require("./routes/commentRoutes");
 const saveRoutes = require("./routes/saveRoutes");
 const shareRoutes = require("./routes/shareRoutes");
 const feedRoutes = require("./routes/feedRoutes");
+const hashtagRoutes = require("./routes/hashtagRoutes");
 
 const app = express();
 
@@ -43,6 +44,7 @@ app.use("/api/comment", commentRoutes);
 app.use("/api/save", saveRoutes);
 app.use("/api/posts", shareRoutes);
 app.use("/api/feed", feedRoutes);
+app.use("/api/hashtag", hashtagRoutes);
 
 app.use("/uploads", express.static("uploads"));
 

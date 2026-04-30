@@ -6,10 +6,6 @@ exports.sharePost = async (req, res) => {
     const receiver_id = req.body.receiver_id;
     const post_id = req.params.id;
 
-    // console.log("Body:", req.body);
-    // console.log("HEADERS:", req.body);
-    // console.log("SENDER:", sender_id);
-
     if (!receiver_id) {
       return res.status(400).json({ message: "receiver_id is required"});
     }
