@@ -12,8 +12,9 @@ exports.createStory = async (
         media_url,
         media_type,
         caption,
-        created_at
-        ) VALUES ($1,$2,$3,$4,NOW() + INTERVAL '24 HOURS')
+        created_at,
+        expiar_at
+        ) VALUES ($1,$2,$3,$4,NOW(),NOW() + INTERVAL '24 HOURS')
          RETURNING *`,
 
 
@@ -31,8 +32,8 @@ exports.getAllStories = async () => {
     FROM user_schema.stories s 
     JOIN user_schema.userstable u 
     ON u.id = s.user_id
-    WHERE s.expires_at > NOW()
-    ORDER BY s.create_at DESC
+    WHERE s.expiar_at > NOW()
+    ORDER BY s.created_at DESC
     `
     );
     console.log(result)
@@ -40,6 +41,8 @@ exports.getAllStories = async () => {
 };
 
 exports.addView = async (story_id, viewer_id) => {
+  
+
     await db.query(
         `
         INSERT INTO user_schema.story_views(
@@ -64,7 +67,7 @@ exports.likeStory = async (
         story_id,
         user_id
     )VALUES($1,$2)
-    NO COMFLICT (story_id , user_id)
+    ON CONFLICT (story_id , user_id)
     DO NOTHING `,
         [story_id,
             user_id
@@ -85,20 +88,21 @@ exports.replyStory = async(
         (
         story_id,
         sender_id,
-        message)
-        VALUES( $1,$2,43)
+        message
+        )
+        VALUES( $1,$2,$3)
         RETURNING * `,
-        [story_id,sender_id,Message]
+        [story_id, sender_id, Message]
     );
     console.log(result)
-    return result.row[0];
+    return result.row;
 };
 
 exports.getStoryViewers = async(story_id)=>{
     const result = await db.query(`
         SELECT u.id , 
         u.full_name,
-        sv.view_at
+        sv.viewed_at
         FROM user_schema.story_views sv 
         JOIN user_schema.userstable u 
         ON u.id = sv.viewer_id 

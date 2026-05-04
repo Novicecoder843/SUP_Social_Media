@@ -1,44 +1,44 @@
 const storyModel = require("../models/storyModel");
+const db = require("../config/db");
 
 
+exports.uploadStory = async (req, res) => {
+    try {
+        const user_id = req.user.id;
 
-exports.uploadStory = async(req ,res )=>{
-    try{
-        const user_id = req.user.user.id;
+        const { caption } = req.body;
 
-        const{caption}=req.body;
-
-        if(!req.file){
+        if (!req.file) {
             return res.status(400).json({
-                success:false,
+                success: false,
                 message: " Media is require"
             });
         }
         const media_url = req.file.location;
 
         const media_type =
-        req.file.mimetype.startWith("image/")
-        ? "image"
-        :"video";
+            req.file.mimetype.startsWith("image/")
+                ? "image"
+                : "video";
 
-        const story=
-        await storyModel.createStory(
-            user_id,
-            media_url,
-            media_type,
-            caption
-        );
+        const story =
+            await storyModel.createStory(
+                user_id,
+                media_url,
+                media_type,
+                caption
+            );
         res.status(201).json({
-            success:true,
-            message:"stury uploaded successfully ",
-            date:story
+            success: true,
+            message: "stury uploaded successfully ",
+            date: story
         });
 
 
-    }catch(err){
+    } catch (err) {
         res.status(500).json({
             success: false,
-            error : err.message
+            error: err.message
         });
     }
 };
@@ -75,11 +75,27 @@ exports.viewStory = async (
 ) => {
 
     try {
+        const user_id = req.user.id;
+        const story_id = req.params.id;
+        // 🔍 Step 1: Check story exists
+        const story = await db.query(
+            "SELECT id FROM user_schema.stories WHERE id = $1",
+            [story_id]
+        );
+
+        if (story.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                error: "Story not found"
+            });
+        }
 
         await storyModel.addView(
             req.params.id,
             req.user.id
         );
+
+
 
         res.json({
             success: true,

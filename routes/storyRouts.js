@@ -5,54 +5,25 @@ const express = require("express");
  const auth = require("../middleware/authMiddleware");
 const controller = require("../controllers/storyController");
 
-router.post(
-    "/",
-    auth,
-    upload.single("media"),
-    controller.uploadStory
-);
+router.post("/",auth,upload.single("media"),controller.uploadStory);
 
 
-router.get(
-    "/",
-    auth,
-    controller.getStories
-);
+router.get("/",auth,controller.getStories);
 
 
-router.post(
-    "/:id/view",
-    auth,
-    controller.viewStory
-);
+router.post("/:id/view",auth,controller.viewStory);
 
 
-router.post(
-    "/:id/like",
-    auth,
-    controller.likeStory
-);
+router.post("/:id/like",auth,controller.likeStory);
 
 
-router.post(
-    "/:id/reply",
-    auth,
-    controller.replyStory
-);
+router.post("/:id/reply",auth,controller.replyStory);
 
 
-router.get(
-    "/:id/viewers",
-    auth,
-    controller.getStoryViewers
-);
+router.get("/:id/viewers",auth,controller.getStoryViewers);
 
 
-router.delete(
-    "/:id",
-    auth,
-    controller.deleteStory
-);
+router.delete("/:id",auth,controller.deleteStory);
 
 
 module.exports = router;
