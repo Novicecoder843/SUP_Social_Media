@@ -1,132 +1,185 @@
+
 const Chat = require("../models/chat.model");
 
-// 💬 Send
+/////////////////////////////////////////////////////
+// 💬 SEND
+/////////////////////////////////////////////////////
 exports.sendMessage = async (req, res) => {
   try {
-    const { receiverId, message } = req.body;
+    const senderId = req.user.id;
+    const { receiver_id, message } = req.body;
 
-    if (!receiverId || !message) {
+    if (!receiver_id || !message) {
       return res.status(400).json({
-        error: "receiverId and message required"
+        success: false,
+        message: "receiver_id and message required"
       });
     }
 
-    const data = await Chat.send(req.user.id, receiverId, message);
+    const data = await Chat.sendMessage(senderId, receiver_id, message);
 
-    res.status(201).json(data);
+    res.status(201).json({
+      success: true,
+      message: "Message sent",
+      data
+    });
 
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-// 🔁 Reply
+/////////////////////////////////////////////////////
+// 🔁 REPLY
+/////////////////////////////////////////////////////
 exports.replyMessage = async (req, res) => {
   try {
-    const { message } = req.body;
+    const senderId = req.user.id;
+    const parentId = req.params.messageId;
+    const { receiver_id, message } = req.body;
 
-    const data = await Chat.reply(
-      req.user.id,
+    const data = await Chat.replyMessage(
+      senderId,
+      receiver_id,
       message,
-      req.params.messageId
+      parentId
     );
 
-    res.status(201).json(data);
+    res.status(201).json({
+      success: true,
+      message: "Reply sent",
+      data
+    });
 
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-// ❌ Delete
-
-// exports.deleteMessage = async (req, res) => {
-//   try {
-//     const deleted = await Chat.delete(
-//       req.params.messageId,
-//       req.user.id
-//     );
-
-//     if (!deleted) {
-//       return res.status(404).json({
-//         error: "Message not found or not authorized"
-//       });
-//     }
-
-//     res.json({
-//       success: true,
-//       message: "Message deleted",
-//       deletedMessageId: req.params.messageId
-//     });
-
-//   } catch (err) {
-//     res.status(500).json({ error: err.message });
-//   }
-// };
+/////////////////////////////////////////////////////
+// ❌ DELETE
+/////////////////////////////////////////////////////
 exports.deleteMessage = async (req, res) => {
   try {
-    await Chat.delete(req.params.messageId, req.user.id);
+    await Chat.deleteMessage(req.params.messageId, req.user.id);
 
-    res.json({ message: "Deleted" });
+    res.json({
+      success: true,
+      message: "Message deleted"
+    });
 
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-// 📩 Get chat
+/////////////////////////////////////////////////////
+// 📩 GET CHAT
+/////////////////////////////////////////////////////
 exports.getChat = async (req, res) => {
   try {
-    const data = await Chat.getChat(
+    const messages = await Chat.getChat(
       req.user.id,
       req.params.userId
     );
 
-    res.json(data);
+    res.json({
+      success: true,
+      count: messages.length,
+      messages
+    });
 
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-
-
-// ✅ DELIVERED
-exports.markDelivered = async (req, res) => {
-  const data = await Chat.markDelivered(
-    req.params.senderId,
-    req.user.id
-  );
-
-  res.json({
-    success: true,
-    deliveredCount: data.length
-  });
-};
-
-// 👀 SEEN
-exports.markSeen = async (req, res) => {
-  const data = await Chat.markSeen(
-    req.params.senderId,
-    req.user.id
-  );
-
-  res.json({
-    success: true,
-    seenCount: data.length
-  });
-};
-
-
-
-// Get conversation
+/////////////////////////////////////////////////////
+// 📩 CONVERSATION (PAGINATION)
+/////////////////////////////////////////////////////
 exports.getConversation = async (req, res) => {
   try {
-    const { user1, user2 } = req.params;
-    const data = await Chat.getConversation(user1, user2);
-    res.json(data);
+    const user1 = req.user.id; // logged in user
+    const user2 = Number(req.params.user2);
+
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const offset = (page - 1) * limit;
+
+    const result = await Chat.getConversation(
+      user1,
+      user2,
+      limit,
+      offset
+    );
+
+    res.json({
+      success: true,
+      page,
+      limit,
+      count: result.rowCount,
+      messages: result.rows.reverse()
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+};
+/////////////////////////////////////////////////////
+// ✔✔ DELIVERED
+/////////////////////////////////////////////////////
+exports.markDelivered = async (req, res) => {
+  try {
+    const receiverId = req.user.id;
+    const senderId = req.params.senderId;
+
+    const result = await Chat.markDelivered(senderId, receiverId);
+
+    res.json({
+      success: true,
+      deliveredCount: result.count
+    });
+
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
+/////////////////////////////////////////////////////
+// 👀 SEEN
+/////////////////////////////////////////////////////
+exports.markSeen = async (req, res) => {
+  try {
+    const receiverId = req.user.id;
+    const senderId = req.params.senderId;
+
+    const result = await Chat.markSeen(senderId, receiverId);
+
+    res.json({
+      success: true,
+      seenCount: result.count
+    });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+/////////////////////////////////////////////////////
+// 📩 UNDELIVERED (DEBUG)
+/////////////////////////////////////////////////////
+exports.getUndelivered = async (req, res) => {
+  try {
+    const messages = await Chat.getUndeliveredMessages(req.user.id);
+
+    res.json({
+      success: true,
+      count: messages.length,
+      messages
+    });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
