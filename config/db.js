@@ -9,17 +9,23 @@ const pool = new Pool({
 
 });
 
-pool.query("SELECT NOW()")
-.then(() => console.log("DB connected successfully"))
-.catch(err => console.error("DB error:", err.message)); 
+// pool.query("SELECT NOW()")
+// .then(() => console.log("DB connected successfully"))
+// .catch(err => console.error("DB error:", err.message)); 
 
-const query = async (text, params) => {
-  console.log("Executing Query:", text);
-  console.log("With Values:", params);
-  const result = await pool.query(text, params);
-  return result;
-};
+// const query = async (text, params) => {
+//   console.log("Executing Query:", text);
+//   console.log("With Values:", params);
+//   const result = await pool.query(text, params);
+//   return result;
+// };
 
-module.exports = {
-  query,
-};
+// module.exports = {
+//   query,
+// };
+// test connection
+pool.connect()
+  .then(() => console.log("DB connected successfully"))
+  .catch(err => console.error("DB error:", err.message));
+
+module.exports = pool;

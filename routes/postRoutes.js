@@ -1,7 +1,7 @@
-
 const express = require("express");
 const router = express.Router();
 const postController = require("../controller/postController");
+const upload = require("../middleware/uploadS3");
 
 const verifyToken = require("../middleware/authMiddleware");
 
@@ -10,7 +10,7 @@ console.log("createPost:",
     console.log("verifyToken:",verifyToken);
 
 // CREATE POST
-router.post("/", verifyToken, postController.createPost);
+router.post("/", verifyToken, upload.array("files", 10), postController.createPost);
 
 // GET ALL POSTS
 router.get("/", postController.getAllPosts);
