@@ -81,7 +81,6 @@ exports.getMyProfile = async (req, res) => {
   }
 };
 
-
 exports.updateMyProfile = async (req, res) => {
   try {
     console.log("Content-Type:", req.header["content-type"]);

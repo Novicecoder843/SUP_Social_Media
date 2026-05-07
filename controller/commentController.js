@@ -1,5 +1,6 @@
 const pool = require("../config/db");
 const db = require("../config/db");
+const commentModel = require("../models/commentModel");
 
 // ADD COMMENT
 exports.addComment = async (req, res) => {
@@ -19,14 +20,53 @@ exports.addComment = async (req, res) => {
   }
 };
 
-// GET COMMENTS
-exports.getComments = async (req, res) => {
-  const result = await pool.query(
-    "SELECT * FROM comments WHERE post_id=$1 ORDER BY created_at DESC",
-    [req.params.id]
-  );
-  res.json(result.rows);
+//ADD REPLY
+exports.addReply = async (req, res) => {
+  try{
+    const user_id = req.user.id;
+    const { post_id, content, parent_id } = req.body;
+    
+    const result = await commentModel.addReply(
+      post_id, user_id, content, parent_id
+    );
+
+    res.json({ success: true, data: result.rows[0] });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Error adding reply"});
+  }
 };
+
+// GET COMMENTS + NESTED
+exports.getComments = async (req, res) => {
+  try {
+    const postId = req.params.postId; 
+
+    console.log("POST ID:", postId); 
+    const result = await commentModel.getCommentsWithReplies(postId);
+
+    return res.status(200).json({
+      success: true,
+      data: result.rows
+    });
+
+  } catch (err) {
+    console.error("FULL ERROR:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Error fetching comments"
+    });
+  }
+};
+
+// // GET COMMENTS
+// exports.getComments = async (req, res) => {
+//   const result = await pool.query(
+//     "SELECT * FROM comments WHERE post_id=$1 ORDER BY created_at DESC",
+//     [req.params.id]
+//   );
+//   res.json(result.rows);
+// };
 
 // UPDATE COMMENT 
 exports.updateComment = async (req, res) => {
@@ -43,11 +83,6 @@ exports.updateComment = async (req, res) => {
     if (existing.rows.length === 0) {
       return res.status(404).json({ message: "Comment not found" });
     }
-
-    // // OPTIONAL: Check ownership (VERY IMPORTANT 🔐)
-    // if (existing.rows[0].user_id !== req.user.userId) {
-    //   return res.status(403).json({ message: "Unauthorized" });
-    // }
 
     const result = await db.query(
       "UPDATE comments SET comment_text = $1 WHERE id = $2 RETURNING *",

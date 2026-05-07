@@ -52,8 +52,6 @@ exports.createPost = async (req, res) => {
   }
 };
 
-
-
 // GET ALL POSTS (FEED)
 exports.getAllPosts = async (req, res) => {
   try {
@@ -73,12 +71,13 @@ exports.getAllPosts = async (req, res) => {
   }
 };
 
-
-
 // GET SINGLE POST
 exports.getSinglePost = async (req, res) => {
   try {
-    const result = await PostModel.getPostById(req.params.id);
+    const postId = req.params.id;
+    const userId = req.user.userId;
+
+    const result = await PostModel.getSinglePostFull(postId, userId);
 
     res.status(200).json({
       success: true,
@@ -86,14 +85,13 @@ exports.getSinglePost = async (req, res) => {
     });
 
   } catch (err) {
+    console.error("err");
     res.status(500).json({
       success: false,
       message: "Error fetching post"
     });
   }
 };
-
-
 
 // UPDATE POST
 exports.updatePost = async (req, res) => {
@@ -113,14 +111,13 @@ exports.updatePost = async (req, res) => {
     });
 
   } catch (err) {
+    console.error("err");
     res.status(500).json({
       success: false,
       message: "Error updating post"
     });
   }
 };
-
-
 
 // DELETE POST
 exports.deletePost = async (req, res) => {

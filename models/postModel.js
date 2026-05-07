@@ -11,7 +11,6 @@ exports.createPost = (client, user_id, content) => {
   );
 };
 
-
 // 2. BULK INSERT MEDIA (BEST WAY)
 exports.addPostMediaBulk = (client, post_id, mediaList) => {
   if (!mediaList || mediaList.length === 0) return;
@@ -42,7 +41,6 @@ exports.addPostMediaBulk = (client, post_id, mediaList) => {
   );
 };
 
-
 // 3. GET ALL POSTS (FEED WITH MEDIA)
 exports.getAllPosts = () => {
   return pool.query(`
@@ -70,7 +68,6 @@ exports.getAllPosts = () => {
     ORDER BY p.created_at DESC
   `);
 };
-
 
 // 4. GET SINGLE POST
 exports.getPostById = (post_id) => {
@@ -100,7 +97,6 @@ exports.getPostById = (post_id) => {
   `, [post_id]);
 };
 
-
 // 5. DELETE POST
 exports.deletePost = (post_id, user_id) => {
   return pool.query(
@@ -109,7 +105,6 @@ exports.deletePost = (post_id, user_id) => {
     [post_id, user_id]
   );
 };
-
 
 // 6. UPDATE POST (ONLY TEXT)
 exports.updatePost = (post_id, user_id, content) => {
@@ -121,7 +116,6 @@ exports.updatePost = (post_id, user_id, content) => {
     [content, post_id, user_id]
   );
 };
-
 
 // 7. USER POSTS (WITH MEDIA)
 exports.getUserPosts = async (user_id) => {
@@ -163,4 +157,48 @@ exports.getUserPosts = async (user_id) => {
     GROUP BY p.id, u.id
     ORDER BY p.created_at DESC
   `, [user_id]);
+};
+
+exports.getSinglePostFull = (postId, userId) => {
+  return pool.query(
+    `
+    SELECT 
+      p.id,
+      p.content,
+      p.created_at,
+
+      json_build_object(
+        'id', u.id,
+        'name', u.name
+      ) as user,
+
+      -- MEDIA
+      COALESCE(
+        json_agg(DISTINCT jsonb_build_object(
+          'url', pm.media_url,
+          'type', pm.media_type
+        )) FILTER (WHERE pm.id IS NOT NULL), '[]'
+      ) as media,
+
+      -- COUNTS
+      (SELECT COUNT(*) FROM likes WHERE post_id = p.id) as likes_count,
+      (SELECT COUNT(*) FROM comments WHERE post_id = p.id) as comments_count,
+      (SELECT COUNT(*) FROM shares WHERE post_id = p.id) as shares_count,
+
+      -- IS LIKED
+      EXISTS (
+        SELECT 1 FROM likes 
+        WHERE post_id = p.id AND user_id = $2
+      ) as is_liked
+
+    FROM posts p
+    JOIN users u ON u.id = p.user_id
+    LEFT JOIN post_media pm ON pm.post_id = p.id
+
+    WHERE p.id = $1
+
+    GROUP BY p.id, u.id
+    `,
+    [postId, userId]
+  );
 };

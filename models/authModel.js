@@ -8,7 +8,6 @@ exports.findByEmail = async (email) => {
 
 // models/userModel.js
 
-
 exports.setResetToken = async (email, token, expires) => {
   const query = `
     UPDATE users

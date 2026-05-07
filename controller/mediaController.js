@@ -1,5 +1,4 @@
 const mediaModel = require("../models/mediaModel");
-
 const db = require("../config/db");
 
 exports.uploadMedia = async (req, res) => {

@@ -19,7 +19,6 @@ exports.addHashtags = async (req, res) => {
   }
 };
 
-
 // ✅ Get hashtags of post
 exports.getPostHashtags = async (req, res) => {
   const { id: postId } = req.params;
@@ -35,7 +34,6 @@ exports.getPostHashtags = async (req, res) => {
     res.status(500).json({ message: "Error fetching hashtags" });
   }
 };
-
 
 // ✅ Get posts by hashtag
 exports.getPostsByHashtag = async (req, res) => {

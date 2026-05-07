@@ -16,7 +16,7 @@ router.post("/", verifyToken, upload.array("files", 10), postController.createPo
 router.get("/", postController.getAllPosts);
 
 // GET SINGLE POST
-router.get("/:id", postController.getSinglePost);
+router.get("/:id", verifyToken, postController.getSinglePost);
 
 // UPDATE POST
 router.put("/:id", verifyToken, postController.updatePost);
