@@ -14,16 +14,20 @@ const postRoutes = require("./routes/postRoutes");
 const saveRoutes = require("./routes/saveRoutes");
 const shareRoutes = require("./routes/shareRoutes");
 const hashtagRoutes = require("./routes/hashtagRoutes");
+
 const app = express();
 
-// ✅ parse JSON
-app.use(express.json());
 
-// ✅ FIXED LOGGER (no undefined body)
+// ✅ IMPORTANT (for large files like video)
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ extended: true }));
+
+
+// ✅ LOGGER
 app.use((req, res, next) => {
   console.log("\n===============================");
-  console.log("Request Method:", req.method);
-  console.log("Request URL:", req.originalUrl);
+  console.log("Method:", req.method);
+  console.log("URL:", req.originalUrl);
 
   if (Object.keys(req.params).length > 0) {
     console.log("Params:", req.params);
@@ -33,7 +37,6 @@ app.use((req, res, next) => {
     console.log("Query:", req.query);
   }
 
-  // ✅ only print body if exists
   if (req.body && Object.keys(req.body).length > 0) {
     console.log("Body:", req.body);
   }
@@ -42,25 +45,40 @@ app.use((req, res, next) => {
   next();
 });
 
-// ✅ routes
+
+// ✅ ROUTES
 app.use("/api/roles", roleRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/posts", postRoutes);
 app.use("/api/files", fileRoutes);
-app.use("/api/media", mediaRoutes);
+app.use("/api/media", mediaRoutes);   // 🔥 media working here
 app.use("/api/like", likeRoutes);
 app.use("/api/comment", commentRoutes);
 app.use("/api/save", saveRoutes);
 app.use("/api/share", shareRoutes);
 app.use("/api/feed", feedRoutes);
-app.use("/api/hashtag",hashtagRoutes);
+app.use("/api/hashtag", hashtagRoutes);
 
-// ✅ static uploads
+
+// ✅ STATIC FILES (if you save locally)
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-const PORT = 3000;
+
+// ✅ GLOBAL ERROR HANDLER (VERY IMPORTANT 🔥)
+app.use((err, req, res, next) => {
+  console.error("ERROR:", err.message);
+
+  if (err.message.includes("Only Image & Video")) {
+    return res.status(400).json({ message: err.message });
+  }
+
+  res.status(500).json({ message: "Something went wrong" });
+});
+
+
+const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.log(`Server started at http://localhost:${PORT}`);
+  console.log(`🚀 Server running at http://localhost:${PORT}`);
 });

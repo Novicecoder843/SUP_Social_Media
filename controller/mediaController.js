@@ -1,119 +1,105 @@
-const mediaModel = require("../models/mediaModel");
-
 const db = require("../config/db");
-const s3 = require("../config/s3");
-const { PutObjectCommand } = require("@aws-sdk/client-s3");
 
+// ✅ SINGLE UPLOAD
 exports.uploadMedia = async (req, res) => {
   try {
-    console.log("FILE:", req.file);
-    console.log("BODY:", req.body);
-
     const { post_id } = req.body;
 
-    // 1️⃣ Check file
     if (!req.file) {
       return res.status(400).json({ message: "No file uploaded" });
     }
 
-    // 2️⃣ Check post_id
-    if (!post_id) {
-      return res.status(400).json({ message: "post_id is required" });
-    }
+    const media_url = req.file.originalname;
 
-    // 3️⃣ Validate post exists
-    const postExists = await mediaModel.checkPostExists(post_id);
-    if (!postExists) {
-      return res.status(404).json({ message: "Post not found" });
-    }
-
-    // 4️⃣ Create file name
-    const fileName = `${Date.now()}-${req.file.originalname}`;
-
-    // 5️⃣ Upload to AWS S3
-    await s3.send(
-      new PutObjectCommand({
-        Bucket: "lagna-222",
-        Key: `images/${fileName}`,
-        Body: req.file.buffer,
-        ContentType: req.file.mimetype,
-      })
-    );
-
-    // 6️⃣ AWS URL
-    const media_url = `https://lagna-222.s3.ap-south-1.amazonaws.com/images/${fileName}`;
-
-    // 7️⃣ Detect media type
     const media_type = req.file.mimetype.startsWith("image")
       ? "image"
       : "video";
 
-    // 8️⃣ Save to DB
-    const media = await mediaModel.createMedia({
-      post_id,
-      media_url,
-      media_type,
-    });
+    const result = await db.query(
+      "INSERT INTO post_media (post_id, media_url, media_type) VALUES ($1,$2,$3) RETURNING *",
+      [post_id, media_url, media_type]
+    );
 
-    return res.status(200).json({
-      message: "Media uploaded successfully",
-      media,
+    res.json({
+      message: "Media uploaded",
+      data: result.rows[0],
     });
 
   } catch (err) {
-    console.error("UPLOAD ERROR:", err);
-
-    return res.status(500).json({
-      message: "Error uploading media",
-      error: err.message,
-    });
+    console.error(err);
+    res.status(500).json({ message: "Upload error" });
   }
 };
 
-exports.getMediaByPost = async (req, res) => {
-  const { postId } = req.params;
-
+// ✅ MULTIPLE UPLOAD
+exports.uploadMultipleMedia = async (req, res) => {
   try {
+    const { post_id } = req.body;
+
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ message: "No files uploaded" });
+    }
+
+    const mediaList = [];
+
+    for (let file of req.files) {
+      const media_url = file.originalname;
+
+      const media_type = file.mimetype.startsWith("image")
+        ? "image"
+        : "video";
+
+      const result = await db.query(
+        "INSERT INTO post_media (post_id, media_url, media_type) VALUES ($1,$2,$3) RETURNING *",
+        [post_id, media_url, media_type]
+      );
+
+      mediaList.push(result.rows[0]);
+    }
+
+    res.json({
+      message: "Multiple media uploaded",
+      data: mediaList,
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Upload error" });
+  }
+};
+
+// ✅ GET MEDIA BY POST
+exports.getMediaByPost = async (req, res) => {
+  try {
+    const { postId } = req.params;
+
     const result = await db.query(
       "SELECT * FROM post_media WHERE post_id = $1 ORDER BY created_at DESC",
       [postId]
     );
 
-    res.status(200).json({
-      message: "Media fetched successfully",
+    res.json({
+      message: "Media fetched",
       data: result.rows,
     });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      message: "Error fetching media",
-    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Fetch error" });
   }
 };
 
+// ✅ DELETE MEDIA
 exports.deleteMedia = async (req, res) => {
-  const { id } = req.params;
-
   try {
-    // Check if media exists
-    const media = await db.query(
-      "SELECT * FROM post_media WHERE id = $1",
-      [id]
-    );
-
-    if (media.rows.length === 0) {
-      return res.status(404).json({ message: "Media not found" });
-    }
+    const { id } = req.params;
 
     await db.query("DELETE FROM post_media WHERE id = $1", [id]);
 
-    res.status(200).json({
-      message: "Media deleted successfully",
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      message: "Error deleting media",
-    });
+    res.json({ message: "Media deleted" });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Delete error" });
   }
 };

@@ -1,32 +1,52 @@
 const multer = require("multer");
 const path = require("path");
 
-// File filter
+// storage setup (🔥 main fix)
+const storage = multer.diskStorage({
+  destination: "uploads/",
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + "-" + file.originalname);
+  },
+});
+
+// File filter (same tumhara)
 const fileFilter = (req, file, cb) => {
   const allowedMimeTypes = [
     "image/jpeg",
     "image/png",
-    "image/jpg"
+    "image/jpg",
+    "video/mp4",
+    "video/mkv",
+    "video/quicktime"
   ];
 
   const ext = path.extname(file.originalname).toLowerCase();
 
+  const allowedExt = [
+    ".jpg",
+    ".jpeg",
+    ".png",
+    ".mp4",
+    ".mkv",
+    ".mov"
+  ];
+
   if (
     allowedMimeTypes.includes(file.mimetype) &&
-    [".jpg", ".jpeg", ".png"].includes(ext)
+    allowedExt.includes(ext)
   ) {
     cb(null, true);
   } else {
-    cb(new Error("Only JPG, JPEG, PNG files allowed"), false);
+    cb(new Error("Only Image & Video files allowed"), false);
   }
 };
 
-// Multer config using memory storage
+// multer config
 const upload = multer({
-  storage: multer.memoryStorage(),
+  storage, // 🔥 change here
   fileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB
+    fileSize: 50 * 1024 * 1024,
   },
 });
 

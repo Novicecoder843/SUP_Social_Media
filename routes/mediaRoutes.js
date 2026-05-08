@@ -5,15 +5,26 @@ const mediaController = require("../controller/mediaController");
 const verifyToken = require("../middleware/authMiddleware");
 const upload = require("../config/multer");
 
-// Upload route
-router.post("/media/upload",verifyToken,
-upload.single("image"), mediaController. uploadMedia
+// ✅ SINGLE upload
+router.post(
+  "/upload",
+  verifyToken,
+  upload.single("image"),
+  mediaController.uploadMedia
 );
 
-router.get("/posts/:postId", mediaController.getMediaByPost);
+// ✅ MULTIPLE upload
+router.post(
+  "/upload-multiple",
+  verifyToken,
+  upload.array("media", 5),
+  mediaController.uploadMultipleMedia
+);
 
+// ✅ GET media by post
+router.get("/post/:postId", mediaController.getMediaByPost);
+
+// ✅ DELETE media
 router.delete("/:id", verifyToken, mediaController.deleteMedia);
 
 module.exports = router;
-
-
