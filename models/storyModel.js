@@ -42,6 +42,7 @@ exports.getAllStories = async () => {
 
 exports.addView = async (story_id, viewer_id) => {
   
+     
 
     await db.query(
         `
@@ -58,19 +59,28 @@ exports.addView = async (story_id, viewer_id) => {
 
 exports.likeStory = async (
     story_id,
-    user_id
+    user_id,
+     reaction
 ) => {
 
     await db.query(
         `
     INSERT INTO user_schema.story_likes(
         story_id,
-        user_id
-    )VALUES($1,$2)
+        user_id,
+        reaction
+    )VALUES($1,$2,$3)
     ON CONFLICT (story_id , user_id)
-    DO NOTHING `,
+    DO UPDATE SET
+
+    reaction = EXCLUDED.reaction,
+
+    created_at = NOW()
+
+    RETURNING *; `,
         [story_id,
-            user_id
+            user_id,
+            reaction
         ]
 
     );
@@ -94,6 +104,7 @@ exports.replyStory = async(
         RETURNING * `,
         [story_id, sender_id, Message]
     );
+    
     console.log(result)
     return result.row;
 };

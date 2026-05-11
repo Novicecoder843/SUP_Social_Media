@@ -1,6 +1,6 @@
 const storyModel = require("../models/storyModel");
 const db = require("../config/db");
-
+const generateSignedUrl = require("../utlis/getSignedUrl");
 
 exports.uploadStory = async (req, res) => {
     try {
@@ -14,7 +14,8 @@ exports.uploadStory = async (req, res) => {
                 message: " Media is require"
             });
         }
-        const media_url = req.file.location;
+        // const media_url = req.file.location;
+        const media_url = req.file.key;
 
         const media_type =
             req.file.mimetype.startsWith("image/")
@@ -69,48 +70,157 @@ exports.getStories = async (
 
 
 
-exports.viewStory = async (
-    req,
-    res
-) => {
+// exports.viewStory = async (
+//     req,
+//     res
+// ) => {
+
+//     try {
+//         const user_id = req.user.id;
+//         const story_id = req.params.id;
+
+//         // 🔍 Step 1: Check story exists
+//         const story = await db.query(
+//             "SELECT id FROM user_schema.stories WHERE id = $1",
+//             [story_id]
+//         );
+
+//         if (story.rows.length === 0) {
+//             return res.status(404).json({
+//                 success: false,
+//                 error: "Story not found"
+//             });
+//         }
+
+//         // REAL STORY DATA
+//         const storyData = story.rows[0];
+
+//         console.log("STORY DATA:", storyData);
+//          console.log(storyData.media_url);
+
+//         await storyModel.addView(
+//             req.params.id,
+//             req.user.id
+//         );
+
+//         // GENERATE CLICKABLE URL
+//         const signedUrl = await generateSignedUrl(
+//            storyData.media_url
+//         );
+
+
+
+//         res.json({
+//             success: true,
+//             story_id: storyData.id,
+//             story_type: storyData.media_type,
+//             caption: storyData.caption,
+//             story_url: signedUrl,
+//             message: "Story viewed"
+//         });
+
+//     } catch (err) {
+
+//         res.status(500).json({
+//             error: err.message
+//         });
+//     }
+// };
+
+
+exports.viewStory = async (req, res) => {
 
     try {
-        const user_id = req.user.id;
+
         const story_id = req.params.id;
-        // 🔍 Step 1: Check story exists
-        const story = await db.query(
-            "SELECT id FROM user_schema.stories WHERE id = $1",
+
+        const user_id = req.user.id;
+
+
+        // GET STORY
+        const result = await db.query(
+            `
+            SELECT *
+            FROM user_schema.stories
+            WHERE id = $1
+            `,
             [story_id]
         );
 
-        if (story.rows.length === 0) {
+
+        // STORY NOT FOUND
+        if (result.rows.length === 0) {
+
             return res.status(404).json({
                 success: false,
                 error: "Story not found"
             });
+
         }
 
+
+        // REAL STORY DATA
+        const story = result.rows[0];
+
+
+        console.log("STORY DATA:", story);
+
+
+        console.log("MEDIA URL:", story.media_url);
+
+
+        // ADD VIEW
         await storyModel.addView(
-            req.params.id,
-            req.user.id
+            story_id,
+            user_id
         );
 
 
+        // CHECK media_url EXISTS
+        if (!story.media_url) {
 
-        res.json({
+            return res.status(400).json({
+                success: false,
+                error: "media_url missing in database"
+            });
+
+        }
+
+
+        // GENERATE SIGNED URL
+        const signedUrl = await generateSignedUrl(
+            story.media_url
+        );
+
+
+        return res.json({
+
             success: true,
+
+            story_id: story.id,
+
+            story_type: story.media_type,
+
+            caption: story.caption,
+
+            story_url: signedUrl,
+
             message: "Story viewed"
+
         });
 
     } catch (err) {
 
-        res.status(500).json({
+        console.error(err);
+
+        return res.status(500).json({
+            success: false,
             error: err.message
         });
+
     }
+
 };
-
-
 exports.likeStory = async (
     req,
     res
@@ -118,13 +228,46 @@ exports.likeStory = async (
 
     try {
 
+        const story_id = req.params.id;
+
+        const user_id = req.user.id;
+        const { reaction } = req.body;
+
+        // CHECK STORY EXISTS
+        const story = await db.query(
+            `
+            SELECT id
+            FROM user_schema.stories
+            WHERE id = $1
+            `,
+            [story_id]
+        );
+
+
+        if (story.rows.length === 0) {
+
+            return res.status(404).json({
+                success: false,
+                error: "Story not found"
+            });
+
+        }
+
+        // DEFAULT REACTION
+        const userReaction = reaction || "like";
+
         await storyModel.likeStory(
-            req.params.id,
-            req.user.id
+            story_id,
+            user_id,
+            userReaction
         );
 
         res.json({
             success: true,
+            story_id: Number(story_id),
+            liked: true,
+            liked_by: user_id,
+            reaction: userReaction,
             message: "Story liked"
         });
 
