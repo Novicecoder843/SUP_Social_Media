@@ -41,8 +41,8 @@ exports.getAllStories = async () => {
 };
 
 exports.addView = async (story_id, viewer_id) => {
-  
-     
+
+
 
     await db.query(
         `
@@ -60,7 +60,7 @@ exports.addView = async (story_id, viewer_id) => {
 exports.likeStory = async (
     story_id,
     user_id,
-     reaction
+    reaction
 ) => {
 
     await db.query(
@@ -86,11 +86,11 @@ exports.likeStory = async (
     );
 };
 
-exports.replyStory = async(
+exports.replyStory = async (
     story_id,
     sender_id,
     Message
-)=>{
+) => {
 
     const result = await db.query(
         `
@@ -104,12 +104,12 @@ exports.replyStory = async(
         RETURNING * `,
         [story_id, sender_id, Message]
     );
-    
+
     console.log(result)
     return result.row;
 };
 
-exports.getStoryViewers = async(story_id)=>{
+exports.getStoryViewers = async (story_id) => {
     const result = await db.query(`
         SELECT u.id , 
         u.full_name,
@@ -119,19 +119,201 @@ exports.getStoryViewers = async(story_id)=>{
         ON u.id = sv.viewer_id 
         WHERE  sv.story_id = $1
         ORDER BY sv.viewed_at DESC `,
-    [story_id]
+        [story_id]
     );
- console.log(result)
-  return result.rows;
+    console.log(result)
+    return result.rows;
 };
 
-exports.deleteStory = async(story_id , user_id)=>{
+exports.deleteStory = async (story_id, user_id) => {
     await db.query(`
         DELETE  FROM user_schema.stories 
         WHERE id = $1 
         AND user_id =$2 `,
-    [story_id,
-        user_id
-    ]);
-  console.log("story deleted successfully ")  
+        [story_id,
+            user_id
+        ]);
+    console.log("story deleted successfully ")
+};
+
+
+
+
+
+
+// GET STORY DETAILS
+exports.getStoryDetails = async (story_id) => {
+
+    const query = `
+
+SELECT
+    s.id,
+    s.caption,
+    s.media_url,
+    s.media_type,
+    s.created_at,
+
+    u.user_id AS user_id,
+    u.username
+    
+
+FROM user_schema.stories s
+
+JOIN user_schema.users u
+ON s.user_id = u.user_id
+
+WHERE s.id = $1
+
+`;
+
+    const result = await db.query(
+        query,
+        [story_id]
+    );
+
+    return result.rows[0];
+
+};
+
+
+// TOTAL VIEWS
+exports.getTotalViews = async (story_id) => {
+
+    const result = await db.query(
+        `
+        SELECT COUNT(*) AS total_views
+        FROM user_schema.story_views
+        WHERE story_id = $1
+        `,
+        [story_id]
+    );
+
+    return result.rows[0];
+
+};
+
+
+// TOTAL LIKES
+exports.getTotalLikes = async (story_id) => {
+
+    const result = await db.query(
+        `
+        SELECT COUNT(*) AS total_likes
+        FROM user_schema.story_likes
+        WHERE story_id = $1
+        `,
+        [story_id]
+    );
+
+    return result.rows[0];
+
+};
+
+
+// TOTAL COMMENTS
+exports.getTotalComments = async (story_id) => {
+
+    const result = await db.query(
+        `
+        SELECT COUNT(*) AS total_comments
+        FROM user_schema.story_replies
+        WHERE story_id = $1
+        `,
+        [story_id]
+    );
+
+    return result.rows[0];
+
+};
+
+
+// WHO VIEWED
+exports.getStoryViewers = async (story_id) => {
+
+    const result = await db.query(
+        `
+        SELECT
+
+            u.id,
+            u.username,
+            u.profile_image,
+
+            sv.viewed_at
+
+        FROM user_schema.story_views sv
+
+        JOIN user_schema.users u
+        ON sv.viewer_id = u.id
+
+        WHERE sv.story_id = $1
+
+        ORDER BY sv.viewed_at DESC
+        `,
+        [story_id]
+    );
+
+    return result.rows;
+
+};
+
+
+// WHO LIKED
+exports.getStoryLikes = async (story_id) => {
+
+    const result = await db.query(
+        `
+        SELECT
+
+            u.id,
+            u.username,
+            u.profile_image,
+
+            sl.reaction,
+            sl.created_at
+
+        FROM user_schema.story_likes sl
+
+        JOIN user_schema.users u
+        ON sl.user_id = u.id
+
+        WHERE sl.story_id = $1
+
+        ORDER BY sl.created_at DESC
+        `,
+        [story_id]
+    );
+
+    return result.rows;
+
+};
+
+
+// WHO COMMENTED
+exports.getStoryComments = async (story_id) => {
+
+    const result = await db.query(
+        `
+        SELECT
+
+            u.id,
+            u.username,
+            u.profile_image,
+
+            sr.message,
+            sr.created_at
+
+        FROM user_schema.story_replies sr
+
+        JOIN user_schema.users u
+        ON sr.user_id = u.id
+
+        WHERE sr.story_id = $1
+
+        ORDER BY sr.created_at DESC
+        `,
+        [story_id]
+    );
+
+    return result.rows;
+
 };

@@ -221,6 +221,9 @@ exports.viewStory = async (req, res) => {
     }
 
 };
+
+
+
 exports.likeStory = async (
     req,
     res
@@ -367,4 +370,146 @@ exports.deleteStory = async (
             error: err.message
         });
     }
+};
+
+
+
+
+exports.getStoryDetails = async (req, res) => {
+
+    try {
+
+        const story_id = req.params.id;
+
+
+        // STORY
+        const story =
+            await storyModel.getStoryDetails(
+                story_id
+            );
+
+
+        if (!story) {
+
+            return res.status(404).json({
+                success: false,
+                error: "Story not found"
+            });
+
+        }
+
+
+        // SIGNED URL
+        const signedUrl =
+            await generateSignedUrl(
+                story.media_url
+            );
+
+
+        // ANALYTICS
+        const totalViews =
+            await storyModel.getTotalViews(
+                story_id
+            );
+
+        const totalLikes =
+            await storyModel.getTotalLikes(
+                story_id
+            );
+
+        const totalComments =
+            await storyModel.getTotalComments(
+                story_id
+            );
+
+
+        // USERS
+        const viewers =
+            await storyModel.getStoryViewers(
+                story_id
+            );
+
+        const likes =
+            await storyModel.getStoryLikes(
+                story_id
+            );
+
+        const comments =
+            await storyModel.getStoryComments(
+                story_id
+            );
+
+
+        return res.json({
+
+            success: true,
+
+            story: {
+
+                story_id: story.id,
+
+                caption: story.caption,
+
+                media_type: story.media_type,
+
+                story_url: signedUrl,
+
+                created_at: story.created_at,
+
+                owner: {
+
+                    user_id: story.user_id,
+
+                    username: story.username,
+
+                    profile_image:
+                        story.profile_image
+
+                }
+
+            },
+
+
+            analytics: {
+
+                total_views:
+                    Number(
+                        totalViews.total_views
+                    ),
+
+                total_likes:
+                    Number(
+                        totalLikes.total_likes
+                    ),
+
+                total_comments:
+                    Number(
+                        totalComments.total_comments
+                    )
+
+            },
+
+
+            viewers,
+
+            likes,
+
+            comments
+
+        });
+
+    } catch (err) {
+
+        console.error(err);
+
+        return res.status(500).json({
+
+            success: false,
+
+            error: err.message
+
+        });
+
+    }
+
 };

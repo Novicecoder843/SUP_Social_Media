@@ -24,6 +24,7 @@ router.get("/:id/viewers",auth,controller.getStoryViewers);
 
 
 router.delete("/:id",auth,controller.deleteStory);
+router.get("/:id/details",auth,controller.getStoryDetails);
 
 
 module.exports = router;
