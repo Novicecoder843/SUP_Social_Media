@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Chat Pro</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial;
+      display: flex;
+      height: 100vh;
+    }
+
+    /* LEFT PANEL */
+    .sidebar {
+      width: 30%;
+      border-right: 1px solid #ddd;
+      display: flex;
+      flex-direction: column;
+      background: #f0f2f5;
+    }
+
+    .header {
+      padding: 12px;
+      background: #008069;
+      color: white;
+      font-weight: bold;
+    }
+
+    .search-box {
+      padding: 8px;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 8px;
+    }
+
+    .chat-list {
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .user {
+  padding: 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #eee;
+  transition: 0.2s;
+}
+
+.user:hover {
+  background: #f5f5f5;
+}
+
+.active {
+  background: #d9fdd3;
+}
+
+.user b {
+  font-size: 14px;
+}
+
+.user small {
+  color: gray;
+}
+
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #008069;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 10px;
+      font-weight: bold;
+    }
+
+    .user-info { flex: 1; }
+
+    .user-email { font-weight: bold; }
+
+    .last-msg {
+      font-size: 12px;
+      color: gray;
+    }
+
+    .meta {
+      text-align: right;
+      font-size: 12px;
+    }
+
+    .online { color: green; }
+
+    .unread {
+      background: green;
+      color: white;
+      border-radius: 50%;
+      padding: 3px 6px;
+      font-size: 12px;
+    }
+
+    /* RIGHT PANEL */
+    .chat-container {
+      width: 70%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .chat-header {
+      padding: 10px;
+      background: #ededed;
+      border-bottom: 1px solid #ddd;
+    }
+
+    #chatBox {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+      background: #e5ddd5;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .msg {
+      max-width: 60%;
+      padding: 10px;
+      margin: 5px;
+      border-radius: 10px;
+    }
+
+    .me { background: #dcf8c6; margin-left: auto; }
+    .friend { background: white; }
+
+    .input {
+      display: flex;
+      border-top: 1px solid #ddd;
+    }
+
+    input {
+      flex: 1;
+      padding: 12px;
+      border: none;
+    }
+
+    button {
+      padding: 12px;
+      background: #008069;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- LEFT -->
+<div class="sidebar">
+  <div class="header">Chat App</div>
+
+  <div class="search-box">
+    <input placeholder="Search..." oninput="searchUser(this.value)">
+  </div>
+
+  <div id="chatList" class="chat-list"></div>
+</div>
+
+<!-- RIGHT -->
+<div class="chat-container">
+  <div class="chat-header" id="chatHeader">Select a user</div>
+
+  <div id="chatBox"></div>
+
+  <div class="input">
+    <input id="message" placeholder="Type message..." />
+    <button onclick="send()">Send</button>
+  </div>
+</div>
+
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+
+<script>
+let socket;
+let myUserId;
+let currentChatUser = null;
+let usersCache = [];
+
+/////////////////////////////////////////////////////
+// CONNECT
+/////////////////////////////////////////////////////
+function connect(token) {
+
+  const decoded = JSON.parse(atob(token.split('.')[1]));
+  myUserId = decoded.id;
+
+  socket = io("http://localhost:3001", {
+    auth: { token }
+  });
+
+  /////////////////////////////////////////////////////
+  // CONNECTED
+  /////////////////////////////////////////////////////
+  socket.on("connect", () => {
+    console.log("🟢 Connected:", socket.id);
+
+    loadChatList();
+
+    // JOIN CHAT
+    socket.emit("join_chat", {
+      userId: myUserId
+    });
+  });
+
+  /////////////////////////////////////////////////////
+  // SOCKET ERROR
+  /////////////////////////////////////////////////////
+  socket.on("connect_error", (err) => {
+    console.log("❌ Socket Error:", err.message);
+  });
+
+  /////////////////////////////////////////////////////
+  // RECEIVE MESSAGE
+  /////////////////////////////////////////////////////
+  socket.on("receive_message", (msg) => {
+    console.log("📩 New message:", msg);
+
+    // if current open chat
+    if (
+      msg.sender_id == currentChatUser ||
+      msg.receiver_id == currentChatUser
+    ) {
+      renderMessage(msg);
+    }
+
+    loadChatList();
+  });
+
+  /////////////////////////////////////////////////////
+  // SENT MESSAGE
+  /////////////////////////////////////////////////////
+  socket.on("message_sent", (msg) => {
+    console.log("✅ Sent:", msg);
+
+    renderMessage(msg);
+
+    loadChatList();
+  });
+
+  /////////////////////////////////////////////////////
+  // ONLINE USERS
+  /////////////////////////////////////////////////////
+  socket.on("onlineUsers", (users) => {
+    console.log("🟢 Online:", users);
+  });
+
+  /////////////////////////////////////////////////////
+  // TYPING
+  /////////////////////////////////////////////////////
+  socket.on("typing", () => {
+    document.getElementById("chatHeader").innerText =
+      "Typing...";
+  });
+
+  socket.on("stop_typing", () => {
+    const user = usersCache.find(
+      u => u.user_id == currentChatUser
+    );
+
+    document.getElementById("chatHeader").innerText =
+      user?.email || "Chat";
+  });
+}
+
+/////////////////////////////////////////////////////
+// LOAD CHAT LIST
+/////////////////////////////////////////////////////
+async function loadChatList() {
+
+  const res = await fetch(
+    "http://localhost:3001/api/chats/list",
+    {
+      headers: {
+        Authorization:
+          "Bearer " + localStorage.getItem("token")
+      }
+    }
+  );
+
+  const data = await res.json();
+
+  usersCache = data.users || [];
+
+  const list = document.getElementById("chatList");
+
+  list.innerHTML = "";
+
+  usersCache.forEach(u => {
+
+    const div = document.createElement("div");
+
+    div.className =
+      "user " +
+      (u.user_id == currentChatUser ? "active" : "");
+
+    div.innerHTML = `
+      <b>${u.email}</b><br>
+      <small>${u.last_message || "Start chatting..."}</small>
+      ${
+        u.unread > 0
+          ? `<span class="unread">${u.unread}</span>`
+          : ""
+      }
+    `;
+
+    div.onclick = () => openChat(u);
+
+    list.appendChild(div);
+  });
+
+  /////////////////////////////////////////////////////
+  // AUTO OPEN FIRST CHAT
+  /////////////////////////////////////////////////////
+  if (usersCache.length > 0 && !currentChatUser) {
+    openChat(usersCache[0]);
+  }
+}
+
+/////////////////////////////////////////////////////
+// OPEN CHAT
+/////////////////////////////////////////////////////
+async function openChat(user) {
+
+  currentChatUser = user.user_id;
+
+  document.getElementById("chatHeader").innerText =
+    user.email;
+
+  const chatBox = document.getElementById("chatBox");
+
+  chatBox.innerHTML = "";
+
+  const res = await fetch(
+    `http://localhost:3001/api/chats/conversation/${user.user_id}`,
+    {
+      headers: {
+        Authorization:
+          "Bearer " + localStorage.getItem("token")
+      }
+    }
+  );
+
+  const data = await res.json();
+
+  (data.messages || []).forEach(renderMessage);
+
+  /////////////////////////////////////////////////////
+  // MARK SEEN
+  /////////////////////////////////////////////////////
+  socket.emit("seen", {
+    sender_id: user.user_id,
+    receiver_id: myUserId
+  });
+}
+
+/////////////////////////////////////////////////////
+// RENDER MESSAGE
+/////////////////////////////////////////////////////
+function renderMessage(msg) {
+
+  const chatBox = document.getElementById("chatBox");
+
+  const div = document.createElement("div");
+
+  div.className =
+    "msg " +
+    (msg.sender_id == myUserId
+      ? "me"
+      : "friend");
+
+  div.innerHTML = `
+    ${msg.message}
+  `;
+
+  chatBox.appendChild(div);
+
+  chatBox.scrollTop =
+    chatBox.scrollHeight;
+}
+
+/////////////////////////////////////////////////////
+// SEND
+/////////////////////////////////////////////////////
+function send() {
+
+  if (!currentChatUser) {
+    alert("Select user first");
+    return;
+  }
+
+  const input =
+    document.getElementById("message");
+
+  const message = input.value.trim();
+
+  if (!message) return;
+
+  socket.emit("send_message", {
+    sender_id: myUserId,
+    receiver_id: currentChatUser,
+    message
+  });
+
+  input.value = "";
+}
+
+/////////////////////////////////////////////////////
+// SEARCH
+/////////////////////////////////////////////////////
+function searchUser(text) {
+
+  const filtered = usersCache.filter(u =>
+    u.email
+      .toLowerCase()
+      .includes(text.toLowerCase())
+  );
+
+  const list =
+    document.getElementById("chatList");
+
+  list.innerHTML = "";
+
+  filtered.forEach(u => {
+
+    const div = document.createElement("div");
+
+    div.className = "user";
+
+    div.innerHTML = `
+      <b>${u.email}</b>
+    `;
+
+    div.onclick = () => openChat(u);
+
+    list.appendChild(div);
+  });
+}
+
+/////////////////////////////////////////////////////
+// TYPING
+/////////////////////////////////////////////////////
+function typing() {
+
+  if (!currentChatUser) return;
+
+  socket.emit("typing", {
+    sender_id: myUserId,
+    receiver_id: currentChatUser
+  });
+
+  clearTimeout(window.typingTimeout);
+
+  window.typingTimeout =
+    setTimeout(() => {
+
+      socket.emit("stop_typing", {
+        receiver_id: currentChatUser
+      });
+
+    }, 1000);
+}
+
+/////////////////////////////////////////////////////
+// INIT
+/////////////////////////////////////////////////////
+let token =
+  localStorage.getItem("token");
+
+if (!token) {
+
+  token = prompt("Paste JWT Token");
+
+  localStorage.setItem(
+    "token",
+    token
+  );
+}
+
+connect(token);
+</script>
+
+</body>
+</html>

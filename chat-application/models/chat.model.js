@@ -158,7 +158,7 @@ exports.markSeen = async (senderId, receiverId) => {
 /////////////////////////////////////////////////////
 // 📩 UNDELIVERED (OFFLINE)
 /////////////////////////////////////////////////////
-exports.getUndeliveredMessages = async (userId) => {
+exports.getUndelivered = async (userId) => {
   const result = await db.query(
     `
     SELECT *
@@ -192,4 +192,100 @@ exports.markAllDelivered = async (userId) => {
     count: result.rowCount,
     ids: result.rows.map(r => r.id)
   };
+};
+
+
+
+/////////////////////////////////////////////////////
+// 🟢 SET USER ONLINE
+/////////////////////////////////////////////////////
+
+exports.setOnline = async (userId) => {
+  await db.query(
+    `UPDATE users SET is_online = true WHERE id = $1`,
+    [userId]
+  );
+};
+
+// exports.setOnline = async (userId) => {
+//   await db.query(
+//     `
+//     UPDATE public.users
+//     SET status = true,
+//         last_seen = NOW()
+//     WHERE id = $1
+//     `,
+//     [userId]
+//   );
+// };
+
+/////////////////////////////////////////////////////
+// ⚫ SET USER OFFLINE
+/////////////////////////////////////////////////////
+exports.setOffline = async (userId) => {
+  await db.query(
+    `UPDATE users 
+     SET is_online = false, last_seen = NOW() 
+     WHERE id = $1`,
+    [userId]
+  );
+};
+
+
+// exports.setOffline = async (userId) => {
+//   await db.query(
+//     `
+//     UPDATE public.users
+//     SET status = false,
+//         last_seen = NOW()
+//     WHERE id = $1
+//     `,
+//     [userId]
+//   );
+// };
+
+/////////////////////////////////////////////////////
+// 👀 GET USER STATUS
+/////////////////////////////////////////////////////
+exports.getUserStatus = async (userId) => {
+  const result = await db.query(
+    `
+    SELECT id, status, last_seen
+    FROM public.users
+    WHERE id = $1
+    `,
+    [userId]
+  );
+
+  return result.rows[0];
+};
+
+
+
+
+
+
+exports.getChatListFromMessages = async (userId) => {
+  const result = await db.query(`
+    SELECT 
+      CASE 
+        WHEN sender_id = $1 THEN receiver_id
+        ELSE sender_id
+      END as user_id,
+
+      MAX(message) as last_message,
+      MAX(created_at) as last_time,
+
+      SUM(CASE 
+        WHEN receiver_id = $1 AND is_seen = false THEN 1 
+        ELSE 0 
+      END) as unread
+
+    FROM messages
+    WHERE sender_id = $1 OR receiver_id = $1
+    GROUP BY user_id
+    ORDER BY last_time DESC
+  `, [userId]);
+
+  return result.rows;
 };

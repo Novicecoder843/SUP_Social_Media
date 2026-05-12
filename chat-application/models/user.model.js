@@ -21,3 +21,5 @@ exports.findByEmail = async (email) => {
 
   return result.rows[0];
 };
+
+

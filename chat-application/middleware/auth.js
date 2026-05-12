@@ -1,7 +1,32 @@
+// const jwt = require("jsonwebtoken");
+
+// module.exports = (req, res, next) => {
+//   const token = req.headers.authorization?.split(" ")[1];
+
+//   if (!token) {
+//     return res.status(401).json({ error: "No token" });
+//   }
+
+//   try {
+//     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+//     // req.user = decoded; // { id: ... }
+//     req.user = decoded; // { id, email }
+//     next();
+//   } catch {
+//     return res.status(401).json({ error: "Invalid token" });
+//   }
+// };a
+
 const jwt = require("jsonwebtoken");
 
 module.exports = (req, res, next) => {
-  const token = req.headers.authorization?.split(" ")[1];
+  const authHeader = req.headers.authorization;
+
+  console.log("AUTH HEADER:", authHeader);
+
+  const token = authHeader?.split(" ")[1];
+
+  console.log("TOKEN:", token);
 
   if (!token) {
     return res.status(401).json({ error: "No token" });
@@ -9,12 +34,12 @@ module.exports = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    // req.user = decoded; // { id: ... }
-    req.user = decoded; // { id, email }
+    console.log("DECODED:", decoded);
+
+    req.user = decoded;
     next();
-  } catch {
-    return res.status(401).json({ error: "Invalid token" });
+  } catch (err) {
+    console.log("JWT ERROR:", err.message);
+    return res.status(401).json({ error: err.message });
   }
 };
-
-

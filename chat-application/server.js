@@ -1,31 +1,55 @@
 require("dotenv").config();
+
 const express = require("express");
 const http = require("http");
+const cors = require("cors"); // ✅ ADD THIS
+
+const { Server } = require("socket.io");
 const { setSocket } = require("./config/socket");
 
 const app = express();
 
-// middleware
+/////////////////////////////////////////////////////
+// ✅ MIDDLEWARE
+/////////////////////////////////////////////////////
+app.use(cors()); // ✅ ADD THIS
 app.use(express.json());
 
-// routes
+/////////////////////////////////////////////////////
+// 📦 ROUTES
+/////////////////////////////////////////////////////
 app.use("/api/auth", require("./routes/auth.routes"));
 app.use("/api/chats", require("./routes/chat.routes"));
+app.use("/api", require("./routes/chat.routes"));
 
-// test route
 app.get("/", (req, res) => {
-  res.send("Chat API running 🚀");
+  res.send("🚀 Chat API + Socket running");
 });
 
 /////////////////////////////////////////////////////
-// 🔥 CREATE HTTP SERVER (IMPORTANT)
+// 🌐 CREATE HTTP SERVER
 /////////////////////////////////////////////////////
 const server = http.createServer(app);
 
 /////////////////////////////////////////////////////
-// 🔌 INIT SOCKET.IO
+// 🔌 SOCKET.IO SETUP
 /////////////////////////////////////////////////////
-setSocket(server);
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+  },
+});
+
+/////////////////////////////////////////////////////
+// 🧠 SHARE GLOBALS
+/////////////////////////////////////////////////////
+app.set("io", io);
+app.set("onlineUsers", {});
+
+/////////////////////////////////////////////////////
+// 📡 SOCKET LOGIC
+/////////////////////////////////////////////////////
+require("./socket/chat.socket")(io);
 
 /////////////////////////////////////////////////////
 // 🚀 START SERVER

@@ -31,8 +31,14 @@ exports.register = async (req, res) => {
 // 🔐 LOGIN
 exports.login = async (req, res) => {
   try {
+
+    console.log("🔥 LOGIN API HIT");
+
     const { email, password } = req.body;
 
+    console.log(email, password);
+
+    // find user
     const user = await User.findByEmail(email);
 
     if (!user) {
@@ -42,7 +48,10 @@ exports.login = async (req, res) => {
     }
 
     // compare password
-    const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = await bcrypt.compare(
+      password,
+      user.password
+    );
 
     if (!isMatch) {
       return res.status(400).json({
@@ -52,16 +61,31 @@ exports.login = async (req, res) => {
 
     // generate token
     const token = jwt.sign(
-      { id: user.id, email: user.email },
+      {
+        id: user.id,
+        email: user.email
+      },
       process.env.JWT_SECRET,
-      { expiresIn: "1h" }
+      {
+        expiresIn: "7d"
+      }
     );
 
+    // send response
     res.json({
-      token
+      token,
+      user: {
+        id: user.id,
+        email: user.email
+      }
     });
 
   } catch (err) {
-    res.status(500).json({ error: err.message });
+
+    console.log("❌ LOGIN ERROR:", err);
+
+    res.status(500).json({
+      error: err.message
+    });
   }
 };

@@ -1,7 +1,10 @@
 const router = require("express").Router();
 const auth = require("../middleware/auth");
 const chatController = require("../controllers/chat.controller");
+const express = require("express");
+const controller = require("../controllers/chat.Controller");
 
+router.get("/users", auth, controller.getUsers);
 /////////////////////////////////////////////////////
 // 💬 SEND MESSAGE
 /////////////////////////////////////////////////////
@@ -13,9 +16,13 @@ router.post("/", auth, chatController.sendMessage);
 router.post("/:messageId/reply", auth, chatController.replyMessage);
 
 /////////////////////////////////////////////////////
+// 📋 CHAT LIST (⚠️ MUST BE BEFORE :userId)
+/////////////////////////////////////////////////////
+router.get("/list", auth, chatController.getChatList);
+
+/////////////////////////////////////////////////////
 // 📩 GET CONVERSATION (PAGINATION)
 /////////////////////////////////////////////////////
-// ⚠️ ALWAYS before /:userId
 router.get("/conversation/:user2", auth, chatController.getConversation);
 
 /////////////////////////////////////////////////////
@@ -36,7 +43,6 @@ router.delete("/:messageId", auth, chatController.deleteMessage);
 /////////////////////////////////////////////////////
 // 📩 GET CHAT (SIMPLE)
 /////////////////////////////////////////////////////
-// ⚠️ KEEP LAST (VERY IMPORTANT)
+// ⚠️ ALWAYS LAST
 router.get("/:userId", auth, chatController.getChat);
-
 module.exports = router;

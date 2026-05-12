@@ -1,15 +1,20 @@
+const { Server } = require("socket.io");
+
 let io;
 
 const setSocket = (server) => {
-  const { Server } = require("socket.io");
-
   io = new Server(server, {
-    cors: { origin: "*" }
+    cors: { origin: "*" },
   });
 
-  require("../socket/chat.socket")(io);
+  console.log("✅ Socket initialized");
 
   return io;
 };
 
-module.exports = { setSocket };
+const getIO = () => {
+  if (!io) throw new Error("Socket not initialized");
+  return io;
+};
+
+module.exports = { setSocket, getIO };
