@@ -311,7 +311,8 @@ exports.replyStory = async (
 
         res.json({
             success: true,
-            data: reply
+            data: reply,
+            message:  message,
         });
 
     } catch (err) {
@@ -336,7 +337,8 @@ exports.getStoryViewers = async (
 
         res.json({
             success: true,
-            data: viewers
+            data: viewers,
+            user_id:req.params.id
         });
 
     } catch (err) {
@@ -380,6 +382,7 @@ exports.getStoryDetails = async (req, res) => {
     try {
 
         const story_id = req.params.id;
+        console.log(story_id);
 
 
         // STORY
@@ -388,6 +391,8 @@ exports.getStoryDetails = async (req, res) => {
                 story_id
             );
 
+
+        console.log("STORY:",story);
 
         if (!story) {
 
@@ -462,8 +467,6 @@ exports.getStoryDetails = async (req, res) => {
 
                     username: story.username,
 
-                    profile_image:
-                        story.profile_image
 
                 }
 

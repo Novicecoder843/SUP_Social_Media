@@ -109,21 +109,21 @@ exports.replyStory = async (
     return result.row;
 };
 
-exports.getStoryViewers = async (story_id) => {
-    const result = await db.query(`
-        SELECT u.id , 
-        u.full_name,
-        sv.viewed_at
-        FROM user_schema.story_views sv 
-        JOIN user_schema.userstable u 
-        ON u.id = sv.viewer_id 
-        WHERE  sv.story_id = $1
-        ORDER BY sv.viewed_at DESC `,
-        [story_id]
-    );
-    console.log(result)
-    return result.rows;
-};
+// exports.getStoryViewers = async (story_id) => {
+//     const result = await db.query(`
+//         SELECT u.id , 
+//         u.full_name,
+//         sv.viewed_at
+//         FROM user_schema.story_views sv 
+//         JOIN user_schema.userstable u 
+//         ON u.id = sv.viewer_id 
+//         WHERE  sv.story_id = $1
+//         ORDER BY sv.viewed_at DESC `,
+//         [story_id]
+//     );
+//     console.log(result)
+//     return result.rows;
+// };
 
 exports.deleteStory = async (story_id, user_id) => {
     await db.query(`
@@ -153,16 +153,15 @@ SELECT
     s.media_type,
     s.created_at,
 
-    u.user_id AS user_id,
-    u.username
-    
+    u.id AS user_id,
+    u.full_name
 
 FROM user_schema.stories s
 
-JOIN user_schema.users u
-ON s.user_id = u.user_id
+LEFT JOIN user_schema.userstable u
+ON s.user_id = u.id
 
-WHERE s.id = $1
+WHERE s.id = $1;
 
 `;
 
@@ -234,20 +233,19 @@ exports.getStoryViewers = async (story_id) => {
         `
         SELECT
 
-            u.id,
-            u.username,
-            u.profile_image,
+    u.id,
+    u.full_name,
 
-            sv.viewed_at
+    sv.viewed_at
 
-        FROM user_schema.story_views sv
+      FROM user_schema.story_views sv
 
-        JOIN user_schema.users u
-        ON sv.viewer_id = u.id
+       LEFT JOIN user_schema.userstable u
+       ON sv.viewer_id = u.id
 
-        WHERE sv.story_id = $1
+      WHERE sv.story_id = $1
 
-        ORDER BY sv.viewed_at DESC
+     ORDER BY sv.viewed_at DESC;
         `,
         [story_id]
     );
@@ -265,15 +263,15 @@ exports.getStoryLikes = async (story_id) => {
         SELECT
 
             u.id,
-            u.username,
-            u.profile_image,
+            u.full_name,
+            
 
             sl.reaction,
             sl.created_at
 
         FROM user_schema.story_likes sl
 
-        JOIN user_schema.users u
+        JOIN user_schema.userstable u
         ON sl.user_id = u.id
 
         WHERE sl.story_id = $1
@@ -296,20 +294,20 @@ exports.getStoryComments = async (story_id) => {
         SELECT
 
             u.id,
-            u.username,
-            u.profile_image,
+            u.full_name,
+            
 
             sr.message,
-            sr.created_at
+            sr.create_at
 
         FROM user_schema.story_replies sr
 
-        JOIN user_schema.users u
-        ON sr.user_id = u.id
+        JOIN user_schema.userstable u
+        ON sr.id = u.id
 
         WHERE sr.story_id = $1
 
-        ORDER BY sr.created_at DESC
+        ORDER BY sr.create_at DESC
         `,
         [story_id]
     );
