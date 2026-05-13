@@ -172,6 +172,75 @@ exports.likeReel = async (req, res) => {
   }
 };
 
+// LIKE COUNT
+exports.getLikeCount = async (req, res) => {
+  try {
+
+    const { id } = req.params;
+
+    const result = await pool.query(
+      `SELECT likes_count FROM reels WHERE id = $1`,
+      [id]
+    );
+
+    res.status(200).json({
+      success: true,
+      likes: result.rows[0].likes_count
+    });
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      success: false
+    });
+  }
+};
+
+// UNLIKE REEL
+exports.unlikeReel = async (req, res) => {
+  try {
+
+    const { id } = req.params;
+
+    const result = await pool.query(
+      `
+      DELETE FROM reel_likes
+      WHERE reel_id = $1 AND user_id = $2
+      RETURNING *
+      `,
+      [id, req.user.id]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Reel not liked yet"
+      });
+    }
+
+    await pool.query(
+      `
+      UPDATE reels
+      SET likes_count = GREATEST(likes_count - 1, 0)
+      WHERE id = $1
+      `,
+      [id]
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Reel unliked"
+    });
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      success: false,
+      message: "Unlike failed"
+    });
+  }
+};
+
 // COMMENT REEL
 exports.commentReel = async (req, res) => {
   try {
@@ -211,6 +280,29 @@ exports.commentReel = async (req, res) => {
     });
   }
 };
+ // COMMENT COUNT
+exports.getCommentCount = async (req, res) => {
+  try {
+
+    const { id } = req.params;
+
+    const result = await pool.query(
+      `SELECT comments_count FROM reels WHERE id = $1`,
+      [id]
+    );
+
+    res.status(200).json({
+      success: true,
+      comments: result.rows[0].comments_count
+    });
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      success: false
+    });
+  }
+};
 
 // SAVE REEL
 exports.saveReel = async (req, res) => {
@@ -238,6 +330,34 @@ exports.saveReel = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Save failed"
+    });
+  }
+};
+
+// UNSAVE REEL
+exports.unsaveReel = async (req, res) => {
+  try {
+
+    const { id } = req.params;
+
+    await pool.query(
+      `
+      DELETE FROM reel_saves
+      WHERE reel_id = $1 AND user_id = $2
+      `,
+      [id, req.user.id]
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Reel unsaved"
+    });
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      success: false,
+      message: "Unsave failed"
     });
   }
 };
@@ -277,6 +397,30 @@ exports.shareReel = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Share failed"
+    });
+  }
+};
+
+// SHARE COUNT
+exports.getShareCount = async (req, res) => {
+  try {
+
+    const { id } = req.params;
+
+    const result = await pool.query(
+      `SELECT shares_count FROM reels WHERE id = $1`,
+      [id]
+    );
+
+    res.status(200).json({
+      success: true,
+      shares: result.rows[0].shares_count
+    });
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      success: false
     });
   }
 };
