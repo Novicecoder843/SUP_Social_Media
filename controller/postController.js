@@ -1,5 +1,6 @@
 const pool = require("../config/db");
 const PostModel = require("../models/postModel");
+const hashtagModel = require("../models/hashtagModel");
 
 //CREATE POST (with media)
 exports.createPost = async (req, res) => {
@@ -9,9 +10,10 @@ exports.createPost = async (req, res) => {
     await client.query("BEGIN");
 
     const user_id = req.user.id;
-    const { content } = req.body;
+    const { content, location_id, hashtags, tagged_users, visibility, allow_comments, allow_share } = req.body;
 
-    const postResult = await PostModel.createPost(client, user_id, content);
+    const postResult = await PostModel.createPost(client, user_id, content, 
+      location_id, visibility, allow_comments, allow_share);
     const post = postResult.rows[0];
 
     //Prepare media list
@@ -23,18 +25,65 @@ exports.createPost = async (req, res) => {
         type: file.mimetype.startsWith("video") ? "video" : "image",
         order: index
       }));
+      const mediaDBList = req.files.map((file, index) => ({
+    url: file.key, // ONLY FILE NAME
+    type: file.mimetype.startsWith("video") ? "video" : "image",
+    order: index
+  }));
 
       //Insert media
-      await PostModel.addPostMediaBulk(client, post.id, mediaList);
+      await PostModel.addPostMediaBulk(client, post.id,mediaDBList);
+      mediaList = req.files.map((file, index) => ({
+    url: file.location || file.key,
+    type: file.mimetype.startsWith("video")
+      ? "video"
+      : "image",
+    order: index
+  }));
+}
+  
+    // HASHTAGS
+    if (hashtags) {
+
+      const hashtagArray = hashtags ? JSON.parse(hashtags) : [];
+
+      for (const hashtagId of hashtagArray) {
+
+        await hashtagModel.addPostHashtag(
+          client,
+          post.id,
+          hashtagId
+        );
+      }
+    }
+
+    // TAGGED USERS
+    if (tagged_users) {
+
+      const taggedArray = tagged_users ? JSON.parse(tagged_users) : [];
+     
+      for (const taggedUserId of taggedArray) {
+
+        await PostModel.addTaggedUser(
+          client,
+          post.id,
+          taggedUserId
+        );
+      }
     }
 
     await client.query("COMMIT");
+
+    console.log("COMMENT DONE");
 
     res.status(201).json({
       success: true,
       message: "Post created successfully",
       data: {
         ...post,
+        location_id,
+        hashtags,
+        tagged_users,
         media: mediaList
       }
     });
@@ -64,6 +113,7 @@ exports.getAllPosts = async (req, res) => {
     });
 
   } catch (err) {
+    console.error(err);
     res.status(500).json({
       success: false,
       message: "Error fetching posts"

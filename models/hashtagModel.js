@@ -7,10 +7,26 @@ exports.createOrGetHashtag = async (tag) => {
      VALUES ($1)
      ON CONFLICT (tag) DO UPDATE SET tag = EXCLUDED.tag
      RETURNING id`,
-    [tag.toLowerCase()]
+    [String(tag).toLowerCase()]
   );
 
   return result.rows[0]; // { id }
+};
+
+exports.addPostHashtag = async (
+  client,
+  post_id,
+  hashtag_id
+) => {
+
+  return client.query(
+    `
+    INSERT INTO post_hashtags
+    (post_id, hashtag_id)
+    VALUES ($1, $2)
+    `,
+    [post_id, hashtag_id]
+  );
 };
 
 // ✅ Get hashtags of a post

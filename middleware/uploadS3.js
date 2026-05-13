@@ -28,9 +28,7 @@ try {
 
         const ext = path.extname(file.originalname);
 
-        const uniqueName = Date.now() + "-" + Math.floor(Math.random() + 1000)
-
-        ext;
+        const uniqueName = Date.now() + "-" + Math.floor(Math.random() + 1000) + ext;
 
         cb(null, `Upload-images/${uniqueName}`);
       },
@@ -52,7 +50,7 @@ try {
     },
 
     limits: {
-      fileSize: 5 * 1024 * 1024, // 5MB
+      fileSize: 50 * 1024 * 1024, 
     },
   });
 

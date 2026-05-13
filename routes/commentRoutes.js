@@ -12,6 +12,7 @@ router.post("/reply", verifyToken, commentController.addReply);
 
 // get comments
 router.get("/posts/:postId/comments", commentController.getComments);
+
 //update comment
 router.put("/:commentId", verifyToken, commentController.updateComment);
 
