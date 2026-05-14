@@ -170,7 +170,7 @@ exports.viewStory = async (req, res) => {
 
 
         // ADD VIEW
-        await storyModel.addView(
+        const view = await storyModel.addView(
             story_id,
             user_id
         );
@@ -181,7 +181,7 @@ exports.viewStory = async (req, res) => {
 
             return res.status(400).json({
                 success: false,
-                error: "media_url missing in database"
+                error: "expiar thes story"
             });
 
         }
@@ -196,10 +196,12 @@ exports.viewStory = async (req, res) => {
         return res.json({
 
             success: true,
+            is_seen: view.is_seen,
 
             story_id: story.id,
 
             story_type: story.media_type,
+    
 
             caption: story.caption,
 

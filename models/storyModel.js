@@ -36,7 +36,7 @@ exports.getAllStories = async () => {
     ORDER BY s.created_at DESC
     `
     );
-    console.log(result)
+    console.log(result.rows);
     return result.rows;
 };
 
@@ -44,17 +44,67 @@ exports.addView = async (story_id, viewer_id) => {
 
 
 
-    await db.query(
+    // CHECK ALREADY VIEWED
+    const existing = await db.query(
         `
-        INSERT INTO user_schema.story_views(
-        story_id,
-        viewer_id) 
-        VALUES($1,$2) ON CONFLICT(story_id, viewer_id)
-        DO NOTHING `,
-        [story_id,
-            viewer_id
-        ]
+        SELECT *
+        FROM user_schema.story_views
+
+        WHERE story_id = $1
+        AND viewer_id = $2
+        `,
+        [story_id, viewer_id]
     );
+
+
+    // IF NOT VIEWED
+    if (existing.rows.length === 0) {
+
+        const result = await db.query(
+            `
+            INSERT INTO user_schema.story_views
+            (
+                story_id,
+                viewer_id,
+                is_seen,
+                viewed_at
+            )
+
+            VALUES
+            (
+                $1,
+                $2,
+                TRUE,
+                NOW()
+            )
+
+            RETURNING *
+            `,
+            [story_id, viewer_id]
+        );
+
+        return result.rows[0];
+
+    }
+
+
+    // IF ALREADY VIEWED
+    const update = await db.query(
+        `
+        UPDATE user_schema.story_views
+
+        SET
+            is_seen = TRUE,
+            viewed_at = NOW()
+
+        WHERE story_id = $1
+        AND viewer_id = $2
+
+        RETURNING *
+        `,
+        [story_id, viewer_id]
+    );
+    return update.rows[0];
 };
 
 exports.likeStory = async (
@@ -109,21 +159,7 @@ exports.replyStory = async (
     return result.row;
 };
 
-// exports.getStoryViewers = async (story_id) => {
-//     const result = await db.query(`
-//         SELECT u.id , 
-//         u.full_name,
-//         sv.viewed_at
-//         FROM user_schema.story_views sv 
-//         JOIN user_schema.userstable u 
-//         ON u.id = sv.viewer_id 
-//         WHERE  sv.story_id = $1
-//         ORDER BY sv.viewed_at DESC `,
-//         [story_id]
-//     );
-//     console.log(result)
-//     return result.rows;
-// };
+
 
 exports.deleteStory = async (story_id, user_id) => {
     await db.query(`
