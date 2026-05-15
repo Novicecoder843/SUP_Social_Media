@@ -13,7 +13,7 @@ if(!fs.existsSync(uploadPath)) {
 // Storage config
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, uploadpath); 
+    cb(null, uploadPath); 
   },
 filename: (req, file, cb) => {
   const uniqueName = Date.now() + "-" + file.originalname;
@@ -21,16 +21,25 @@ filename: (req, file, cb) => {
 }});
 
 //File filter
-const fileFilter = (req, file, cb) => {
-  const allowedMimeTypes = ["image/jpeg", "image/png"];
-  const allowedExt = [".jpg", ".jpeg", ".png"];
+const fileFilter = (req, file, cb) => 
+  {
+  const allowedMimeTypes = [
+    "image/jpeg",
+    "image/png",
+    "image/jpg",
+    "video/mp4",
+    "video/mpeg",
+    "video/quicktime"
+  ];
 
   const ext = path.extname(file.originalname).toLowerCase();
 
-  if(allowedMimeTypes.includes(file.mimetype) && allowedExt.includes(ext)) {
+  const allowedExt = [".jpg", ".jpeg", ".png", ".mp4", ".mov", ".mpeg"];
+
+ if(allowedMimeTypes.includes(file.mimetype) && allowedExt.includes(ext)) {
     cb(null, true);
   } else {
-    cb(new Error("Only JEPG, JPG, PNG files are allowed"), false);
+    cb(new Error("Only images and videos are allowed"), false);
   }
 
 };
@@ -38,7 +47,7 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 5 * 1024 * 1024 },
+  limits: { fileSize: 50 * 1024 * 1024 },
 });
 
 module.exports = upload ;

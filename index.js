@@ -45,7 +45,7 @@ app.use("/api/posts", shareRoutes);
 app.use("/api/feed", feedRoutes);
 app.use("/api/hashtag", hashtagRoutes);
 
-app.use("/uploads", express.static("uploads"));
+app.use("/uploads", express.static(path.join(__dirname,"uploads")));
 
 const PORT = 3000;
 
