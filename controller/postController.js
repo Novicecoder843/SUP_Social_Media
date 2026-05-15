@@ -21,17 +21,19 @@ exports.createPost = async (req, res) => {
 
     if (req.files && req.files.length > 0) {
       mediaList = req.files.map((file, index) => ({
-        url: file.location,
+        url: file.location || file.key,
         type: file.mimetype.startsWith("video") ? "video" : "image",
         order: index
       }));
       const mediaDBList = req.files.map((file, index) => ({
-    url: file.key, // ONLY FILE NAME
+    url: file.key || file.location,
     type: file.mimetype.startsWith("video") ? "video" : "image",
     order: index
   }));
 
-      //Insert media
+  console.log("MEDIA DB LIST:", mediaDBList);
+
+   //Insert media
       await PostModel.addPostMediaBulk(client, post.id,mediaDBList);
       mediaList = req.files.map((file, index) => ({
     url: file.location || file.key,
@@ -47,14 +49,11 @@ exports.createPost = async (req, res) => {
 
       const hashtagArray = hashtags ? JSON.parse(hashtags) : [];
 
-      for (const hashtagId of hashtagArray) {
-
-        await hashtagModel.addPostHashtag(
+        await PostModel.addPostHashtagsBulk (
           client,
           post.id,
-          hashtagId
+          hashtagArray
         );
-      }
     }
 
     // TAGGED USERS
@@ -62,23 +61,26 @@ exports.createPost = async (req, res) => {
 
       const taggedArray = tagged_users ? JSON.parse(tagged_users) : [];
      
-      for (const taggedUserId of taggedArray) {
-
-        await PostModel.addTaggedUser(
+        await PostModel.addTaggedUsersBulk(
           client,
           post.id,
-          taggedUserId
+          taggedArray
         );
-      }
     }
 
     await client.query("COMMIT");
 
     console.log("COMMENT DONE");
 
+    const fullPost = await PostModel.getSinglePostFull(
+      post.id,
+      user_id
+    );
+
     res.status(201).json({
       success: true,
       message: "Post created successfully",
+      // data: fullPost.rows[0]
       data: {
         ...post,
         location_id,

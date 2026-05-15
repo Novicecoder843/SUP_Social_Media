@@ -1,3 +1,4 @@
+const { queue } = require("sharp");
 const pool = require("../config/db");
 const db = require("../config/db");
 
@@ -12,9 +13,10 @@ exports.createPost = (client, user_id, content, location_id, visibility, allow_c
 };
 
 // 2. BULK INSERT MEDIA (BEST WAY)
-exports.addPostMediaBulk = (client, post_id, mediaList) => {
-  if (!mediaList || mediaList.length === 0) return;
-
+exports.addPostMediaBulk = async (client, post_id, mediaList) => {
+  if (!mediaList || mediaList.length === 0) {
+    return;
+  }
   const values = [];
   const placeholders = [];
 
@@ -33,12 +35,16 @@ exports.addPostMediaBulk = (client, post_id, mediaList) => {
     );
   });
 
-  return client.query(
+  const query =
     `INSERT INTO post_media 
      (post_id, media_url, media_type, order_index)
-     VALUES ${placeholders.join(",")}`,
-    values
-  );
+     VALUES ${placeholders.join(",")}
+     `;
+
+    //  console.log("MEDIA QUERY:", query);
+    //  console.log("MEDIA VALUES:", values);
+    
+     return client.query(query, values);
 };
 
 // 3. GET ALL POSTS (FEED WITH MEDIA)
@@ -75,8 +81,10 @@ exports.getAllPosts = async () => {
       COALESCE(
         json_agg(
           DISTINCT jsonb_build_object(
+          'id', pm.id,
             'url', pm.media_url,
-            'type', pm.media_type
+            'type', pm.media_type,
+            'order', pm.order_index
           )
         ) FILTER (WHERE pm.id IS NOT NULL),
         '[]'
@@ -341,4 +349,66 @@ ON tu.id = ptu.tagged_user_id
     `,
     [postId, userId]
   );
+};
+
+// BULK INSERT HASHTAGS
+exports.addPostHashtagsBulk = async (
+client,
+post_id,
+hashtagArray
+) => {
+
+if (!hashtagArray || hashtagArray.length === 0) {
+return null;
+}
+
+const values = [];
+const placeholders = [];
+
+hashtagArray.forEach((hashtagId, index) => {
+
+const position = index * 2;
+
+placeholders.push(
+  `($${position + 1}, $${position + 2})`
+);
+
+values.push(post_id, hashtagId);
+
+});
+
+const query = `INSERT INTO post_hashtags (post_id, hashtag_id) VALUES ${placeholders.join(",")}`;
+
+return await client.query(query, values);
+};
+
+// BULK INSERT TAGGED USERS
+exports.addTaggedUsersBulk = async (
+client,
+post_id,
+taggedArray
+) => {
+
+if (!taggedArray || taggedArray.length === 0) {
+return null;
+}
+
+const values = [];
+const placeholders = [];
+
+taggedArray.forEach((taggedUserId, index) => {
+
+const position = index * 2;
+
+placeholders.push(
+  `($${position + 1}, $${position + 2})`
+);
+
+values.push(post_id, taggedUserId);
+
+});
+
+const query = `INSERT INTO post_tags (post_id, tagged_user_id) VALUES ${placeholders.join(",")}`;
+
+return await client.query(query, values);
 };
