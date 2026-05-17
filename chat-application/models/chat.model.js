@@ -289,3 +289,127 @@ exports.getChatListFromMessages = async (userId) => {
 
   return result.rows;
 };
+
+
+
+
+
+// const db = require("../config/db");
+
+/////////////////////////////////////////////////////
+// ✅ CREATE GROUP
+/////////////////////////////////////////////////////
+exports.createGroup = async (
+  name,
+  createdBy,
+  members = []
+) => {
+
+  // create group
+  const groupResult = await db.query(
+    `
+    INSERT INTO groups (name, created_by)
+    VALUES ($1, $2)
+    RETURNING *
+    `,
+    [name, createdBy]
+  );
+
+  const group = groupResult.rows[0];
+
+  /////////////////////////////////////////////////////
+  // add creator
+  /////////////////////////////////////////////////////
+  await db.query(
+    `
+    INSERT INTO group_members (group_id, user_id)
+    VALUES ($1, $2)
+    `,
+    [group.id, createdBy]
+  );
+
+  /////////////////////////////////////////////////////
+  // add members
+  /////////////////////////////////////////////////////
+  for (const memberId of members) {
+
+    await db.query(
+      `
+      INSERT INTO group_members (group_id, user_id)
+      VALUES ($1, $2)
+      `,
+      [group.id, memberId]
+    );
+  }
+
+  return group;
+};
+
+/////////////////////////////////////////////////////
+// ✅ GET MY GROUPS
+/////////////////////////////////////////////////////
+exports.getMyGroups = async (userId) => {
+
+  const result = await db.query(
+    `
+    SELECT
+      g.id,
+      g.name,
+      g.created_at
+    FROM groups g
+    JOIN group_members gm
+      ON gm.group_id = g.id
+    WHERE gm.user_id = $1
+    ORDER BY g.created_at DESC
+    `,
+    [userId]
+  );
+
+  return result.rows;
+};
+
+/////////////////////////////////////////////////////
+// ✅ SEND GROUP MESSAGE
+/////////////////////////////////////////////////////
+exports.createGroupMessage = async (
+  group_id,
+  sender_id,
+  message
+) => {
+
+  const result = await db.query(
+    `
+    INSERT INTO group_messages
+    (group_id, sender_id, message)
+    VALUES ($1, $2, $3)
+    RETURNING *
+    `,
+    [group_id, sender_id, message]
+  );
+
+  return result.rows[0];
+};
+
+/////////////////////////////////////////////////////
+// ✅ GET GROUP MESSAGES
+/////////////////////////////////////////////////////
+exports.getGroupMessages = async (
+  groupId
+) => {
+
+  const result = await db.query(
+    `
+    SELECT
+      gm.*,
+      u.email
+    FROM group_messages gm
+    JOIN users u
+      ON u.id = gm.sender_id
+    WHERE gm.group_id = $1
+    ORDER BY gm.created_at ASC
+    `,
+    [groupId]
+  );
+
+  return result.rows;
+};

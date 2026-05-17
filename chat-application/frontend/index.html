@@ -345,8 +345,13 @@
 
 let socket;
 let myUserId;
+
 let currentChatUser = null;
+let currentGroupId = null;
+
 let usersCache = [];
+let groupsCache = [];
+
 let onlineUsers = [];
 
 /////////////////////////////////////////////////////
@@ -360,9 +365,12 @@ function connect(token){
 
   myUserId = decoded.id;
 
-  socket = io("http://localhost:3001", {
-    auth:{ token }
-  });
+  socket = io(
+    "http://localhost:3001",
+    {
+      auth:{ token }
+    }
+  );
 
   /////////////////////////////////////////////////////
   // CONNECTED
@@ -371,62 +379,93 @@ function connect(token){
 
     console.log("🟢 Connected");
 
-    socket.emit("join_chat", {
-      userId: myUserId
-    });
-
     loadChatList();
+
+    loadGroups();
   });
 
   /////////////////////////////////////////////////////
   // ONLINE USERS
   /////////////////////////////////////////////////////
-  socket.on("onlineUsers", users => {
+  socket.on(
+    "onlineUsers",
+    users => {
 
-    onlineUsers = users;
+      onlineUsers = users;
 
-    loadChatList();
-  });
-
-  /////////////////////////////////////////////////////
-  // RECEIVE MESSAGE
-  /////////////////////////////////////////////////////
-  socket.on("receive_message", msg => {
-
-    if(
-      msg.sender_id == currentChatUser ||
-      msg.receiver_id == currentChatUser
-    ){
-      renderMessage(msg);
+      loadChatList();
     }
+  );
 
-    loadChatList();
-  });
+  /////////////////////////////////////////////////////
+  // RECEIVE PRIVATE MESSAGE
+  /////////////////////////////////////////////////////
+  socket.on(
+    "receive_message",
+    msg => {
+
+      if(
+        msg.sender_id == currentChatUser ||
+        msg.receiver_id == currentChatUser
+      ){
+        renderMessage(msg);
+      }
+
+      loadChatList();
+    }
+  );
 
   /////////////////////////////////////////////////////
   // MESSAGE SENT
   /////////////////////////////////////////////////////
-  socket.on("message_sent", msg => {
+  socket.on(
+    "message_sent",
+    msg => {
 
-    renderMessage(msg);
+      renderMessage(msg);
 
-    loadChatList();
-  });
+      loadChatList();
+    }
+  );
+
+  /////////////////////////////////////////////////////
+  // RECEIVE GROUP MESSAGE
+  /////////////////////////////////////////////////////
+  socket.on(
+    "receive_group_message",
+    msg => {
+
+      if(
+        msg.group_id ==
+        currentGroupId
+      ){
+        renderMessage(msg);
+      }
+    }
+  );
 
   /////////////////////////////////////////////////////
   // TYPING
   /////////////////////////////////////////////////////
   socket.on("typing", ()=>{
 
-    document.getElementById("typing")
-      .innerText = "Typing...";
+    document.getElementById(
+      "typing"
+    ).innerText = "Typing...";
   });
 
-  socket.on("stop_typing", ()=>{
+  /////////////////////////////////////////////////////
+  // STOP TYPING
+  /////////////////////////////////////////////////////
+  socket.on(
+    "stop_typing",
+    ()=>{
 
-    document.getElementById("typing")
-      .innerText = "";
-  });
+      document.getElementById(
+        "typing"
+      ).innerText = "";
+    }
+  );
 }
 
 /////////////////////////////////////////////////////
@@ -440,20 +479,29 @@ async function loadChatList(){
       headers:{
         Authorization:
           "Bearer " +
-          localStorage.getItem("token")
+          localStorage.getItem(
+            "token"
+          )
       }
     }
   );
 
-  const data = await res.json();
+  const data =
+    await res.json();
 
-  usersCache = data.users || [];
+  usersCache =
+    data.users || [];
 
   const list =
-    document.getElementById("chatList");
+    document.getElementById(
+      "chatList"
+    );
 
   list.innerHTML = "";
 
+  /////////////////////////////////////////////////////
+  // USERS
+  /////////////////////////////////////////////////////
   usersCache.forEach(u => {
 
     const online =
@@ -462,22 +510,27 @@ async function loadChatList(){
       );
 
     const div =
-      document.createElement("div");
+      document.createElement(
+        "div"
+      );
 
     div.className =
       "user " +
       (
-        currentChatUser == u.user_id
+        currentChatUser ==
+        u.user_id
         ? "active"
         : ""
       );
 
-    div.onclick = ()=> openChat(u);
+    div.onclick =
+      ()=> openChat(u);
 
     div.innerHTML = `
       <div class="avatar">
         <div class="avatar-inner">
-          ${u.email[0].toUpperCase()}
+          ${u.email[0]
+            .toUpperCase()}
         </div>
       </div>
 
@@ -488,7 +541,10 @@ async function loadChatList(){
         </div>
 
         <div class="last-message">
-          ${u.last_message || "Active now"}
+          ${
+            u.last_message ||
+            "Active now"
+          }
         </div>
 
       </div>
@@ -504,32 +560,125 @@ async function loadChatList(){
   });
 
   /////////////////////////////////////////////////////
-  // AUTO OPEN FIRST USER
+  // GROUP TITLE
   /////////////////////////////////////////////////////
-  if(
-    usersCache.length > 0 &&
-    !currentChatUser
-  ){
-    openChat(usersCache[0]);
+  const title =
+    document.createElement("div");
+
+  title.style.padding = "12px";
+  title.style.fontWeight = "bold";
+  title.innerText = "👥 Groups";
+
+  list.appendChild(title);
+
+  /////////////////////////////////////////////////////
+  // GROUPS
+  /////////////////////////////////////////////////////
+  groupsCache.forEach(group => {
+
+    const div =
+      document.createElement(
+        "div"
+      );
+
+    div.className =
+      "user " +
+      (
+        currentGroupId ==
+        group.id
+        ? "active"
+        : ""
+      );
+
+    div.onclick =
+      ()=> openGroup(group);
+
+    div.innerHTML = `
+      <div class="avatar">
+        <div class="avatar-inner">
+          👥
+        </div>
+      </div>
+
+      <div class="user-info">
+
+        <div class="username">
+          ${group.name}
+        </div>
+
+        <div class="last-message">
+          Group Chat
+        </div>
+
+      </div>
+    `;
+
+    list.appendChild(div);
+  });
+}
+
+/////////////////////////////////////////////////////
+// LOAD GROUPS
+/////////////////////////////////////////////////////
+async function loadGroups(){
+
+  try {
+
+    const res = await fetch(
+      "http://localhost:3001/api/chats/groups",
+      {
+        headers:{
+          Authorization:
+            "Bearer " +
+            localStorage.getItem(
+              "token"
+            )
+        }
+      }
+    );
+
+    const data =
+      await res.json();
+
+    groupsCache =
+      data.groups || [];
+
+    loadChatList();
+
+  } catch(err){
+
+    console.log(
+      "❌ GROUP LOAD ERROR:",
+      err.message
+    );
   }
 }
 
 /////////////////////////////////////////////////////
-// OPEN CHAT
+// OPEN PRIVATE CHAT
 /////////////////////////////////////////////////////
 async function openChat(user){
 
-  currentChatUser = user.user_id;
+  currentGroupId = null;
 
-  document.getElementById("chatHeader")
-    .innerText = user.email;
+  currentChatUser =
+    user.user_id;
 
-  document.getElementById("headerAvatar")
-    .innerText =
-      user.email[0].toUpperCase();
+  document.getElementById(
+    "chatHeader"
+  ).innerText =
+    user.email;
+
+  document.getElementById(
+    "headerAvatar"
+  ).innerText =
+    user.email[0]
+      .toUpperCase();
 
   const chatBox =
-    document.getElementById("chatBox");
+    document.getElementById(
+      "chatBox"
+    );
 
   chatBox.innerHTML = "";
 
@@ -539,26 +688,91 @@ async function openChat(user){
       headers:{
         Authorization:
           "Bearer " +
-          localStorage.getItem("token")
+          localStorage.getItem(
+            "token"
+          )
       }
     }
   );
 
-  const data = await res.json();
+  const data =
+    await res.json();
 
-  (data.messages || [])
-    .forEach(renderMessage);
+  (
+    data.messages || []
+  ).forEach(
+    renderMessage
+  );
+
+  socket.emit(
+    "seen",
+    {
+      sender_id:
+        user.user_id,
+      receiver_id:
+        myUserId
+    }
+  );
+}
+
+/////////////////////////////////////////////////////
+// OPEN GROUP
+/////////////////////////////////////////////////////
+async function openGroup(group){
+
+  currentChatUser = null;
+
+  currentGroupId =
+    group.id;
 
   /////////////////////////////////////////////////////
-  // SEEN
+  // JOIN ROOM
   /////////////////////////////////////////////////////
-  socket.emit("seen", {
-    sender_id: user.user_id,
-    receiver_id: myUserId
-  });
+  socket.emit(
+    "join_group",
+    group.id
+  );
 
-  document.getElementById("message")
-    .focus();
+  document.getElementById(
+    "chatHeader"
+  ).innerText =
+    group.name;
+
+  document.getElementById(
+    "headerAvatar"
+  ).innerText = "👥";
+
+  const chatBox =
+    document.getElementById(
+      "chatBox"
+    );
+
+  chatBox.innerHTML = "";
+
+  /////////////////////////////////////////////////////
+  // LOAD GROUP MESSAGES
+  /////////////////////////////////////////////////////
+  const res = await fetch(
+    `http://localhost:3001/api/chats/groups/${group.id}/messages`,
+    {
+      headers:{
+        Authorization:
+          "Bearer " +
+          localStorage.getItem(
+            "token"
+          )
+      }
+    }
+  );
+
+  const data =
+    await res.json();
+
+  (
+    data.messages || []
+  ).forEach(
+    renderMessage
+  );
 }
 
 /////////////////////////////////////////////////////
@@ -567,30 +781,44 @@ async function openChat(user){
 function renderMessage(msg){
 
   const chatBox =
-    document.getElementById("chatBox");
+    document.getElementById(
+      "chatBox"
+    );
 
   const div =
-    document.createElement("div");
+    document.createElement(
+      "div"
+    );
 
   div.className =
     "message " +
     (
-      msg.sender_id == myUserId
+      msg.sender_id ==
+      myUserId
       ? "me"
       : "friend"
     );
 
   const time =
-    new Date().toLocaleTimeString(
-      [],
-      {
-        hour:"2-digit",
-        minute:"2-digit"
-      }
-    );
+    new Date()
+      .toLocaleTimeString(
+        [],
+        {
+          hour:"2-digit",
+          minute:"2-digit"
+        }
+      );
 
   div.innerHTML = `
-    <div>${msg.message}</div>
+    <div>
+      ${
+        msg.sender_name
+        ? `<b>${msg.sender_name}</b><br>`
+        : ""
+      }
+
+      ${msg.message}
+    </div>
 
     <div class="time">
       ${time}
@@ -608,24 +836,59 @@ function renderMessage(msg){
 /////////////////////////////////////////////////////
 function send(){
 
-  if(!currentChatUser){
-    alert("Select user first");
-    return;
-  }
-
   const input =
-    document.getElementById("message");
+    document.getElementById(
+      "message"
+    );
 
   const message =
     input.value.trim();
 
   if(!message) return;
 
-  socket.emit("send_message", {
-    sender_id: myUserId,
-    receiver_id: currentChatUser,
-    message
-  });
+  /////////////////////////////////////////////////////
+  // GROUP CHAT
+  /////////////////////////////////////////////////////
+  if(currentGroupId){
+
+    socket.emit(
+      "send_group_message",
+      {
+        group_id:
+          currentGroupId,
+        message
+      }
+    );
+
+    input.value = "";
+
+    return;
+  }
+
+  /////////////////////////////////////////////////////
+  // PRIVATE CHAT
+  /////////////////////////////////////////////////////
+  if(!currentChatUser){
+
+    alert(
+      "Select user/group first"
+    );
+
+    return;
+  }
+
+  socket.emit(
+    "send_message",
+    {
+      sender_id:
+        myUserId,
+
+      receiver_id:
+        currentChatUser,
+
+      message
+    }
+  );
 
   input.value = "";
 }
@@ -645,21 +908,35 @@ function handleEnter(e){
 /////////////////////////////////////////////////////
 function typingEvent(){
 
-  if(!currentChatUser) return;
+  if(
+    !currentChatUser
+  ) return;
 
-  socket.emit("typing", {
-    sender_id: myUserId,
-    receiver_id: currentChatUser
-  });
+  socket.emit(
+    "typing",
+    {
+      sender_id:
+        myUserId,
 
-  clearTimeout(window.typingTimeout);
+      receiver_id:
+        currentChatUser
+    }
+  );
+
+  clearTimeout(
+    window.typingTimeout
+  );
 
   window.typingTimeout =
     setTimeout(()=>{
 
-      socket.emit("stop_typing", {
-        receiver_id: currentChatUser
-      });
+      socket.emit(
+        "stop_typing",
+        {
+          receiver_id:
+            currentChatUser
+        }
+      );
 
     },1000);
 }
@@ -679,21 +956,26 @@ function searchUser(text){
     );
 
   const list =
-    document.getElementById("chatList");
+    document.getElementById(
+      "chatList"
+    );
 
   list.innerHTML = "";
 
   filtered.forEach(u => {
 
     const div =
-      document.createElement("div");
+      document.createElement(
+        "div"
+      );
 
     div.className = "user";
 
     div.innerHTML = `
       <div class="avatar">
         <div class="avatar-inner">
-          ${u.email[0].toUpperCase()}
+          ${u.email[0]
+            .toUpperCase()}
         </div>
       </div>
 
@@ -706,7 +988,8 @@ function searchUser(text){
       </div>
     `;
 
-    div.onclick = ()=> openChat(u);
+    div.onclick =
+      ()=> openChat(u);
 
     list.appendChild(div);
   });
@@ -716,12 +999,15 @@ function searchUser(text){
 // INIT
 /////////////////////////////////////////////////////
 let token =
-  localStorage.getItem("token");
+  localStorage.getItem(
+    "token"
+  );
 
 if(!token){
 
-  token =
-    prompt("Paste JWT Token");
+  token = prompt(
+    "Paste JWT Token"
+  );
 
   localStorage.setItem(
     "token",

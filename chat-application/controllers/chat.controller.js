@@ -488,3 +488,152 @@ exports.getUsers = async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 };
+
+
+
+
+
+
+
+// const Chat = require("../models/chat.model");
+
+/////////////////////////////////////////////////////
+// ✅ CREATE GROUP
+/////////////////////////////////////////////////////
+exports.createGroup = async (req, res) => {
+
+  try {
+
+    const { name, members } = req.body;
+
+    const createdBy = req.user.id;
+
+    const group = await Chat.createGroup(
+      name,
+      createdBy,
+      members
+    );
+
+    res.json({
+      success: true,
+      group
+    });
+
+  } catch (err) {
+
+    console.log(
+      "CREATE GROUP ERROR:",
+      err
+    );
+
+    res.status(500).json({
+      error: err.message
+    });
+  }
+};
+
+/////////////////////////////////////////////////////
+// ✅ GET MY GROUPS
+/////////////////////////////////////////////////////
+exports.getMyGroups = async (
+  req,
+  res
+) => {
+
+  try {
+
+    const groups =
+      await Chat.getMyGroups(
+        req.user.id
+      );
+
+    res.json({
+      success: true,
+      groups
+    });
+
+  } catch (err) {
+
+    console.log(
+      "GET GROUPS ERROR:",
+      err
+    );
+
+    res.status(500).json({
+      error: err.message
+    });
+  }
+};
+
+/////////////////////////////////////////////////////
+// ✅ SEND GROUP MESSAGE
+/////////////////////////////////////////////////////
+exports.sendGroupMessage =
+  async (req, res) => {
+
+    try {
+
+      const { group_id, message } =
+        req.body;
+
+      const sender_id =
+        req.user.id;
+
+      const msg =
+        await Chat.createGroupMessage(
+          group_id,
+          sender_id,
+          message
+        );
+
+      res.json({
+        success: true,
+        message: msg
+      });
+
+    } catch (err) {
+
+      console.log(
+        "GROUP MESSAGE ERROR:",
+        err
+      );
+
+      res.status(500).json({
+        error: err.message
+      });
+    }
+  };
+
+/////////////////////////////////////////////////////
+// ✅ GET GROUP MESSAGES
+/////////////////////////////////////////////////////
+exports.getGroupMessages =
+  async (req, res) => {
+
+    try {
+
+      const { groupId } =
+        req.params;
+
+      const messages =
+        await Chat.getGroupMessages(
+          groupId
+        );
+
+      res.json({
+        success: true,
+        messages
+      });
+
+    } catch (err) {
+
+      console.log(
+        "GROUP FETCH ERROR:",
+        err
+      );
+
+      res.status(500).json({
+        error: err.message
+      });
+    }
+  };
