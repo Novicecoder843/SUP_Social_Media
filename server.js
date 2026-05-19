@@ -10,6 +10,8 @@ const hastagRouter =  require("./routes/hastagRouter");
 const chatRouter = require("./routes/chatRoutes")
 const chatSocket  = require("./utlis/chatSoket");
 const storyRoutes =require("./routes/storyRouts");
+const reelRoutes = require("./routes/reelRouts");
+
 const { Server } = require("socket.io");
 const path = require("path");
 
@@ -50,6 +52,8 @@ app.use("/api/auth", authRouter );
 app.use("/api/hashtags", hastagRouter );
 app.use("/api/chats", chatRouter );
 app.use("/api/stories",storyRoutes);
+app.use("/api/reels",reelRoutes);
+
 // app.use("/uploads", express.static("uploads"));
 app.use(
     "/uploads",
