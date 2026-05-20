@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
 
   <title>CHAT PRO</title>
 
@@ -12,21 +15,22 @@
       margin:0;
       padding:0;
       box-sizing:border-box;
-      font-family:Arial, sans-serif;
+      font-family:Arial,sans-serif;
     }
 
     body{
       height:100vh;
-      background:#fafafa;
       display:flex;
       overflow:hidden;
+      background:#fafafa;
     }
 
-   
+  
+
     .sidebar{
       width:350px;
-      border-right:1px solid #ddd;
       background:white;
+      border-right:1px solid #ddd;
       display:flex;
       flex-direction:column;
     }
@@ -34,12 +38,12 @@
     .topbar{
       height:70px;
       padding:20px;
-      border-bottom:1px solid #ddd;
       display:flex;
       align-items:center;
       justify-content:space-between;
-      font-weight:bold;
+      border-bottom:1px solid #ddd;
       font-size:20px;
+      font-weight:bold;
     }
 
     .search{
@@ -51,9 +55,9 @@
       width:100%;
       padding:12px;
       border:none;
+      outline:none;
       background:#efefef;
       border-radius:10px;
-      outline:none;
     }
 
     .chat-list{
@@ -67,8 +71,8 @@
       gap:12px;
       padding:14px;
       cursor:pointer;
-      transition:0.2s;
       border-bottom:1px solid #f5f5f5;
+      transition:0.2s;
     }
 
     .user:hover{
@@ -93,9 +97,11 @@
       );
 
       padding:2px;
+
       display:flex;
       align-items:center;
       justify-content:center;
+
       flex-shrink:0;
     }
 
@@ -104,11 +110,13 @@
       height:100%;
       border-radius:50%;
       background:white;
+
       display:flex;
       align-items:center;
       justify-content:center;
-      font-weight:bold;
+
       font-size:20px;
+      font-weight:bold;
     }
 
     .user-info{
@@ -116,25 +124,24 @@
     }
 
     .username{
-      font-weight:bold;
       font-size:14px;
+      font-weight:bold;
     }
 
     .last-message{
-      color:gray;
-      font-size:13px;
       margin-top:3px;
+      font-size:13px;
+      color:gray;
     }
 
     .online-dot{
       width:10px;
       height:10px;
-      background:#00c853;
       border-radius:50%;
-      margin-left:auto;
+      background:#00c853;
     }
 
-    
+
     .chat-container{
       flex:1;
       display:flex;
@@ -144,17 +151,17 @@
 
     .chat-header{
       height:70px;
-      border-bottom:1px solid #ddd;
       padding:0 20px;
       display:flex;
       align-items:center;
       gap:12px;
+      border-bottom:1px solid #ddd;
       background:white;
     }
 
     .chat-user{
-      font-weight:bold;
       font-size:15px;
+      font-weight:bold;
     }
 
     .typing{
@@ -162,14 +169,13 @@
       color:gray;
     }
 
-    
     #chatBox{
       flex:1;
       overflow-y:auto;
       padding:20px;
-      background:#fafafa;
       display:flex;
       flex-direction:column;
+      background:#fafafa;
     }
 
     .empty{
@@ -179,6 +185,7 @@
     }
 
     
+
     .message{
       max-width:65%;
       padding:12px 15px;
@@ -205,13 +212,14 @@
     }
 
     .time{
-      font-size:10px;
       margin-top:5px;
+      font-size:10px;
       opacity:0.7;
       text-align:right;
     }
 
     
+
     .chat-input{
       padding:15px;
       border-top:1px solid #ddd;
@@ -224,7 +232,6 @@
       border:1px solid #ddd;
       border-radius:30px;
       padding:10px 15px;
-      background:white;
     }
 
     .input-box input{
@@ -236,15 +243,16 @@
     }
 
     .send-btn{
-      background:none;
       border:none;
+      background:none;
       color:#3797f0;
+      font-size:14px;
       font-weight:bold;
       cursor:pointer;
-      font-size:14px;
     }
 
-   
+    
+
     @media(max-width:768px){
 
       .sidebar{
@@ -255,10 +263,6 @@
       .last-message{
         display:none;
       }
-
-      .chat-header .chat-user{
-        font-size:13px;
-      }
     }
 
   </style>
@@ -266,42 +270,60 @@
 
 <body>
 
-  
+ 
+
   <div class="sidebar">
 
     <div class="topbar">
-      Instagram
+      CHAT PRO
     </div>
 
     <div class="search">
+
       <input
         type="text"
         placeholder="Search"
         oninput="searchUser(this.value)"
       />
+
     </div>
 
-    <div id="chatList" class="chat-list"></div>
+    <div
+      id="chatList"
+      class="chat-list"
+    ></div>
 
   </div>
 
-  
+ 
+
   <div class="chat-container">
 
     <div class="chat-header">
 
       <div class="avatar">
-        <div class="avatar-inner" id="headerAvatar">
+        <div
+          class="avatar-inner"
+          id="headerAvatar"
+        >
           U
         </div>
       </div>
 
       <div>
-        <div class="chat-user" id="chatHeader">
+
+        <div
+          class="chat-user"
+          id="chatHeader"
+        >
           Select a user
         </div>
 
-        <div class="typing" id="typing"></div>
+        <div
+          class="typing"
+          id="typing"
+        ></div>
+
       </div>
 
     </div>
@@ -314,7 +336,7 @@
 
     </div>
 
-    
+
     <div class="chat-input">
 
       <div class="input-box">
@@ -357,11 +379,13 @@ let onlineUsers = [];
 /////////////////////////////////////////////////////
 // CONNECT
 /////////////////////////////////////////////////////
+
 function connect(token){
 
-  const decoded = JSON.parse(
-    atob(token.split('.')[1])
-  );
+  const decoded =
+    JSON.parse(
+      atob(token.split('.')[1])
+    );
 
   myUserId = decoded.id;
 
@@ -373,20 +397,26 @@ function connect(token){
   );
 
   /////////////////////////////////////////////////////
-  // CONNECTED
+  // CONNECT
   /////////////////////////////////////////////////////
-  socket.on("connect", ()=>{
 
-    console.log("🟢 Connected");
+  socket.on(
+    "connect",
+    ()=>{
 
-    loadChatList();
+      console.log(
+        "🟢 Connected"
+      );
 
-    loadGroups();
-  });
+      loadChatList();
+      loadGroups();
+    }
+  );
 
   /////////////////////////////////////////////////////
   // ONLINE USERS
   /////////////////////////////////////////////////////
+
   socket.on(
     "onlineUsers",
     users => {
@@ -398,15 +428,19 @@ function connect(token){
   );
 
   /////////////////////////////////////////////////////
-  // RECEIVE PRIVATE MESSAGE
+  // PRIVATE MESSAGE
   /////////////////////////////////////////////////////
+
   socket.on(
     "receive_message",
     msg => {
 
       if(
-        msg.sender_id == currentChatUser ||
-        msg.receiver_id == currentChatUser
+        msg.sender_id ==
+        currentChatUser ||
+
+        msg.receiver_id ==
+        currentChatUser
       ){
         renderMessage(msg);
       }
@@ -416,8 +450,9 @@ function connect(token){
   );
 
   /////////////////////////////////////////////////////
-  // MESSAGE SENT
+  // SENT MESSAGE
   /////////////////////////////////////////////////////
+
   socket.on(
     "message_sent",
     msg => {
@@ -429,15 +464,21 @@ function connect(token){
   );
 
   /////////////////////////////////////////////////////
-  // RECEIVE GROUP MESSAGE
+  // GROUP MESSAGE
   /////////////////////////////////////////////////////
+
   socket.on(
     "receive_group_message",
     msg => {
 
+      console.log(
+        "👥 GROUP MESSAGE:",
+        msg
+      );
+
       if(
-        msg.group_id ==
-        currentGroupId
+        Number(msg.group_id) ===
+        Number(currentGroupId)
       ){
         renderMessage(msg);
       }
@@ -447,16 +488,22 @@ function connect(token){
   /////////////////////////////////////////////////////
   // TYPING
   /////////////////////////////////////////////////////
-  socket.on("typing", ()=>{
 
-    document.getElementById(
-      "typing"
-    ).innerText = "Typing...";
-  });
+  socket.on(
+    "typing",
+    ()=>{
+
+      document.getElementById(
+        "typing"
+      ).innerText =
+        "Typing...";
+    }
+  );
 
   /////////////////////////////////////////////////////
   // STOP TYPING
   /////////////////////////////////////////////////////
+
   socket.on(
     "stop_typing",
     ()=>{
@@ -471,6 +518,7 @@ function connect(token){
 /////////////////////////////////////////////////////
 // LOAD CHAT LIST
 /////////////////////////////////////////////////////
+
 async function loadChatList(){
 
   const res = await fetch(
@@ -502,6 +550,7 @@ async function loadChatList(){
   /////////////////////////////////////////////////////
   // USERS
   /////////////////////////////////////////////////////
+
   usersCache.forEach(u => {
 
     const online =
@@ -529,8 +578,7 @@ async function loadChatList(){
     div.innerHTML = `
       <div class="avatar">
         <div class="avatar-inner">
-          ${u.email[0]
-            .toUpperCase()}
+          ${u.email[0].toUpperCase()}
         </div>
       </div>
 
@@ -562,6 +610,7 @@ async function loadChatList(){
   /////////////////////////////////////////////////////
   // GROUP TITLE
   /////////////////////////////////////////////////////
+
   const title =
     document.createElement("div");
 
@@ -574,6 +623,7 @@ async function loadChatList(){
   /////////////////////////////////////////////////////
   // GROUPS
   /////////////////////////////////////////////////////
+
   groupsCache.forEach(group => {
 
     const div =
@@ -620,6 +670,7 @@ async function loadChatList(){
 /////////////////////////////////////////////////////
 // LOAD GROUPS
 /////////////////////////////////////////////////////
+
 async function loadGroups(){
 
   try {
@@ -657,6 +708,7 @@ async function loadGroups(){
 /////////////////////////////////////////////////////
 // OPEN PRIVATE CHAT
 /////////////////////////////////////////////////////
+
 async function openChat(user){
 
   currentGroupId = null;
@@ -703,21 +755,12 @@ async function openChat(user){
   ).forEach(
     renderMessage
   );
-
-  socket.emit(
-    "seen",
-    {
-      sender_id:
-        user.user_id,
-      receiver_id:
-        myUserId
-    }
-  );
 }
 
 /////////////////////////////////////////////////////
 // OPEN GROUP
 /////////////////////////////////////////////////////
+
 async function openGroup(group){
 
   currentChatUser = null;
@@ -728,10 +771,15 @@ async function openGroup(group){
   /////////////////////////////////////////////////////
   // JOIN ROOM
   /////////////////////////////////////////////////////
+
   socket.emit(
     "join_group",
     group.id
   );
+
+  /////////////////////////////////////////////////////
+  // HEADER
+  /////////////////////////////////////////////////////
 
   document.getElementById(
     "chatHeader"
@@ -741,6 +789,10 @@ async function openGroup(group){
   document.getElementById(
     "headerAvatar"
   ).innerText = "👥";
+
+  /////////////////////////////////////////////////////
+  // CLEAR CHAT
+  /////////////////////////////////////////////////////
 
   const chatBox =
     document.getElementById(
@@ -752,32 +804,52 @@ async function openGroup(group){
   /////////////////////////////////////////////////////
   // LOAD GROUP MESSAGES
   /////////////////////////////////////////////////////
-  const res = await fetch(
-    `http://localhost:3001/api/chats/groups/${group.id}/messages`,
-    {
-      headers:{
-        Authorization:
-          "Bearer " +
-          localStorage.getItem(
-            "token"
-          )
+
+  try {
+
+    const res = await fetch(
+      `http://localhost:3001/api/chats/groups/${group.id}/messages`,
+      {
+        headers:{
+          Authorization:
+            "Bearer " +
+            localStorage.getItem(
+              "token"
+            )
+        }
       }
-    }
-  );
+    );
 
-  const data =
-    await res.json();
+    const data =
+      await res.json();
 
-  (
-    data.messages || []
-  ).forEach(
-    renderMessage
-  );
+    console.log(
+      "📦 GROUP DATA:",
+      data
+    );
+
+    const messages =
+      data.messages ||
+      data.data ||
+      [];
+
+    messages.forEach(
+      renderMessage
+    );
+
+  } catch(err){
+
+    console.log(
+      "❌ GROUP ERROR:",
+      err.message
+    );
+  }
 }
 
 /////////////////////////////////////////////////////
 // RENDER MESSAGE
 /////////////////////////////////////////////////////
+
 function renderMessage(msg){
 
   const chatBox =
@@ -793,31 +865,44 @@ function renderMessage(msg){
   div.className =
     "message " +
     (
-      msg.sender_id ==
-      myUserId
+      Number(msg.sender_id) ===
+      Number(myUserId)
       ? "me"
       : "friend"
     );
 
   const time =
-    new Date()
-      .toLocaleTimeString(
-        [],
-        {
-          hour:"2-digit",
-          minute:"2-digit"
-        }
-      );
+    new Date(
+      msg.created_at ||
+      Date.now()
+    ).toLocaleTimeString(
+      [],
+      {
+        hour:"2-digit",
+        minute:"2-digit"
+      }
+    );
 
   div.innerHTML = `
     <div>
+
       ${
+        currentGroupId &&
         msg.sender_name
-        ? `<b>${msg.sender_name}</b><br>`
+        ? `
+          <div style="
+            font-size:12px;
+            font-weight:bold;
+            margin-bottom:5px;
+          ">
+            ${msg.sender_name}
+          </div>
+        `
         : ""
       }
 
       ${msg.message}
+
     </div>
 
     <div class="time">
@@ -832,8 +917,9 @@ function renderMessage(msg){
 }
 
 /////////////////////////////////////////////////////
-// SEND
+// SEND MESSAGE
 /////////////////////////////////////////////////////
+
 function send(){
 
   const input =
@@ -847,8 +933,9 @@ function send(){
   if(!message) return;
 
   /////////////////////////////////////////////////////
-  // GROUP CHAT
+  // GROUP
   /////////////////////////////////////////////////////
+
   if(currentGroupId){
 
     socket.emit(
@@ -856,6 +943,7 @@ function send(){
       {
         group_id:
           currentGroupId,
+
         message
       }
     );
@@ -866,8 +954,9 @@ function send(){
   }
 
   /////////////////////////////////////////////////////
-  // PRIVATE CHAT
+  // PRIVATE
   /////////////////////////////////////////////////////
+
   if(!currentChatUser){
 
     alert(
@@ -896,6 +985,7 @@ function send(){
 /////////////////////////////////////////////////////
 // ENTER KEY
 /////////////////////////////////////////////////////
+
 function handleEnter(e){
 
   if(e.key === "Enter"){
@@ -904,8 +994,9 @@ function handleEnter(e){
 }
 
 /////////////////////////////////////////////////////
-// TYPING EVENT
+// TYPING
 /////////////////////////////////////////////////////
+
 function typingEvent(){
 
   if(
@@ -944,6 +1035,7 @@ function typingEvent(){
 /////////////////////////////////////////////////////
 // SEARCH
 /////////////////////////////////////////////////////
+
 function searchUser(text){
 
   const filtered =
@@ -971,11 +1063,13 @@ function searchUser(text){
 
     div.className = "user";
 
+    div.onclick =
+      ()=> openChat(u);
+
     div.innerHTML = `
       <div class="avatar">
         <div class="avatar-inner">
-          ${u.email[0]
-            .toUpperCase()}
+          ${u.email[0].toUpperCase()}
         </div>
       </div>
 
@@ -988,9 +1082,6 @@ function searchUser(text){
       </div>
     `;
 
-    div.onclick =
-      ()=> openChat(u);
-
     list.appendChild(div);
   });
 }
@@ -998,6 +1089,7 @@ function searchUser(text){
 /////////////////////////////////////////////////////
 // INIT
 /////////////////////////////////////////////////////
+
 let token =
   localStorage.getItem(
     "token"

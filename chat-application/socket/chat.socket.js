@@ -248,6 +248,9 @@
 const jwt = require("jsonwebtoken");
 const Chat = require("../models/chat.model");
 
+/////////////////////////////////////////////////////
+// ONLINE USERS
+/////////////////////////////////////////////////////
 const onlineUsers = new Map();
 
 module.exports = (io) => {
@@ -280,7 +283,8 @@ module.exports = (io) => {
     } catch (err) {
 
       console.log(
-        "❌ JWT ERROR"
+        "❌ JWT ERROR:",
+        err.message
       );
 
       next(
@@ -299,26 +303,32 @@ module.exports = (io) => {
       const userId =
         socket.userId;
 
-      console.log(
-        "🟢 User connected:",
-        userId
-      );
-
       /////////////////////////////////////////////////////
-      // 🟢 STORE ONLINE USER
+      // STORE USER
       /////////////////////////////////////////////////////
       onlineUsers.set(
         String(userId),
         socket.id
       );
 
+      /////////////////////////////////////////////////////
+      // TERMINAL LOG
+      /////////////////////////////////////////////////////
+      console.log(
+        "🟢 User connected:",
+        userId
+      );
+
       console.log(
         "👥 Online Users:",
-        Array.from(
-          onlineUsers.keys()
+        Object.fromEntries(
+          onlineUsers
         )
       );
 
+      /////////////////////////////////////////////////////
+      // SEND ONLINE USERS
+      /////////////////////////////////////////////////////
       io.emit(
         "onlineUsers",
         Array.from(
@@ -327,7 +337,7 @@ module.exports = (io) => {
       );
 
       /////////////////////////////////////////////////////
-      // 📩 SEND UNDELIVERED
+      // 📩 SEND UNDELIVERED MESSAGES
       /////////////////////////////////////////////////////
       try {
 
@@ -460,7 +470,7 @@ module.exports = (io) => {
               );
 
             /////////////////////////////////////////////////////
-            // SEND TO GROUP ROOM
+            // SEND TO GROUP
             /////////////////////////////////////////////////////
             io.to(
               "group_" +
@@ -579,15 +589,31 @@ module.exports = (io) => {
         "disconnect",
         () => {
 
+          /////////////////////////////////////////////////////
+          // REMOVE USER
+          /////////////////////////////////////////////////////
+          onlineUsers.delete(
+            String(userId)
+          );
+
+          /////////////////////////////////////////////////////
+          // TERMINAL LOG
+          /////////////////////////////////////////////////////
           console.log(
             "🔴 User disconnected:",
             userId
           );
 
-          onlineUsers.delete(
-            String(userId)
+          console.log(
+            "👥 Online Users:",
+            Object.fromEntries(
+              onlineUsers
+            )
           );
 
+          /////////////////////////////////////////////////////
+          // SEND ONLINE USERS
+          /////////////////////////////////////////////////////
           io.emit(
             "onlineUsers",
             Array.from(
@@ -599,4 +625,3 @@ module.exports = (io) => {
     }
   );
 };
-

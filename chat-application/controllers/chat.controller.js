@@ -304,25 +304,62 @@ exports.getChat = async (req, res) => {
   }
 };
 
+
 /////////////////////////////////////////////////////
 // 📩 GET CONVERSATION (PAGINATION)
 /////////////////////////////////////////////////////
 exports.getConversation = async (req, res) => {
+
   try {
+
+    /////////////////////////////////////////////////////
+    // LOGGED IN USER
+    /////////////////////////////////////////////////////
     const user1 = req.user.id;
-    const user2 = Number(req.params.user2);
 
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20;
-    const offset = (page - 1) * limit;
+    /////////////////////////////////////////////////////
+    // RECEIVER USER
+    /////////////////////////////////////////////////////
+    const receiver_id =
+      Number(req.params.receiver_id);
 
-    const result = await Chat.getConversation(
-      user1,
-      user2,
-      limit,
-      offset
-    );
+    /////////////////////////////////////////////////////
+    // VALIDATION
+    /////////////////////////////////////////////////////
+    if (!receiver_id) {
 
+      return res.status(400).json({
+        success: false,
+        message: "Invalid receiver ID"
+      });
+    }
+
+    /////////////////////////////////////////////////////
+    // PAGINATION
+    /////////////////////////////////////////////////////
+    const page =
+      parseInt(req.query.page) || 1;
+
+    const limit =
+      parseInt(req.query.limit) || 20;
+
+    const offset =
+      (page - 1) * limit;
+
+    /////////////////////////////////////////////////////
+    // GET CONVERSATION
+    /////////////////////////////////////////////////////
+    const result =
+      await Chat.getConversation(
+        user1,
+        receiver_id,
+        limit,
+        offset
+      );
+
+    /////////////////////////////////////////////////////
+    // RESPONSE
+    /////////////////////////////////////////////////////
     res.json({
       success: true,
       page,
@@ -332,10 +369,47 @@ exports.getConversation = async (req, res) => {
     });
 
   } catch (err) {
-    console.error("CONVERSATION ERROR:", err);
-    res.status(500).json({ error: err.message });
+
+    console.error(
+      "CONVERSATION ERROR:",
+      err
+    );
+
+    res.status(500).json({
+      success: false,
+      error: err.message
+    });
   }
 };
+// exports.getConversation = async (req, res) => {
+//   try {
+//     const user1 = req.user.id;
+//     const user2 = Number(req.params.user2);
+
+//     const page = parseInt(req.query.page) || 1;
+//     const limit = parseInt(req.query.limit) || 20;
+//     const offset = (page - 1) * limit;
+
+//     const result = await Chat.getConversation(
+//       user1,
+//       user2,
+//       limit,
+//       offset
+//     );
+
+//     res.json({
+//       success: true,
+//       page,
+//       limit,
+//       count: result.rowCount,
+//       messages: result.rows.reverse(),
+//     });
+
+//   } catch (err) {
+//     console.error("CONVERSATION ERROR:", err);
+//     res.status(500).json({ error: err.message });
+//   }
+// };
 
 /////////////////////////////////////////////////////
 // ✔✔ MARK DELIVERED

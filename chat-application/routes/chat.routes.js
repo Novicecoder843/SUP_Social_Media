@@ -23,8 +23,8 @@ router.get("/list", auth, chatController.getChatList);
 /////////////////////////////////////////////////////
 // 📩 GET CONVERSATION (PAGINATION)
 /////////////////////////////////////////////////////
-router.get("/conversation/:user2", auth, chatController.getConversation);
-
+// router.get("/conversation/:user2", auth, chatController.getConversation);
+router.get( "/conversation/:receiver_id",auth,chatController.getConversation);
 /////////////////////////////////////////////////////
 // ✔✔ MARK DELIVERED
 /////////////////////////////////////////////////////
