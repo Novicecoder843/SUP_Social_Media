@@ -1,64 +1,6 @@
-// const pool = require("../config/db");
-
-// // CREATE POST
-// exports.createPost = async (req, res) => {
-//   try {
-//     const user_id = req.user.id;
-//     const { content } = req.body;
-
-//     const result = await pool.query(
-//       "INSERT INTO posts (user_id, content) VALUES ($1,$2) RETURNING *",
-//       [user_id, content]
-//     );
-
-//     res.json(result.rows[0]);
-//   } catch (err) {
-//     res.status(500).json({ message: "Error creating post" });
-//   }
-// };
-
-// // GET ALL POSTS
-// exports.getAllPosts = async (req, res) => {
-//   const result = await pool.query("SELECT * FROM posts ORDER BY created_at DESC");
-//   res.json(result.rows);
-// };
-
-// // GET SINGLE POST
-// exports.getSinglePost = async (req, res) => {
-//   const result = await pool.query("SELECT * FROM posts WHERE id=$1", [req.params.id]);
-//   res.json(result.rows[0]);
-// };
-
-// // UPDATE
-// exports.updatePost = async (req, res) => {
-//   const { content } = req.body;
-
-//   const result = await pool.query(
-//     "UPDATE posts SET content=$1, updated_at=NOW() WHERE id=$2 RETURNING *",
-//     [content, req.params.id]
-//   );
-
-//   res.json(result.rows[0]);
-// };
-
-// // DELETE
-// exports.deletePost = async (req, res) => {
-//   await pool.query("DELETE FROM posts WHERE id=$1", [req.params.id]);
-//   res.json({ message: "Post deleted" });
-// };
-
-// // USER POSTS
-// exports.getUserPosts = async (req, res) => {
-//   const result = await pool.query(
-//     "SELECT * FROM posts WHERE user_id=$1",
-//     [req.params.id]
-//   );
-//   res.json(result.rows);
-// };
-
-
 const pool = require("../config/db");
 const PostModel = require("../models/postModel");
+const hashtagModel = require("../models/hashtagModel");
 
 //CREATE POST (with media)
 exports.createPost = async (req, res) => {
@@ -68,41 +10,118 @@ exports.createPost = async (req, res) => {
     await client.query("BEGIN");
 
     const user_id = req.user.id;
-    const { content } = req.body;
+    const { content, location_id, hashtags, tagged_users, visibility, allow_comments, allow_share } = req.body;
 
-    const postResult = await PostModel.createPost(client, user_id, content);
+    const postResult = await PostModel.createPost(client, user_id, content, 
+      location_id, visibility, allow_comments, allow_share);
     const post = postResult.rows[0];
 
-    //Prepare media list
-    let mediaList = [];
+//     //Prepare media list
+//     let mediaList = [];
 
-    if (req.files && req.files.length > 0) {
-  mediaList = req.files.map((file, index) => ({
-    url: `uploads/${file.filename}`, // ✅ FIXED
-    type: file.mimetype.startsWith("video") ? "video" : "image",
-    order: index
-  }));
+//     if (req.files && req.files.length > 0) {
+//       mediaList = req.files.map((file, index) => ({
+//         url: file.location || file.key,
+//         type: file.mimetype.startsWith("video") ? "video" : "image",
+//         order: index
+//       }));
+//       const mediaDBList = req.files.map((file, index) => ({
+//     url: file.key || file.location,
+//     type: file.mimetype.startsWith("video") ? "video" : "image",
+//     order: index
+//   }));
 
-  await PostModel.addPostMediaBulk(client, post.id, mediaList);
+//   console.log("MEDIA DB LIST:", mediaDBList);
+
+//    //Insert media
+//       await PostModel.addPostMediaBulk(client, post.id,mediaDBList);
+//       mediaList = req.files.map((file, index) => ({
+//     url: file.location || file.key,
+//     type: file.mimetype.startsWith("video")
+//       ? "video"
+//       : "image",
+//     order: index
+//   }));
+// }
+
+let mediaList = [];
+
+if (req.files && req.files.length > 0) {
+
+  const mediaDBList = req.files.map((file, index) => {
+
+    const mediaUrl =
+      file.location ||
+      file.path ||
+      file.filename ||
+      file.key;
+
+    if (!mediaUrl) {
+      throw new Error("Media URL missing");
+    }
+
+    return {
+      url: mediaUrl,
+      type: file.mimetype.startsWith("video")
+        ? "video"
+        : "image",
+      order: index
+    };
+  });
+
+  console.log("MEDIA DB LIST:", mediaDBList);
+
+  await PostModel.addPostMediaBulk(
+    client,
+    post.id,
+    mediaDBList
+  );
+
+  mediaList = mediaDBList;
 }
-    // if (req.files && req.files.length > 0) {
-    //   mediaList = req.files.map((file, index) => ({
-    //     url: file.location,
-    //     type: file.mimetype.startsWith("video") ? "video" : "image",
-    //     order: index
-    //   }));
+  
+    // HASHTAGS
+    if (hashtags) {
 
-    //   //Insert media
-    //   await PostModel.addPostMediaBulk(client, post.id, mediaList);
-    // }
+      const hashtagArray = hashtags ? JSON.parse(hashtags) : [];
+
+        await PostModel.addPostHashtagsBulk (
+          client,
+          post.id,
+          hashtagArray
+        );
+    }
+
+    // TAGGED USERS
+    if (tagged_users) {
+
+      const taggedArray = tagged_users ? JSON.parse(tagged_users) : [];
+     
+        await PostModel.addTaggedUsersBulk(
+          client,
+          post.id,
+          taggedArray
+        );
+    }
 
     await client.query("COMMIT");
+
+    console.log("COMMENT DONE");
+
+    const fullPost = await PostModel.getSinglePostFull(
+      post.id,
+      user_id
+    );
 
     res.status(201).json({
       success: true,
       message: "Post created successfully",
+      // data: fullPost.rows[0]
       data: {
         ...post,
+        location_id,
+        hashtags,
+        tagged_users,
         media: mediaList
       }
     });
@@ -120,8 +139,6 @@ exports.createPost = async (req, res) => {
   }
 };
 
-
-
 // GET ALL POSTS (FEED)
 exports.getAllPosts = async (req, res) => {
   try {
@@ -134,14 +151,13 @@ exports.getAllPosts = async (req, res) => {
     });
 
   } catch (err) {
+    console.error(err);
     res.status(500).json({
       success: false,
       message: "Error fetching posts"
     });
   }
 };
-
-
 
 // GET SINGLE POST
 exports.getSinglePost = async (req, res) => {

@@ -1,73 +1,22 @@
-// const pool = require("../config/db");
-
-// // CREATE POST (with client for transaction)
-// exports.createPost = (client, user_id, content) => {
-//   return client.query(
-//     "INSERT INTO posts (user_id, content, created_at, updates_at) VALUES ($1,$2, NOW(), NOW()) RETURNING *",
-//     [user_id, content]
-//   );
-// };
-
-// // ADD MEDIA (transaction)
-// exports.addPostMedia = (client, post_id, url, type) => {
-//   return client.query(
-//     "INSERT INTO post_media (post_id, media_url, media_type) VALUES ($1,$2,$3)",
-//     [post_id, url, type]
-//   );
-// };
-
-// // GET ALL POSTS
-// exports.getAllPosts = () => {
-//   return pool.query("SELECT * FROM posts ORDER BY created_at DESC");
-// };
-
-// // GET SINGLE POST
-// exports.getPostById = (id) => {
-//   return pool.query("SELECT * FROM posts WHERE id=$1", [id]);
-// };
-
-// // UPDATE POST (only owner)
-// exports.updatePost = (post_id, user_id, content) => {
-//   return pool.query(
-//     "UPDATE posts SET content=$1, updated_at=NOW() WHERE id=$2 AND user_id=$3 RETURNING *",
-//     [content, post_id, user_id]
-//   );
-// };
-
-// // DELETE POST (only owner)
-// exports.deletePost = (post_id, user_id) => {
-//   return pool.query(
-//     "DELETE FROM posts WHERE id=$1 AND user_id=$2",
-//     [post_id, user_id]
-//   );
-// };
-
-// // GET USER POSTS
-// exports.getUserPosts = (user_id) => {
-//   return pool.query(
-//     "SELECT * FROM posts WHERE user_id=$1 ORDER BY created_at DESC",
-//     [user_id]
-//   );
-// };
-
-
+const { queue } = require("sharp");
 const pool = require("../config/db");
 const db = require("../config/db");
 
 // 1. CREATE POST (transaction client use karega)
-exports.createPost = (client, user_id, content) => {
+exports.createPost = (client, user_id, content, location_id, visibility, allow_comments, allow_share) => {
   return client.query(
-    `INSERT INTO posts (user_id, content, created_at, updated_at)
-     VALUES ($1,$2,NOW(),NOW())
+    `INSERT INTO posts (user_id, content, location_id, visibility, allow_comments, allow_share)
+     VALUES ($1,$2,$3,$4,$5,$6)
      RETURNING *`,
-    [user_id, content]
+    [user_id, content, location_id, visibility || "public", allow_comments ?? true, allow_share ?? true]
   );
 };
 
 // 2. BULK INSERT MEDIA (BEST WAY)
-exports.addPostMediaBulk = (client, post_id, mediaList) => {
-  if (!mediaList || mediaList.length === 0) return;
-
+exports.addPostMediaBulk = async (client, post_id, mediaList) => {
+  if (!mediaList || mediaList.length === 0) {
+    return;
+  }
   const values = [];
   const placeholders = [];
 
@@ -86,40 +35,135 @@ exports.addPostMediaBulk = (client, post_id, mediaList) => {
     );
   });
 
-  return client.query(
+  const query =
     `INSERT INTO post_media 
      (post_id, media_url, media_type, order_index)
-     VALUES ${placeholders.join(",")}`,
-    values
-  );
+     VALUES ${placeholders.join(",")}
+     `;
+
+    //  console.log("MEDIA QUERY:", query);
+    //  console.log("MEDIA VALUES:", values);
+    
+     return client.query(query, values);
 };
 
 // 3. GET ALL POSTS (FEED WITH MEDIA)
-exports.getAllPosts = () => {
-  return pool.query(`
+exports.getAllPosts = async () => {
+  return db.query(
+    `
     SELECT 
       p.id,
-      p.user_id,
       p.content,
       p.created_at,
+      p.visibility,
+      p.allow_comments,
+      p.allow_share,
 
+      p.user_id,
+
+      json_build_object(
+        'id', u.id,
+        'name', u.name
+      ) AS user,
+
+       ---LOCATION
+       CASE
+       WHEN loc.id IS NOT NULL 
+       THEN
+      json_build_object(
+  'id', loc.id,
+  'name', loc.name
+)
+  ELSE NULL
+    END AS location,
+
+      -- MEDIA
       COALESCE(
         json_agg(
-          json_build_object(
-            'url', m.media_url,
-            'type', m.media_type,
-            'order', m.order_index
+          DISTINCT jsonb_build_object(
+          'id', pm.id,
+            'url', pm.media_url,
+            'type', pm.media_type,
+            'order', pm.order_index
           )
-          ORDER BY m.order_index
-        ) FILTER (WHERE m.id IS NOT NULL),
+        ) FILTER (WHERE pm.id IS NOT NULL),
         '[]'
-      ) AS media
+      ) AS media,
+
+       ---HASHTAGS
+      COALESCE(
+       json_agg(
+    DISTINCT 
+  jsonb_build_object(
+      'id', h.id,
+      'tag', h.tag
+    )
+  ) FILTER (WHERE h.id IS NOT NULL),
+  '[]'
+) AS hashtags,
+
+ ---TAGGED USERS
+COALESCE(
+  json_agg(
+    DISTINCT 
+  jsonb_build_object(
+      'id', tu.id,
+      'name', tu.name
+    )
+  ) FILTER (WHERE tu.id IS NOT NULL),
+  '[]'
+) AS tagged_users,
+
+      -- LIKE COUNT
+      (
+        SELECT COUNT(*) 
+        FROM likes l
+        WHERE l.post_id = p.id
+      ) AS likes_count,
+
+      -- COMMENT COUNT
+      (
+        SELECT COUNT(*) 
+        FROM comments c
+        WHERE c.post_id = p.id
+        AND c.parent_id IS NULL
+      ) AS comments_count,
+
+      -- SHARE COUNT
+      (
+        SELECT COUNT(*) 
+        FROM shares s
+        WHERE s.post_id = p.id
+      ) AS shares_count
 
     FROM posts p
-    LEFT JOIN post_media m ON p.id = m.post_id
-    GROUP BY p.id
+
+    JOIN users u 
+    ON u.id = p.user_id
+
+    LEFT JOIN post_media pm 
+     ON pm.post_id = p.id
+
+    LEFT JOIN locations loc
+ON loc.id = p.location_id
+
+LEFT JOIN post_hashtags ph
+ON ph.post_id = p.id
+
+LEFT JOIN hashtags h
+ON h.id = ph.hashtag_id
+
+LEFT JOIN post_tags ptu
+ON ptu.post_id = p.id
+
+LEFT JOIN users tu
+ON tu.id = ptu.tagged_user_id
+
+    GROUP BY p.id, u.id, loc.id
+
     ORDER BY p.created_at DESC
-  `);
+    `
+  );
 };
 
 // 4. GET SINGLE POST
@@ -220,10 +264,22 @@ exports.getSinglePostFull = (postId, userId) => {
       p.content,
       p.created_at,
 
+      ---USER
       json_build_object(
         'id', u.id,
         'name', u.name
       ) as user,
+
+      ---LOCATION
+       CASE
+       WHEN loc.id IS NOT NULL 
+       THEN
+      json_build_object(
+  'id', loc.id,
+  'name', loc.name
+)
+  ELSE NULL
+    END AS location,
 
       -- MEDIA
       COALESCE(
@@ -232,6 +288,30 @@ exports.getSinglePostFull = (postId, userId) => {
           'type', pm.media_type
         )) FILTER (WHERE pm.id IS NOT NULL), '[]'
       ) as media,
+
+       ---HASHTAGS
+      COALESCE(
+       json_agg(
+    DISTINCT 
+  jsonb_build_object(
+      'id', h.id,
+      'tag', h.tag
+    )
+  ) FILTER (WHERE h.id IS NOT NULL),
+  '[]'
+) AS hashtags,
+
+ ---TAGGED USERS
+COALESCE(
+  json_agg(
+    DISTINCT 
+  jsonb_build_object(
+      'id', tu.id,
+      'name', tu.name
+    )
+  ) FILTER (WHERE tu.id IS NOT NULL),
+  '[]'
+) AS tagged_users,
 
       -- COUNTS
       (SELECT COUNT(*) FROM likes WHERE post_id = p.id) as likes_count,
@@ -248,10 +328,87 @@ exports.getSinglePostFull = (postId, userId) => {
     JOIN users u ON u.id = p.user_id
     LEFT JOIN post_media pm ON pm.post_id = p.id
 
+    LEFT JOIN locations loc
+ON loc.id = p.location_id
+
+LEFT JOIN post_hashtags ph
+ON ph.post_id = p.id
+
+LEFT JOIN hashtags h
+ON h.id = ph.hashtag_id
+
+LEFT JOIN post_tags ptu
+ON ptu.post_id = p.id
+
+LEFT JOIN users tu
+ON tu.id = ptu.tagged_user_id
+
     WHERE p.id = $1
 
-    GROUP BY p.id, u.id
+    GROUP BY p.id, u.id, loc.id, loc.name
     `,
     [postId, userId]
   );
+};
+
+// BULK INSERT HASHTAGS
+exports.addPostHashtagsBulk = async (
+client,
+post_id,
+hashtagArray
+) => {
+
+if (!hashtagArray || hashtagArray.length === 0) {
+return null;
+}
+
+const values = [];
+const placeholders = [];
+
+hashtagArray.forEach((hashtagId, index) => {
+
+const position = index * 2;
+
+placeholders.push(
+  `($${position + 1}, $${position + 2})`
+);
+
+values.push(post_id, hashtagId);
+
+});
+
+const query = `INSERT INTO post_hashtags (post_id, hashtag_id) VALUES ${placeholders.join(",")}`;
+
+return await client.query(query, values);
+};
+
+// BULK INSERT TAGGED USERS
+exports.addTaggedUsersBulk = async (
+client,
+post_id,
+taggedArray
+) => {
+
+if (!taggedArray || taggedArray.length === 0) {
+return null;
+}
+
+const values = [];
+const placeholders = [];
+
+taggedArray.forEach((taggedUserId, index) => {
+
+const position = index * 2;
+
+placeholders.push(
+  `($${position + 1}, $${position + 2})`
+);
+
+values.push(post_id, taggedUserId);
+
+});
+
+const query = `INSERT INTO post_tags (post_id, tagged_user_id) VALUES ${placeholders.join(",")}`;
+
+return await client.query(query, values);
 };
