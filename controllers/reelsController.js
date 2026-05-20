@@ -157,12 +157,14 @@ exports.viewReel = async (
     req, res
 ) => {
     try {
-        await reelModel.addView(
+        
+        const result = await reelModel.addView(
             req.params.id,
             req.user.id
         );
         res.json({
             success: true,
+            data: result,
             message: "reels views successfully "
         });
     } catch (err) {

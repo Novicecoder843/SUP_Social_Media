@@ -29,34 +29,6 @@ exports.createReel = async(
 };
 
 
-
-// GET REELS FEED 
-
-// exports.getReelsFeed = async(
-//     user_id
-// )=>{
-//     const result = await db.query(
-//         `
-//         SELECT r.*,
-//         u.full_name,
-//         u.profile_image,
-//         EXISTS(SELECT 1
-//         FROM user_schema.reel_likes rl 
-//         WHERE rl.reel_id = r.id
-//         AND rl.user_id = $1 
-//         )AS "isLiked"
-    
-//         FROM user_schema.reels r
-//         JOIN user_schema.userstable u 
-//         ON u.id = r.user_id 
-//         ORDER BY r.created_at DESC
-//         `,
-//         [user_id]
-//     );
-
-//     return result.rows;
-// };
-
 exports.getReelsFeed = async (
     user_id
 ) => {
@@ -115,11 +87,25 @@ exports.likeReel = async (
             [reel_id, user_id]
         );
 
+        // DECREASE COUNT
+        await db.query(
+            `
+            UPDATE user_schema.reels
+
+            SET likes_count = likes_count - 1
+
+            WHERE id = $1
+            `,
+            [reel_id]
+        );
+
         return {
             liked: false
         };
+
     }
 
+    
     // LIEK 
     await db.query(
         `
@@ -132,6 +118,20 @@ exports.likeReel = async (
         $1,$2,NOW()  )`,
         [reel_id , user_id]
     );
+
+
+    // INCREASE COUNT
+    await db.query(
+        `
+        UPDATE user_schema.reels
+
+        SET likes_count = likes_count + 1
+
+        WHERE id = $1
+        `,
+        [reel_id]
+    );
+
     return{
         liked:true
     };
@@ -144,6 +144,10 @@ exports.addView = async(
     reel_id,
     user_id
 )=>{
+
+     console.log("REEL ID:", reel_id);
+    console.log("USER ID:", user_id);
+
     const existing = await db.query(
         `
         SELECT * FROM 
@@ -155,8 +159,12 @@ exports.addView = async(
         ]
     );
 
-    if (existing.rows.length >0){
-        return;
+    console.log("EXISTING:", existing.rows);
+
+    if (existing.rows.length > 0){
+        return {
+            viewed: true
+        };
     }
     await db.query(`
         INSERT INTO user_schema.reel_views
@@ -168,8 +176,28 @@ exports.addView = async(
         `,
      [reel_id, user_id]
     );
+
+    console.log("VIEW INSERTED");
+
+     // INCREASE VIEW COUNT
+    await db.query(
+        `
+        UPDATE user_schema.reels
+
+        SET views_count = COALESCE(views_count,0) + 1
+
+        WHERE id = $1
+        `,
+        [reel_id]
+    );
+    console.log("VIEW COUNT UPDATED");
+
+    return {
+        viewed: true
+    };
        
 };
+
 
 // COMMENT REEL
 exports.commentReel = async (
@@ -185,7 +213,7 @@ exports.commentReel = async (
             reel_id,
             user_id,
             comment,
-            created_at
+            createed_at
         )
 
         VALUES
@@ -203,6 +231,18 @@ exports.commentReel = async (
             user_id,
             comment
         ]
+    );
+
+    // INCREASE COMMENT COUNT
+    await db.query(
+        `
+        UPDATE user_schema.reels
+
+        SET comment_count = comment_count + 1
+
+        WHERE id = $1
+        `,
+        [reel_id]
     );
 
     return result.rows[0];
