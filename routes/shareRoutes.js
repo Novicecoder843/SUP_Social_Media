@@ -12,4 +12,4 @@ const {
 // share post
 router.post("/:id/share", verifyToken, validations(sharePostSchema), shareController.sharePost);
 
-module.exports = router;
+module.exports = router; 
