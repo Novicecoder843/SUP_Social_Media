@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+
   <meta
     name="viewport"
     content="width=device-width, initial-scale=1.0"
@@ -24,8 +25,6 @@
       overflow:hidden;
       background:#fafafa;
     }
-
-  
 
     .sidebar{
       width:350px;
@@ -141,7 +140,6 @@
       background:#00c853;
     }
 
-
     .chat-container{
       flex:1;
       display:flex;
@@ -182,9 +180,15 @@
       margin:auto;
       color:gray;
       font-size:15px;
+      text-align:center;
     }
 
-    
+    .loading{
+      text-align:center;
+      padding:20px;
+      color:gray;
+      font-size:13px;
+    }
 
     .message{
       max-width:65%;
@@ -218,8 +222,6 @@
       text-align:right;
     }
 
-    
-
     .chat-input{
       padding:15px;
       border-top:1px solid #ddd;
@@ -251,17 +253,19 @@
       cursor:pointer;
     }
 
-    
-
     @media(max-width:768px){
 
       .sidebar{
-        width:100px;
+        width:80px;
       }
 
       .username,
       .last-message{
         display:none;
+      }
+
+      .chat-user{
+        font-size:13px;
       }
     }
 
@@ -269,8 +273,6 @@
 </head>
 
 <body>
-
- 
 
   <div class="sidebar">
 
@@ -294,8 +296,6 @@
     ></div>
 
   </div>
-
- 
 
   <div class="chat-container">
 
@@ -331,11 +331,12 @@
     <div id="chatBox">
 
       <div class="empty">
-        Send private messages 🚀
+        <h2>CHAT PRO</h2>
+        <br>
+        Select user or group to start chatting 🚀
       </div>
 
     </div>
-
 
     <div class="chat-input">
 
@@ -408,8 +409,40 @@ function connect(token){
         "🟢 Connected"
       );
 
+      document.getElementById(
+        "typing"
+      ).innerText =
+        "🟢 Connected";
+
+      setTimeout(()=>{
+
+        document.getElementById(
+          "typing"
+        ).innerText = "";
+
+      },2000);
+
       loadChatList();
       loadGroups();
+    }
+  );
+
+  /////////////////////////////////////////////////////
+  // SOCKET DISCONNECT
+  /////////////////////////////////////////////////////
+
+  socket.on(
+    "disconnect",
+    ()=>{
+
+      document.getElementById(
+        "typing"
+      ).innerText =
+        "❌ Socket disconnected";
+
+      console.log(
+        "❌ Socket disconnected"
+      );
     }
   );
 
@@ -435,6 +468,21 @@ function connect(token){
     "receive_message",
     msg => {
 
+      /////////////////////////////////////////////////////
+      // STOP DUPLICATE OWN MESSAGE
+      /////////////////////////////////////////////////////
+
+      if(
+        Number(msg.sender_id) ===
+        Number(myUserId)
+      ){
+        return;
+      }
+
+      /////////////////////////////////////////////////////
+      // SHOW ONLY ACTIVE CHAT
+      /////////////////////////////////////////////////////
+
       if(
         msg.sender_id ==
         currentChatUser ||
@@ -444,6 +492,18 @@ function connect(token){
       ){
         renderMessage(msg);
       }
+
+      /////////////////////////////////////////////////////
+      // AUTO SEEN
+      /////////////////////////////////////////////////////
+
+      socket.emit(
+        "seen",
+        {
+          sender_id:
+            msg.sender_id
+        }
+      );
 
       loadChatList();
     }
@@ -547,10 +607,6 @@ async function loadChatList(){
 
   list.innerHTML = "";
 
-  /////////////////////////////////////////////////////
-  // USERS
-  /////////////////////////////////////////////////////
-
   usersCache.forEach(u => {
 
     const online =
@@ -607,10 +663,6 @@ async function loadChatList(){
     list.appendChild(div);
   });
 
-  /////////////////////////////////////////////////////
-  // GROUP TITLE
-  /////////////////////////////////////////////////////
-
   const title =
     document.createElement("div");
 
@@ -619,10 +671,6 @@ async function loadChatList(){
   title.innerText = "👥 Groups";
 
   list.appendChild(title);
-
-  /////////////////////////////////////////////////////
-  // GROUPS
-  /////////////////////////////////////////////////////
 
   groupsCache.forEach(group => {
 
@@ -732,7 +780,11 @@ async function openChat(user){
       "chatBox"
     );
 
-  chatBox.innerHTML = "";
+  chatBox.innerHTML = `
+    <div class="loading">
+      Loading messages...
+    </div>
+  `;
 
   const res = await fetch(
     `http://localhost:3001/api/chats/conversation/${user.user_id}`,
@@ -749,6 +801,8 @@ async function openChat(user){
 
   const data =
     await res.json();
+
+  chatBox.innerHTML = "";
 
   (
     data.messages || []
@@ -768,18 +822,10 @@ async function openGroup(group){
   currentGroupId =
     group.id;
 
-  /////////////////////////////////////////////////////
-  // JOIN ROOM
-  /////////////////////////////////////////////////////
-
   socket.emit(
     "join_group",
     group.id
   );
-
-  /////////////////////////////////////////////////////
-  // HEADER
-  /////////////////////////////////////////////////////
 
   document.getElementById(
     "chatHeader"
@@ -790,20 +836,16 @@ async function openGroup(group){
     "headerAvatar"
   ).innerText = "👥";
 
-  /////////////////////////////////////////////////////
-  // CLEAR CHAT
-  /////////////////////////////////////////////////////
-
   const chatBox =
     document.getElementById(
       "chatBox"
     );
 
-  chatBox.innerHTML = "";
-
-  /////////////////////////////////////////////////////
-  // LOAD GROUP MESSAGES
-  /////////////////////////////////////////////////////
+  chatBox.innerHTML = `
+    <div class="loading">
+      Loading group messages...
+    </div>
+  `;
 
   try {
 
@@ -823,10 +865,7 @@ async function openGroup(group){
     const data =
       await res.json();
 
-    console.log(
-      "📦 GROUP DATA:",
-      data
-    );
+    chatBox.innerHTML = "";
 
     const messages =
       data.messages ||
@@ -856,6 +895,15 @@ function renderMessage(msg){
     document.getElementById(
       "chatBox"
     );
+
+  const empty =
+    document.querySelector(
+      ".empty"
+    );
+
+  if(empty){
+    empty.remove();
+  }
 
   const div =
     document.createElement(
@@ -906,14 +954,25 @@ function renderMessage(msg){
     </div>
 
     <div class="time">
+
       ${time}
+
+      ${
+        Number(msg.sender_id) ===
+        Number(myUserId)
+        ? " ✔✔"
+        : ""
+      }
+
     </div>
   `;
 
   chatBox.appendChild(div);
 
-  chatBox.scrollTop =
-    chatBox.scrollHeight;
+  chatBox.scrollTo({
+    top:chatBox.scrollHeight,
+    behavior:"smooth"
+  });
 }
 
 /////////////////////////////////////////////////////
@@ -1085,6 +1144,48 @@ function searchUser(text){
     list.appendChild(div);
   });
 }
+
+/////////////////////////////////////////////////////
+// NETWORK STATUS
+/////////////////////////////////////////////////////
+
+window.addEventListener(
+  "offline",
+  () => {
+
+    document.getElementById(
+      "typing"
+    ).innerText =
+      "❌ Offline";
+
+    console.log(
+      "❌ Internet disconnected"
+    );
+  }
+);
+
+window.addEventListener(
+  "online",
+  () => {
+
+    document.getElementById(
+      "typing"
+    ).innerText =
+      "🟢 Online";
+
+    console.log(
+      "🟢 Internet connected"
+    );
+
+    setTimeout(()=>{
+
+      document.getElementById(
+        "typing"
+      ).innerText = "";
+
+    },2000);
+  }
+);
 
 /////////////////////////////////////////////////////
 // INIT
