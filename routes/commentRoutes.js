@@ -3,18 +3,50 @@ const router = express.Router();
 
 const commentController = require("../controller/commentController");
 const verifyToken = require("../middleware/authMiddleware");
+const validations = require("../middleware/validate");
 
-// add comment
-router.post("/posts/:id/comment", verifyToken, commentController.addComment);
-// add reply
-router.post("/reply", verifyToken, commentController.addReply);
+const {
+  addCommentSchema,
+  addReplySchema,
+  updateCommentIdSchema,
+  commentIdSchema
+} = require("../validations/commentValidation");
 
-// get comments
-router.get("/posts/:postId/comments", commentController.getComments);
-//update comment
-router.put("/:commentId", verifyToken, commentController.updateComment);
+// ADD COMMENT
+router.post(
+  "/posts/:postId/comments",
+  verifyToken,
+  validations(addCommentSchema),
+  commentController.addComment
+);
 
-// delete comment
-router.delete("/comments/:id", verifyToken, commentController.deleteComment);
+// ADD REPLY
+router.post(
+  "/reply",
+  verifyToken,
+  validations(addReplySchema),
+  commentController.addReply
+);
+
+// GET COMMENTS
+router.get(
+  "/posts/:postId/comments",
+  commentController.getComments
+);
+
+// UPDATE COMMENT
+router.put(
+  "/:commentId",
+  verifyToken,
+  validations(updateCommentIdSchema),
+  commentController.updateComment
+);
+
+// DELETE COMMENT
+router.delete(
+  "/:id",
+  verifyToken,
+  commentController.deleteComment
+);
 
 module.exports = router;

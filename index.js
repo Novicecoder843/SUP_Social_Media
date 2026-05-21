@@ -17,13 +17,11 @@ const hashtagRoutes = require("./routes/hashtagRoutes");
 
 const app = express();
 
-
-// ✅ IMPORTANT (for large files like video)
+// BODY PARSER
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true }));
 
-
-// ✅ LOGGER
+// LOGGER
 app.use((req, res, next) => {
   console.log("\n===============================");
   console.log("Method:", req.method);
@@ -45,27 +43,27 @@ app.use((req, res, next) => {
   next();
 });
 
-
-// ✅ ROUTES
+// ROUTES
 app.use("/api/roles", roleRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/posts", postRoutes);
 app.use("/api/files", fileRoutes);
-app.use("/api/media", mediaRoutes);   // 🔥 media working here
-app.use("/api/like", likeRoutes);
+app.use("/api/media", mediaRoutes);
+
+// ✅ FIXED HERE (IMPORTANT)
+app.use("/api/likes", likeRoutes);
+
 app.use("/api/comment", commentRoutes);
 app.use("/api/save", saveRoutes);
 app.use("/api/share", shareRoutes);
 app.use("/api/feed", feedRoutes);
 app.use("/api/hashtag", hashtagRoutes);
 
-
-// ✅ STATIC FILES (if you save locally)
+// STATIC FILES
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-
-// ✅ GLOBAL ERROR HANDLER (VERY IMPORTANT 🔥)
+// GLOBAL ERROR HANDLER
 app.use((err, req, res, next) => {
   console.error("ERROR:", err.message);
 
@@ -76,7 +74,7 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: "Something went wrong" });
 });
 
-
+// SERVER START
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {

@@ -31,21 +31,28 @@ exports.unsavePost = async (req, res) => {
 };
 
 // GET SAVED
+// GET SAVED
 exports.getSaved = async (req, res) => {
   try {
-    const user_id = req.user.id;
+    const user_id = req.params.id;
 
-const result = await pool.query(
-    "SELECT * FROM saved_posts WHERE user_id=$1",
-    [user_id]
-  
-  );
+    console.log("User ID:", user_id);
 
-  res.json(result.rows);
+    const result = await pool.query(
+      "SELECT * FROM saved_posts WHERE user_id = $1",
+      [user_id]
+    );
+
+    res.status(200).json({
+      success: true,
+      data: result.rows
+    });
+
   } catch (err) {
     console.error("Get Saved Error:", err);
 
     res.status(500).json({
+      success: false,
       message: "Error fetching saved posts"
     });
   }

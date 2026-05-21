@@ -1,13 +1,18 @@
-const express = require ("express");
+const express = require("express");
 const router = express.Router();
 
 const shareController = require("../controller/shareController");
 const verifyToken = require("../middleware/authMiddleware");
+const validations = require("../middleware/validate");
 
-// Share a post
-router.post("/posts/:id/share", verifyToken, shareController.sharePost);
+const { sharePostSchema } = require("../validations/shareValidation");
 
-// Get all shared posts for logged-in user
-router.get("/shared-posts", verifyToken, shareController.getShares);
+// POST: /api/share/posts/:id/share
+router.post(
+  "/:id/share",
+  verifyToken,
+  validations(sharePostSchema),
+  shareController.sharePost
+);
 
 module.exports = router;

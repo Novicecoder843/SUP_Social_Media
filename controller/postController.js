@@ -16,68 +16,32 @@ exports.createPost = async (req, res) => {
       location_id, visibility, allow_comments, allow_share);
     const post = postResult.rows[0];
 
-//     //Prepare media list
-//     let mediaList = [];
+    //Prepare media list
+    let mediaList = [];
 
-//     if (req.files && req.files.length > 0) {
-//       mediaList = req.files.map((file, index) => ({
-//         url: file.location || file.key,
-//         type: file.mimetype.startsWith("video") ? "video" : "image",
-//         order: index
-//       }));
-//       const mediaDBList = req.files.map((file, index) => ({
-//     url: file.key || file.location,
-//     type: file.mimetype.startsWith("video") ? "video" : "image",
-//     order: index
-//   }));
-
-//   console.log("MEDIA DB LIST:", mediaDBList);
-
-//    //Insert media
-//       await PostModel.addPostMediaBulk(client, post.id,mediaDBList);
-//       mediaList = req.files.map((file, index) => ({
-//     url: file.location || file.key,
-//     type: file.mimetype.startsWith("video")
-//       ? "video"
-//       : "image",
-//     order: index
-//   }));
-// }
-
-let mediaList = [];
-
-if (req.files && req.files.length > 0) {
-
-  const mediaDBList = req.files.map((file, index) => {
-
-    const mediaUrl =
-      file.location ||
-      file.path ||
-      file.filename ||
-      file.key;
-
-    if (!mediaUrl) {
-      throw new Error("Media URL missing");
-    }
-
-    return {
-      url: mediaUrl,
-      type: file.mimetype.startsWith("video")
-        ? "video"
-        : "image",
-      order: index
-    };
-  });
+    if (req.files && req.files.length > 0) {
+      mediaList = req.files.map((file, index) => ({
+        url: file.location || file.key,
+        type: file.mimetype.startsWith("video") ? "video" : "image",
+        order: index
+      }));
+      const mediaDBList = req.files.map((file, index) => ({
+    url: file.path,
+    type: file.mimetype.startsWith("video") ? "video" : "image",
+    order: index
+  }));
 
   console.log("MEDIA DB LIST:", mediaDBList);
 
-  await PostModel.addPostMediaBulk(
-    client,
-    post.id,
-    mediaDBList
-  );
-
-  mediaList = mediaDBList;
+   //Insert media
+      await PostModel.addPostMediaBulk(client, post.id,mediaDBList);
+      mediaList = req.files.map((file, index) => ({
+    url: file.location || file.key,
+    type: file.mimetype.startsWith("video")
+      ? "video"
+      : "image",
+    order: index
+  }));
 }
   
     // HASHTAGS

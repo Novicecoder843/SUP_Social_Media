@@ -3,11 +3,20 @@ const router = express.Router();
 
 const saveController = require("../controller/saveController");
 const verifyToken = require("../middleware/authMiddleware");
+const validations = require("../middleware/validate");
 
-router.post("/posts/:id/save", verifyToken, saveController.savePost);
+const {
+    postIdSchema,
+  userIdSchema
+} = require("../validations/saveValidation");
 
-router.delete("/posts/:id/save", verifyToken, saveController.unsavePost);
+// save post
+router.post("/posts/:id/save", verifyToken, validations(postIdSchema), saveController.savePost);
 
-router.get("/saved-posts", verifyToken, saveController.getSaved);
+// unsave post
+router.delete("/posts/:id/save", verifyToken, validations(postIdSchema), saveController.unsavePost);
+
+// get saved posts
+router.get("/users/:id/saved-posts", verifyToken, validations(userIdSchema), saveController.getSaved);
 
 module.exports = router;
