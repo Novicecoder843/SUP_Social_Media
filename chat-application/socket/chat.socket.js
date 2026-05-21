@@ -581,7 +581,89 @@ module.exports = (io) => {
           }
         }
       );
+/////////////////////////////////////////////////////
+// 🗑 DELETE MESSAGE
+/////////////////////////////////////////////////////
 
+socket.on(
+  "delete_message",
+  async ({
+    message_id,
+    receiver_id
+  }) => {
+
+    try {
+
+      /////////////////////////////////////////////////////
+      // DELETE FROM DB
+      /////////////////////////////////////////////////////
+
+      const deleted =
+        await Chat.deleteMessage(
+          message_id,
+          userId
+        );
+
+      /////////////////////////////////////////////////////
+      // NOT FOUND
+      /////////////////////////////////////////////////////
+
+      if (!deleted) {
+
+        return console.log(
+          "❌ Message not found"
+        );
+      }
+
+      console.log(
+        "🗑 Message Deleted:",
+        message_id
+      );
+
+      /////////////////////////////////////////////////////
+      // RECEIVER SOCKET
+      /////////////////////////////////////////////////////
+
+      const receiverSocket =
+        onlineUsers.get(
+          String(receiver_id)
+        );
+
+      /////////////////////////////////////////////////////
+      // SEND DELETE TO RECEIVER
+      /////////////////////////////////////////////////////
+
+      if (receiverSocket) {
+
+        io.to(receiverSocket)
+          .emit(
+            "message_deleted",
+            {
+              message_id
+            }
+          );
+      }
+
+      /////////////////////////////////////////////////////
+      // SEND DELETE TO SENDER
+      /////////////////////////////////////////////////////
+
+      socket.emit(
+        "message_deleted",
+        {
+          message_id
+        }
+      );
+
+    } catch (err) {
+
+      console.log(
+        "❌ DELETE ERROR:",
+        err.message
+      );
+    }
+  }
+);
       /////////////////////////////////////////////////////
       // 🔴 DISCONNECT
       /////////////////////////////////////////////////////

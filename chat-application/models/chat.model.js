@@ -46,14 +46,37 @@ exports.replyMessage = async (senderId, receiverId, message, parentId) => {
 /////////////////////////////////////////////////////
 // ❌ DELETE MESSAGE
 /////////////////////////////////////////////////////
-exports.deleteMessage = async (messageId, userId) => {
-  await db.query(
-    `UPDATE public.messages
-     SET is_deleted = true
-     WHERE id = $1 AND sender_id = $2`,
-    [messageId, userId]
+exports.deleteMessage = async (
+  messageId,
+  userId
+) => {
+
+  const result =
+    await db.query(
+      `
+      DELETE FROM messages
+      WHERE id = $1
+      AND sender_id = $2
+      RETURNING *
+      `,
+      [messageId, userId]
+    );
+
+  console.log(
+    "DELETE RESULT:",
+    result.rows
   );
+
+  return result.rows[0];
 };
+// exports.deleteMessage = async (messageId, userId) => {
+//   await db.query(
+//     `UPDATE public.messages
+//      SET is_deleted = true
+//      WHERE id = $1 AND sender_id = $2`,
+//     [messageId, userId]
+//   );
+// };
 
 /////////////////////////////////////////////////////
 // 📩 GET CHAT (NO PAGINATION)

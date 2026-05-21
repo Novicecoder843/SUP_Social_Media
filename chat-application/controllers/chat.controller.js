@@ -268,19 +268,68 @@ exports.replyMessage = async (req, res) => {
 // ❌ DELETE MESSAGE
 /////////////////////////////////////////////////////
 exports.deleteMessage = async (req, res) => {
-  try {
-    await Chat.deleteMessage(req.params.messageId, req.user.id);
 
-    res.json({
-      success: true,
-      message: "Message deleted",
+  try {
+
+    const messageId =
+      req.params.messageId;
+
+    const userId =
+      req.user.id;
+
+    console.log(
+      "MESSAGE ID:",
+      messageId
+    );
+
+    console.log(
+      "USER ID:",
+      userId
+    );
+
+    const result =
+      await Chat.deleteMessage(
+        messageId,
+        userId
+      );
+
+    if(!result){
+
+      return res.status(404).json({
+        success:false,
+        message:"Message not found"
+      });
+    }
+
+    return res.json({
+      success:true,
+      message:"Message deleted successfully"
     });
 
-  } catch (err) {
-    console.error("DELETE ERROR:", err);
-    res.status(500).json({ error: err.message });
+  } catch(err){
+
+    console.log(err);
+
+    res.status(500).json({
+      success:false,
+      message:"Server error"
+    });
   }
 };
+// exports.deleteMessage = async (req, res) => {
+//   try {
+//     await Chat.deleteMessage(req.params.messageId, req.user.id);
+
+//     res.json({
+//       success: true,
+//       message: "Message deleted",
+//     });
+
+//   } catch (err) {
+//     console.error("DELETE ERROR:", err);
+//     res.status(500).json({ error: err.message });
+//   }
+// };
 
 /////////////////////////////////////////////////////
 // 📩 GET CHAT (NO PAGINATION)
