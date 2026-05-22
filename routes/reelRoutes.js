@@ -1,7 +1,7 @@
 // const express = require("express");
 // const router = express.Router();
 
-// const reelController = require("../controllers/reelController");
+// const reelController = require("../controller/reelController");
 
 // router.post("/", reelController.createReel);
 

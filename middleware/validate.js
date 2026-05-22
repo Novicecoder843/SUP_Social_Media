@@ -1,22 +1,50 @@
-module.exports = (schema) => {
+// module.exports = (schema) => {
+//   return (req, res, next) => {
+//     try {
+//         console.log(req.body, "body");
+
+//       schema.parse(req.query);
+
+//       next();
+//     } catch (error) {
+//         console.log(error);
+        
+//       return res.status(400).json({
+//         success: false,
+//         message: "Validation failed",
+//         errors: error.issues.map((err) => ({
+//           field: err.path[0],
+//           message: err.message,
+//         })),
+//       });
+//     }
+//   };
+// };
+const validate = (schema) => {
   return (req, res, next) => {
     try {
-        console.log(req.body, "body");
 
-      schema.parse(req.body);
+      // MERGE BODY + PARAMS + QUERY
+      const data = {
+        ...req.body,
+        ...req.params,
+        ...req.query,
+      };
+
+      schema.parse(data);
 
       next();
+
     } catch (error) {
-        console.log(error);
-        
+      console.log(error);
+
       return res.status(400).json({
         success: false,
-        message: "Validation failed",
-        errors: error.issues.map((err) => ({
-          field: err.path[0],
-          message: err.message,
-        })),
+        message: "Validation error",
+        errors: error.errors || error,
       });
     }
   };
 };
+
+module.exports = validate;

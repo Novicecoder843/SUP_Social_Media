@@ -1,5 +1,7 @@
 require('dotenv').config();
 const express = require("express");
+const morgan = require("morgan");
+const logger = require("./utils/logger");
 
 const bodyParser = require('body-parser')
 //const pool = require("./config/db");
@@ -15,12 +17,15 @@ const saveRoutes = require("./routes/saveRoutes");
 const shareRoutes = require("./routes/shareRoutes");
 const feedRoutes = require("./routes/feedRoutes");
 const hashtagRoutes = require("./routes/hashtagRoutes");
+const storyRoutes = require("./routes/storyRoutes");
 // const reelRoutes = require("./routes/reelRoutes");
 // const viewRoutes = require("./routes/viewRoutes");
 
 const app = express();
 
 app.use(express.json());
+
+app.use(morgan("dev"));
 
 app.use((req, res, next) => {
     console.log("Request Method:", req.method);
@@ -47,13 +52,25 @@ app.use("/api/save", saveRoutes);
 app.use("/api/posts", shareRoutes);
 app.use("/api/feed", feedRoutes);
 app.use("/api/hashtag", hashtagRoutes);
+app.use("/api/story", storyRoutes);
 // app.use("/api/reels", reelRoutes);
 // app.use("api/view", viewRoutes);
 
 app.use("/uploads", express.static("uploads"));
 
+app.get("/error", (req, res) => {
+
+    logger.error("This is a test error");
+
+    res.status(500).json({
+        success: false,
+        message: "Error checked"
+    });
+
+});
+
 const PORT = 3000;
 app.listen(PORT, () => {
-    console.log(`Server started at http://localhost:${PORT}`);
+    logger.info(`Server started at http://localhost:${PORT}`);
 });
 
