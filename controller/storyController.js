@@ -495,7 +495,7 @@ const deleteHighlight = async (req, res) => {
 // ADD CLOSE FRIEND
 const addCloseFriend = async (req, res) => {
   try {
-    const userId = req.user.userid;
+    const userId = req.user.id;
     const { friendId } = req.params;
 
     if (userId == friendId) {
@@ -524,7 +524,7 @@ const addCloseFriend = async (req, res) => {
 // REMOVE CLOSE FRIEND
 const removeCloseFriend = async (req, res) => {
   try {
-    const userId = req.user.userid;
+    const userId = req.user.id;
     const { friendId } = req.params;
 
     const data = await storyModel.removeCloseFriend(userId, friendId);
@@ -552,7 +552,7 @@ const removeCloseFriend = async (req, res) => {
 // GET CLOSE FRIENDS
 const getCloseFriends = async (req, res) => {
   try {
-    const userId = req.user.userid;
+    const userId = req.user.id;
 
     const data = await storyModel.getCloseFriends(userId);
 
