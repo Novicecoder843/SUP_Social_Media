@@ -27,11 +27,19 @@ exports.uploadReel = async (req, res) => {
             thumbnail_url,
             caption
         );
+
+                // GENERATE TEMP URL
+        const temp_video_url = await generateSignedUrl(video_url);
+
         res.status(201).json({
             success: true,
             message: "reel uploaded successfully",
+
+            temp_video_url,
+
             data: reel
         });
+
     } catch (err) {
         res.status(500).json({
             success: false,
@@ -203,7 +211,7 @@ exports.commentReel = async (req, res)=>{
 
 // DELETE REELS 
 
-exports.deleteReel = async(rrq, res)=>{
+exports.deleteReel = async(req, res)=>{
     try {
          await reelModel.deleteReel(
             req.params.id,
@@ -219,5 +227,182 @@ exports.deleteReel = async(rrq, res)=>{
             success: false,
             errror : error.message
          });
+    }
+};
+
+
+
+
+// SHARE REEL
+exports.shareReel = async (
+    req,
+    res
+) => {
+
+    try {
+
+        const result =
+            await reelModel.shareReel(
+                req.params.id,
+                req.user.id
+            );
+
+        res.json({
+
+            success: true,
+
+            shared: result.shared,
+
+            message: "Reel shared"
+
+        });
+
+    } catch (err) {
+
+        res.status(500).json({
+
+            success: false,
+
+            error: err.message
+
+        });
+
+    }
+
+};
+
+
+
+
+
+// TOGGLE SAVE / UNSAVE
+exports.toggleSaveReel = async (req, res) => {
+
+    try {
+
+        const user_id = req.user.id;
+
+        const { reel_id } = req.body;
+
+        if (!reel_id) {
+
+            return res.status(400).json({
+                success: false,
+                message: "reel_id required"
+            });
+
+        }
+
+        // CHECK ALREADY SAVED
+        const alreadySaved =
+        await reelModel.checkSaveed(
+            user_id,
+            reel_id
+        );
+
+        // UNSAVE
+        if (alreadySaved) {
+
+            await reelModel.unsaveReel(
+                user_id,
+                reel_id
+            );
+
+            return res.json({
+                success: true,
+                saved: false,
+                message: "reel unsaved successfully"
+            });
+
+        }
+
+        // SAVE
+        await reelModel.saveReel(
+            user_id,
+            reel_id
+        );
+
+        res.json({
+            success: true,
+            saved: true,
+            message: "reel saved successfully"
+        });
+
+    } catch (err) {
+
+        res.status(500).json({
+            success: false,
+            error: err.message
+        });
+
+    }
+
+};
+
+/// GET SAVE REELS 
+
+exports.getSavedReels =  async (req, res)=>{
+
+    try {
+        const user_id = req.user.id;
+
+        const reels = 
+        await reelModel.getSavedReels(user_id);
+
+        const updatedReels = await Promise.all(
+            reels.map(async(reel)=>{
+                const temp_video_url = await generateSignedUrl(
+                    reel.video_url
+                );
+                return{
+                    ...reel,
+                    temp_video_url
+                };
+            })
+        );
+        res.json({
+            success: true,
+            data: updatedReels
+        })
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            error : err.message
+        });
+    }
+};
+
+
+// DOWNLOAD REELS 
+
+
+exports.downloadReel = async(req,res)=>{
+
+    try {
+        const reel_id = req.params.id ;
+
+        const reel = await reelModel.getReelById(reel_id);
+
+        if(!reel){
+
+            return res.status(400).json({
+                success: false,
+                message:"reels not found"
+            });
+        }
+
+        const download_url = 
+        await generateSignedUrl(reel.video_url);
+
+        res.json({
+            success:true , 
+            download_url
+        });
+        
+    } catch (err) {
+        res.status(500).json({
+            success:true ,
+            message : err.message
+        });
     }
 };

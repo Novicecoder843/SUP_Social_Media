@@ -267,3 +267,117 @@ exports.deleteReel = async (
     );
 
 };
+
+
+// SHARE REEL
+exports.shareReel = async (
+    reel_id,
+    user_id
+) => {
+
+    // STORE SHARE HISTORY
+    await db.query(
+        `
+        INSERT INTO user_schema.reel_shares
+        (
+            reel_id,
+            user_id,
+            created_at
+        )
+
+        VALUES
+        (
+            $1,
+            $2,
+            NOW()
+        )
+        `,
+        [reel_id, user_id]
+    );
+
+
+    // INCREASE SHARE COUNT
+    await db.query(
+        `
+        UPDATE user_schema.reels
+
+        SET shares_count = shares_count + 1
+
+        WHERE id = $1
+        `,
+        [reel_id]
+    );
+
+
+    return {
+        shared: true
+    };
+
+};
+
+
+
+exports.saveReel = async( user_id , reel_id)=>{
+
+    const result = await db.query(
+
+        `INSERT INTO  user_schema.save_reels(user_id , reel_id ) 
+        VALUE ($1 , $2 )
+        RETURNING * `,
+        [user_id,reel_id]
+    );
+    return result.rows[0];
+};
+
+exports.checkSaveed = async(user_id, reel_id)=>{
+    const result= await db.query(
+        `
+        SELECT * FROM user_schema.saved_reels WHERE user_id = $1 AND  reel_id = $2`,
+        [user_id,reel_id]
+    );
+    return result.rows;
+;}
+
+
+// UNSAVE REELS //
+
+exports.unsaveReel = async (user_id, reel_id)=>{
+     await db.query(
+        `
+        DELETE FROM user_schema.saved_reels WHERE user_id = $1 
+        AND reel_id = $2`,
+        [user_id,reel_id]
+     );
+}
+
+
+// GET SAVES REELS /
+
+exports.getSavedReels = async (user_id)=>{
+    const result = await db.query(
+        ` SELECT * FROM user_schema.saved_reels sr 
+        JOIN reels r 
+        
+        ON sr.reel_id = r.id
+        WHERE sr.user_id = $1
+        ORDER BY sr.created_at DESC`,
+        [user_id]
+    )
+    return result.rows;
+};
+
+
+// GET SINGLE REEL
+
+exports.getReelById = async(reel_id)=>{
+    const result = await db.query(
+
+        `
+        SELECT * FROM user_schema.reels 
+        WHERE id = $1 `,
+        [reel_id]
+  
+    );
+    return result.rows[0]
+};
+

@@ -13,7 +13,18 @@ router.post("/:id/like", auth, controller.likeReel);
 router.post("/:id/view", auth, controller.viewReel);
 router.post("/:id/comment", auth, controller.commentReel);
 
-router.delete("/delete:id", auth, controller.deleteReel);
+router.post("/save" , auth, controller.toggleSaveReel);
+router.get("/saved" , auth , controller.getSavedReels);
+
+router.get("/download/:id" , auth , controller.deleteReel);
+
+
+// SHARE REEL
+router.post("/:id/share" , auth, controller.shareReel);
+
+
+router.delete("/:id/delete", auth, controller.deleteReel);
+
 
 
 
