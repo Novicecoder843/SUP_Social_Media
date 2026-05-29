@@ -321,8 +321,8 @@ exports.saveReel = async( user_id , reel_id)=>{
 
     const result = await db.query(
 
-        `INSERT INTO  user_schema.save_reels(user_id , reel_id ) 
-        VALUE ($1 , $2 )
+        `INSERT INTO  user_schema.saved_reels (user_id , reel_id ) 
+        VALUES ($1 , $2 )
         RETURNING * `,
         [user_id,reel_id]
     );
@@ -356,7 +356,7 @@ exports.unsaveReel = async (user_id, reel_id)=>{
 exports.getSavedReels = async (user_id)=>{
     const result = await db.query(
         ` SELECT * FROM user_schema.saved_reels sr 
-        JOIN reels r 
+        JOIN user_schema.reels r 
         
         ON sr.reel_id = r.id
         WHERE sr.user_id = $1
@@ -381,3 +381,60 @@ exports.getReelById = async(reel_id)=>{
     return result.rows[0]
 };
 
+exports.getMyReel = async(user_id)=>{
+
+    const result = await db.query(
+        `SELECT * FROM user_schema.reels
+        WHERE user_id = $1
+        ORDER BY create_at DESC `,
+        [user_id]
+    );
+    return result.rows;
+};
+
+exports.cheakReports = async(user_id, reel_id)=>{
+
+    const result = await db.query(
+        `
+        SELECT * FROM user_schema.reel_reports
+        WHERE   user_id = $1 
+        AND reel_id = $2 
+        `,
+        [user_id , reel_id]
+
+    );
+    return result.rows[0]
+};
+
+
+exports.reportReel = async(
+    user_id,reel_id,reason
+)=>{
+    const result = await db.query(
+
+    `INSERT INTO user_schema.reel_reports
+
+    (user_id, reel_id, reason)
+
+    VALUES ($1,$2,$3)
+
+    RETURNING *`,
+
+    [user_id, reel_id, reason]
+
+);
+     return result.rows[0]
+};
+
+
+exports.removeReports = async(user_id, reel_id)=>{
+
+    await db.query(
+        `
+        DELETE FROM user_schema.reel_reports 
+        WHERE user_id = $1 
+        AND reel_id = $2 `,
+        [user_id, reel_id]
+    );
+    
+}

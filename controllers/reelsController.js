@@ -1,4 +1,5 @@
 const reelModel = require("../models/reelsModel");
+const { trace, report } = require("../routes/reelRouts");
 const generateSignedUrl = require("../utlis/getSignedUrl");
 
 
@@ -28,7 +29,7 @@ exports.uploadReel = async (req, res) => {
             caption
         );
 
-                // GENERATE TEMP URL
+        // GENERATE TEMP URL
         const temp_video_url = await generateSignedUrl(video_url);
 
         res.status(201).json({
@@ -165,7 +166,7 @@ exports.viewReel = async (
     req, res
 ) => {
     try {
-        
+
         const result = await reelModel.addView(
             req.params.id,
             req.user.id
@@ -178,7 +179,7 @@ exports.viewReel = async (
     } catch (err) {
         res.status(500).json({
             success: false,
-            error : err.message
+            error: err.message
         });
     }
 };
@@ -186,16 +187,16 @@ exports.viewReel = async (
 
 // COMMENT REELS 
 
-exports.commentReel = async (req, res)=>{
+exports.commentReel = async (req, res) => {
 
     try {
-        const {comment } = req.body;
-        const data = 
-        await reelModel.commentReel(
-            req.params.id,
-            req.user.id,
-            comment
-        );
+        const { comment } = req.body;
+        const data =
+            await reelModel.commentReel(
+                req.params.id,
+                req.user.id,
+                comment
+            );
         res.json({
             success: true,
             data
@@ -203,7 +204,7 @@ exports.commentReel = async (req, res)=>{
     } catch (err) {
         res.status(500).json({
             success: false,
-            error : err.message
+            error: err.message
         });
     }
 };
@@ -211,22 +212,22 @@ exports.commentReel = async (req, res)=>{
 
 // DELETE REELS 
 
-exports.deleteReel = async(req, res)=>{
+exports.deleteReel = async (req, res) => {
     try {
-         await reelModel.deleteReel(
+        await reelModel.deleteReel(
             req.params.id,
             req.user.id
-         );
-         res.json({
+        );
+        res.json({
             success: true,
             message: "reels deleted successfully"
-         });
+        });
 
     } catch (error) {
-         res.status(500).json({
+        res.status(500).json({
             success: false,
-            errror : error.message
-         });
+            errror: error.message
+        });
     }
 };
 
@@ -295,13 +296,13 @@ exports.toggleSaveReel = async (req, res) => {
 
         // CHECK ALREADY SAVED
         const alreadySaved =
-        await reelModel.checkSaveed(
-            user_id,
-            reel_id
-        );
+            await reelModel.checkSaveed(
+                user_id,
+                reel_id
+            );
 
         // UNSAVE
-        if (alreadySaved) {
+        if (alreadySaved.length > 0) {
 
             await reelModel.unsaveReel(
                 user_id,
@@ -311,8 +312,9 @@ exports.toggleSaveReel = async (req, res) => {
             return res.json({
                 success: true,
                 saved: false,
-                message: "reel unsaved successfully"
+                message: "reel unsave succesfully "
             });
+            console.log(alreadySaved);
 
         }
 
@@ -341,20 +343,20 @@ exports.toggleSaveReel = async (req, res) => {
 
 /// GET SAVE REELS 
 
-exports.getSavedReels =  async (req, res)=>{
+exports.getSavedReels = async (req, res) => {
 
     try {
         const user_id = req.user.id;
 
-        const reels = 
-        await reelModel.getSavedReels(user_id);
+        const reels =
+            await reelModel.getSavedReels(user_id);
 
         const updatedReels = await Promise.all(
-            reels.map(async(reel)=>{
+            reels.map(async (reel) => {
                 const temp_video_url = await generateSignedUrl(
                     reel.video_url
                 );
-                return{
+                return {
                     ...reel,
                     temp_video_url
                 };
@@ -367,7 +369,7 @@ exports.getSavedReels =  async (req, res)=>{
     } catch (err) {
         res.status(500).json({
             success: false,
-            error : err.message
+            error: err.message
         });
     }
 };
@@ -376,33 +378,123 @@ exports.getSavedReels =  async (req, res)=>{
 // DOWNLOAD REELS 
 
 
-exports.downloadReel = async(req,res)=>{
+exports.downloadReel = async (req, res) => {
 
     try {
-        const reel_id = req.params.id ;
+        const reel_id = req.params.id;
 
         const reel = await reelModel.getReelById(reel_id);
 
-        if(!reel){
+        if (!reel) {
 
             return res.status(400).json({
                 success: false,
-                message:"reels not found"
+                message: "reels not found"
             });
         }
 
-        const download_url = 
-        await generateSignedUrl(reel.video_url);
+        const download_url =
+            await generateSignedUrl(reel.video_url);
 
         res.json({
-            success:true , 
+            success: true,
             download_url
         });
-        
+
     } catch (err) {
         res.status(500).json({
-            success:true ,
-            message : err.message
+            success: true,
+            message: err.message
+        });
+    }
+};
+
+exports.getMyReel = async (req, res) => {
+
+    try {
+        const user_id = req.user.id;
+
+        const reels = await reelModel.getMyReel(user_id);
+
+        const updatedReels = await Promise.all(
+            reels.map(async (reel) => {
+
+                const temp_video_url = await generateSignedUrl(
+                    reel.video_url
+                );
+                return {
+                    ...reel,
+                    temp_video_url
+                };
+            })
+        );
+
+        res.json({
+            success: true,
+            total_reels: updatedReels.length,
+            data: updatedReels
+        })
+
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            message: err.message
+        });
+    }
+};
+
+
+exports.reportReel = async (req, res) => {
+    try {
+        const user_id = req.user.id;
+
+        const {
+            reel_id, reason } = req.body;
+
+        if (!reel_id || !reason) {
+            return res.status(400).json({
+                success: false,
+                message: " reel_id and reason requird"
+            });
+        }
+
+        const alreadyReported =
+            await reelModel.cheakReports(
+                user_id, reel_id
+            );
+
+ 
+
+        // REMOVE REPORT
+        if (alreadyReported) {
+
+            await reelModel.removeReports(
+                user_id,
+                reel_id
+            );
+
+            return res.json({
+                success: true,
+                reported: false,
+                message: "report removed successfully"
+            });
+
+        }
+
+        await reelModel.reportReel(
+            user_id,
+            reel_id,
+            reason
+        );
+        res.json({
+            success: true,
+            message: "reel reported successfully"
+        });
+
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            message: err.message
         });
     }
 };
