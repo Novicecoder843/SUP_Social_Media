@@ -42,7 +42,7 @@ router.post("/close-friends/:friendId", verifyToken, Validation(friendIdSchema),
 router.delete("/close-friends/:friendId", verifyToken, Validation(friendIdSchema), storyController.removeCloseFriend);
 
 router.get("/close-friends", verifyToken, storyController.getCloseFriends);
-// HIGHLIGHTS
+/* ----------------------Highlights---------------- */
 router.post("/highlights", verifyToken, Validation(createHighlightSchema), storyController.createHighlight);
 
 router.get("/highlights/user/:userId", verifyToken, Validation(userIdSchema), storyController.getUserHighlights);

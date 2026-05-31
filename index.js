@@ -1,5 +1,8 @@
 require('dotenv').config();
 const express = require("express");
+const swaggerUi = require("swagger-ui-express");
+
+const swaggerSpec = require("./config/swagger");
 const morgan = require("morgan");
 const logger = require("./utils/logger");
 
@@ -40,6 +43,7 @@ app.use((req, res, next) => {
 
 //app.use(bodyParser.json());
 
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use("/api/users", userRoutes);
 app.use("/api/roles", roleRoutes);
 app.use("/api/post", postRoutes);
