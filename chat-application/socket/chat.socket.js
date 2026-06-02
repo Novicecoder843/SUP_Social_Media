@@ -392,11 +392,9 @@ module.exports = (io) => {
               "📩 PRIVATE MESSAGE:",
               data
             );
-socket.on("send_message", async (data) => {
 
-  console.log("MEDIA DATA:", data);
 
-});
+
             /////////////////////////////////////////////////////
             // SAVE MESSAGE
             /////////////////////////////////////////////////////
