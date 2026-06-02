@@ -3,8 +3,35 @@ const auth = require("../middleware/auth");
 const chatController = require("../controllers/chat.controller");
 const express = require("express");
 const controller = require("../controllers/chat.Controller");
-
+const upload =require("../middleware/upload.middleware");
 router.get("/users", auth, controller.getUsers);
+/////////////////////////////////////////////////////
+// 📤 UPLOAD IMAGE / VIDEO
+/////////////////////////////////////////////////////
+
+router.post(
+  "/upload",
+
+  auth,
+
+  upload.single("media"),
+
+  (req,res)=>{
+
+    res.json({
+
+      success:true,
+
+      file:req.file.filename,
+
+      media_url:
+        `/uploads/${req.file.filename}`,
+
+      media_type:
+        req.file.mimetype
+    });
+  }
+);
 /////////////////////////////////////////////////////
 // 💬 SEND MESSAGE
 /////////////////////////////////////////////////////

@@ -392,18 +392,33 @@ module.exports = (io) => {
               "📩 PRIVATE MESSAGE:",
               data
             );
+socket.on("send_message", async (data) => {
 
+  console.log("MEDIA DATA:", data);
+
+});
             /////////////////////////////////////////////////////
             // SAVE MESSAGE
             /////////////////////////////////////////////////////
             const newMsg =
-              await Chat.createMessage({
-                sender_id: userId,
-                receiver_id:
-                  data.receiver_id,
-                message:
-                  data.message
-              });
+  await Chat.createMessage({
+
+    sender_id: userId,
+
+    receiver_id:
+      data.receiver_id,
+
+    message:
+      data.message || "",
+
+    media_url:
+      data.media_url || null,
+
+    media_type:
+      data.media_type || null
+
+  });
+          
 
             /////////////////////////////////////////////////////
             // RECEIVER SOCKET
@@ -664,6 +679,85 @@ socket.on(
     }
   }
 );
+
+       ////////////////////////////////////////////////////
+   // 📤 FILE UPLOAD MESSAGE
+      /////////////////////////////////////////////////////
+
+      socket.on(
+        "send_media",
+        async (data) => {
+
+          try {
+
+            console.log(
+              "📁 MEDIA MESSAGE:",
+              data
+            );
+
+            /////////////////////////////////////////////////////
+            // SAVE MEDIA MESSAGE
+            /////////////////////////////////////////////////////
+
+            const mediaMsg =
+              await Chat.createMessage({
+                sender_id:
+                  userId,
+
+                receiver_id:
+                  data.receiver_id,
+
+                message:
+                  data.message || "",
+
+                media_url:
+                  data.media_url,
+
+                media_type:
+                  data.media_type
+              });
+              /////////////////////////////////////////////////////
+            // RECEIVER SOCKET
+            /////////////////////////////////////////////////////
+
+            const receiverSocket =
+              onlineUsers.get(
+                String(
+                  data.receiver_id
+                )
+              );
+
+            /////////////////////////////////////////////////////
+            // SEND TO RECEIVER
+            /////////////////////////////////////////////////////
+
+            if (receiverSocket) {
+
+              io.to(receiverSocket)
+                .emit(
+                  "receive_message",
+                  mediaMsg
+                );
+            }
+            /////////////////////////////////////////////////////
+            // SEND TO SENDER
+            /////////////////////////////////////////////////////
+
+            socket.emit(
+              "message_sent",
+              mediaMsg
+            );
+
+          } catch (err) {
+
+            console.log(
+              "❌ MEDIA ERROR:",
+              err.message
+            );
+          }
+        }
+      );
+
       /////////////////////////////////////////////////////
       // 🔴 DISCONNECT
       /////////////////////////////////////////////////////

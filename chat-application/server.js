@@ -21,7 +21,10 @@ app.use(express.json());
 app.use("/api/auth", require("./routes/auth.routes"));
 app.use("/api/chats", require("./routes/chat.routes"));
 app.use("/api", require("./routes/chat.routes"));
-
+app.use(
+  "/uploads",
+  express.static("uploads")
+);
 app.get("/", (req, res) => {
   res.send("🚀 Chat API + Socket running");
 });

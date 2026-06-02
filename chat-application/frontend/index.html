@@ -276,6 +276,26 @@
       }
     }
 
+    .media-btn{
+  border:none;
+  background:none;
+  cursor:pointer;
+  font-size:20px;
+  margin-right:10px;
+}
+
+.chat-image{
+  max-width:250px;
+  border-radius:10px;
+  display:block;
+}
+
+.chat-video{
+  max-width:250px;
+  border-radius:10px;
+  display:block;
+}
+
   </style>
 </head>
 
@@ -347,7 +367,7 @@
 
     <div class="chat-input">
 
-      <div class="input-box">
+      <!-- <div class="input-box">
 
         <input
           id="message"
@@ -361,15 +381,47 @@
           onclick="send()"
         >
           Send
-        </button>
+        </button> -->
+<div class="input-box">
 
+  <input
+    type="file"
+    id="mediaFile"
+    accept="image/*,video/*,.pdf,.doc,.docx"
+    style="display:none"
+    onchange="uploadMedia()"
+  />
+
+  <button
+    class="media-btn"
+    onclick="document.getElementById('mediaFile').click()"
+  >
+    📎
+  </button>
+
+  <input
+    id="message"
+    placeholder="Message..."
+    onkeypress="handleEnter(event)"
+    oninput="typingEvent()"
+  />
+
+  <button
+    class="send-btn"
+    onclick="send()"
+  >
+    Send
+  </button>
+
+</div>
       </div>
 
     </div>
 
   </div>
 
-<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+<!-- <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script> -->
+<script src="http://localhost:3001/socket.io/socket.io.js"></script>
 
 <script>
 
@@ -384,6 +436,100 @@ let groupsCache = [];
 
 let onlineUsers = [];
 
+
+/////////////////////////////////////////////////////
+// MEDIA UPLOAD
+/////////////////////////////////////////////////////
+
+async function uploadMedia(){
+
+  const file =
+    document.getElementById("mediaFile")
+    .files[0];
+
+  if(!file) return;
+
+  const formData =
+    new FormData();
+
+  formData.append(
+    "media",
+    file
+  );
+
+  try{
+
+    const res =
+      await fetch(
+        "http://localhost:3001/api/chats/upload",
+        {
+          method:"POST",
+          headers:{
+            Authorization:
+              "Bearer " +
+              localStorage.getItem("token")
+          },
+          body:formData
+        }
+      );
+
+    const data =
+      await res.json();
+
+    console.log(
+      "UPLOAD RESPONSE:",
+      data
+    );
+
+    if(!data.media_url){
+
+      alert("Upload failed");
+
+      return;
+    }
+
+    if(currentGroupId){
+
+      socket.emit(
+        "send_group_message",
+        {
+          group_id:
+            currentGroupId,
+          message:"",
+          media_url:
+            data.media_url,
+          media_type:
+            data.media_type
+        }
+      );
+
+    }else{
+
+      socket.emit(
+        "send_message",
+        {
+          sender_id:
+            myUserId,
+          receiver_id:
+            currentChatUser,
+          message:"",
+          media_url:
+            data.media_url,
+          media_type:
+            data.media_type
+        }
+      );
+    }
+
+  }catch(err){
+
+    console.error(err);
+
+    alert(
+      "Media upload failed"
+    );
+  }
+}
 /////////////////////////////////////////////////////
 // CONNECT
 /////////////////////////////////////////////////////
@@ -920,56 +1066,37 @@ async function deleteMessage(messageId){
 /////////////////////////////////////////////////////
 // RENDER MESSAGE
 /////////////////////////////////////////////////////
-
 function renderMessage(msg){
 
-  const chatBox =
-    document.getElementById(
-      "chatBox"
-    );
+  const chatBox = document.getElementById("chatBox");
 
-  const empty =
-    document.querySelector(
-      ".empty"
-    );
+  const empty = document.querySelector(".empty");
 
   if(empty){
     empty.remove();
   }
 
-  const div =
-    document.createElement(
-      "div"
-    );
+  const div = document.createElement("div");
 
-  div.id =
-    "msg_" + msg.id;
+  div.id = "msg_" + msg.id;
 
   div.className =
     "message " +
     (
-      Number(msg.sender_id) ===
-      Number(myUserId)
+      Number(msg.sender_id) === Number(myUserId)
       ? "me"
       : "friend"
     );
 
-  const time =
-    new Date(
-      msg.created_at ||
-      Date.now()
-    ).toLocaleTimeString(
-      [],
-      {
-        hour:"2-digit",
-        minute:"2-digit"
-      }
-    );
+  const time = new Date(
+    msg.created_at || Date.now()
+  ).toLocaleTimeString([],{
+    hour:"2-digit",
+    minute:"2-digit"
+  });
 
   const deleteBtn =
-    Number(msg.sender_id) ===
-    Number(myUserId)
-
+    Number(msg.sender_id) === Number(myUserId)
     ? `
       <span
         class="delete-btn"
@@ -979,6 +1106,60 @@ function renderMessage(msg){
       </span>
     `
     : "";
+
+  /////////////////////////////////////////////////////
+  // MEDIA CONTENT
+  /////////////////////////////////////////////////////
+
+  let content = msg.message || "";
+
+  if(msg.media_url){
+
+    if(
+      msg.media_type &&
+      msg.media_type.startsWith("image/")
+    ){
+
+      content = `
+        <img
+          src="http://localhost:3001${msg.media_url}"
+          class="chat-image"
+        />
+      `;
+
+    }else if(
+      msg.media_type &&
+      msg.media_type.startsWith("video/")
+    ){
+
+      content = `
+        <video
+          controls
+          class="chat-video"
+        >
+          <source
+            src="http://localhost:3001${msg.media_url}"
+            type="${msg.media_type}"
+          >
+        </video>
+      `;
+
+    }else{
+
+      content = `
+        <a
+          href="http://localhost:3001${msg.media_url}"
+          target="_blank"
+        >
+          📄 Download File
+        </a>
+      `;
+    }
+  }
+
+  /////////////////////////////////////////////////////
+  // HTML
+  /////////////////////////////////////////////////////
 
   div.innerHTML = `
     <div>
@@ -998,7 +1179,7 @@ function renderMessage(msg){
         : ""
       }
 
-      ${msg.message}
+      ${content}
 
     </div>
 
@@ -1021,10 +1202,35 @@ function renderMessage(msg){
   chatBox.appendChild(div);
 
   chatBox.scrollTo({
-    top:chatBox.scrollHeight,
-    behavior:"smooth"
+    top: chatBox.scrollHeight,
+    behavior: "smooth"
   });
 }
+
+  
+ 
+  // ? (
+  //     msg.message.match(/\.(jpg|jpeg|png|gif|webp)$/i)
+
+  //     ? `<img src="${msg.message}" class="chat-image">`
+
+  //     : msg.message.match(/\.(mp4|webm|ogg)$/i)
+
+  //     ? `
+  //         <video controls class="chat-video">
+  //           <source src="${msg.message}">
+  //         </video>
+  //       `
+
+  //     : `
+  //         <a href="${msg.message}" target="_blank">
+  //           📄 Download File
+  //         </a>
+  //       `
+  //   )
+ 
+   
+
 
 /////////////////////////////////////////////////////
 // SEND MESSAGE

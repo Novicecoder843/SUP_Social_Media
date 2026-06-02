@@ -193,48 +193,139 @@ const Chat = require("../models/chat.model");
 /////////////////////////////////////////////////////
 // 💬 SEND MESSAGE (API + SOCKET)
 /////////////////////////////////////////////////////
-exports.sendMessage = async (req, res) => {
-  try {
-    const senderId = req.user.id;
-    const { receiver_id, message, parent_id } = req.body;
+// exports.sendMessage = async (req, res) => {
+//   try {
+//     const senderId = req.user.id;
+//     const { receiver_id, message, parent_id } = req.body;
 
-    if (!receiver_id || !message) {
+//     if (!receiver_id || !message) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "receiver_id and message required",
+//       });
+//     }
+
+//     const newMessage = await Chat.createMessage({
+//       sender_id: senderId,
+//       receiver_id,
+//       message,
+//       parent_id,
+//     });
+
+//     // 📡 SOCKET EMIT
+//     const io = req.app.get("io");
+//     const onlineUsers = req.app.get("onlineUsers") || {};
+
+//     const receiverSockets = onlineUsers[receiver_id];
+
+//     if (receiverSockets) {
+//       receiverSockets.forEach((socketId) => {
+//         io.to(socketId).emit("receive_message", newMessage);
+//       });
+//     }
+
+//     res.status(201).json({
+//       success: true,
+//       message: "Message sent",
+//       data: newMessage,
+//     });
+
+//   } catch (err) {
+//     console.error("SEND ERROR:", err);
+//     res.status(500).json({ error: err.message });
+//   }
+// };
+
+
+exports.sendMessage = async (
+  req,
+  res
+) => {
+
+  try {
+
+    const sender_id =
+      req.user.id;
+
+    const {
+      receiver_id,
+      message,
+      media_url,
+      media_type
+    } = req.body;
+
+    if (
+      !receiver_id ||
+      (!message && !media_url)
+    ) {
+
       return res.status(400).json({
-        success: false,
-        message: "receiver_id and message required",
+        success:false,
+        message:
+          "receiver_id and message/media required"
       });
     }
 
-    const newMessage = await Chat.createMessage({
-      sender_id: senderId,
-      receiver_id,
-      message,
-      parent_id,
-    });
+    const newMessage =
+      await Chat.createMessage({
 
-    // 📡 SOCKET EMIT
-    const io = req.app.get("io");
-    const onlineUsers = req.app.get("onlineUsers") || {};
+        sender_id,
 
-    const receiverSockets = onlineUsers[receiver_id];
+        receiver_id,
 
-    if (receiverSockets) {
-      receiverSockets.forEach((socketId) => {
-        io.to(socketId).emit("receive_message", newMessage);
+        message:
+          message || "",
+
+        media_url:
+          media_url || null,
+
+        media_type:
+          media_type || null
       });
+
+    /////////////////////////////////////////////////////
+    // SOCKET
+    /////////////////////////////////////////////////////
+
+    const io =
+      req.app.get("io");
+
+    const onlineUsers =
+      req.app.get("onlineUsers");
+
+    const receiverSocket =
+      onlineUsers[
+        receiver_id
+      ];
+
+    if(receiverSocket){
+
+      io.to(receiverSocket)
+        .emit(
+          "receive_message",
+          newMessage
+        );
     }
 
     res.status(201).json({
-      success: true,
-      message: "Message sent",
-      data: newMessage,
+      success:true,
+      message:"Message sent",
+      data:newMessage
     });
 
-  } catch (err) {
-    console.error("SEND ERROR:", err);
-    res.status(500).json({ error: err.message });
+  } catch(err){
+
+    console.log(err);
+
+    res.status(500).json({
+      success:false,
+      error:err.message
+    });
   }
 };
+
+
+
 
 /////////////////////////////////////////////////////
 // 🔁 REPLY MESSAGE
@@ -726,7 +817,50 @@ exports.sendGroupMessage =
       });
     }
   };
+exports.sendGroupMessage =
+  async (req,res) => {
 
+    try {
+
+      const sender_id =
+        req.user.id;
+
+      const {
+        group_id,
+        message,
+        media_url,
+        media_type
+      } = req.body;
+
+      const msg =
+        await Chat.createGroupMessage(
+
+          group_id,
+
+          sender_id,
+
+          message || "",
+
+          media_url || null,
+
+          media_type || null
+        );
+
+      res.json({
+        success:true,
+        data:msg
+      });
+
+    } catch(err){
+
+      console.log(err);
+
+      res.status(500).json({
+        success:false,
+        error:err.message
+      });
+    }
+  };
 /////////////////////////////////////////////////////
 // ✅ GET GROUP MESSAGES
 /////////////////////////////////////////////////////

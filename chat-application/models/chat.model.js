@@ -18,13 +18,61 @@ exports.sendMessage = async (senderId, receiverId, message) => {
 /////////////////////////////////////////////////////
 // 💬 CREATE MESSAGE (SOCKET)
 /////////////////////////////////////////////////////
-exports.createMessage = async ({ sender_id, receiver_id, message, parent_id }) => {
+
+// exports.createMessage = async ({ sender_id, receiver_id, message, parent_id }) => {
+//   const result = await db.query(
+//     `INSERT INTO public.messages (sender_id, receiver_id, message, parent_id)
+//      VALUES ($1, $2, $3, $4)
+//      RETURNING *`,
+//     [sender_id, receiver_id, message, parent_id || null]
+//   );
+
+//   return result.rows[0];
+// };
+
+exports.createMessage = async ({
+  sender_id,
+  receiver_id,
+  message,
+  parent_id = null,
+  media_url = null,
+  media_type = null
+}) => {
+
+  console.log("INSERT DATA:", {
+    sender_id,
+    receiver_id,
+    message,
+    parent_id,
+    media_url,
+    media_type
+  });
+
   const result = await db.query(
-    `INSERT INTO public.messages (sender_id, receiver_id, message, parent_id)
-     VALUES ($1, $2, $3, $4)
-     RETURNING *`,
-    [sender_id, receiver_id, message, parent_id || null]
+    `
+    INSERT INTO messages
+    (
+      sender_id,
+      receiver_id,
+      message,
+      parent_id,
+      media_url,
+      media_type
+    )
+    VALUES ($1,$2,$3,$4,$5,$6)
+    RETURNING *
+    `,
+    [
+      sender_id,
+      receiver_id,
+      message,
+      parent_id,
+      media_url,
+      media_type
+    ]
   );
+
+  console.log("DB RESULT:", result.rows[0]);
 
   return result.rows[0];
 };
@@ -322,52 +370,85 @@ exports.getChatListFromMessages = async (userId) => {
 /////////////////////////////////////////////////////
 // ✅ CREATE GROUP
 /////////////////////////////////////////////////////
-exports.createGroup = async (
-  name,
-  createdBy,
-  members = []
+// exports.createGroup = async (
+//   name,
+//   createdBy,
+//   members = []
+// ) => {
+
+//   // create group
+//   const groupResult = await db.query(
+//     `
+//     INSERT INTO groups (name, created_by)
+//     VALUES ($1, $2)
+//     RETURNING *
+//     `,
+//     [name, createdBy]
+//   );
+
+//   const group = groupResult.rows[0];
+
+//   /////////////////////////////////////////////////////
+//   // add creator
+//   /////////////////////////////////////////////////////
+//   await db.query(
+//     `
+//     INSERT INTO group_members (group_id, user_id)
+//     VALUES ($1, $2)
+//     `,
+//     [group.id, createdBy]
+//   );
+
+//   /////////////////////////////////////////////////////
+//   // add members
+//   /////////////////////////////////////////////////////
+//   for (const memberId of members) {
+
+//     await db.query(
+//       `
+//       INSERT INTO group_members (group_id, user_id)
+//       VALUES ($1, $2)
+//       `,
+//       [group.id, memberId]
+//     );
+//   }
+
+//   return group;
+// };
+
+exports.createGroupMessage = async (
+  group_id,
+  sender_id,
+  message,
+  media_url = null,
+  media_type = null
 ) => {
 
-  // create group
-  const groupResult = await db.query(
+  const result = await db.query(
     `
-    INSERT INTO groups (name, created_by)
-    VALUES ($1, $2)
+    INSERT INTO group_messages
+    (
+      group_id,
+      sender_id,
+      message,
+      media_url,
+      media_type
+    )
+    VALUES ($1,$2,$3,$4,$5)
+
     RETURNING *
     `,
-    [name, createdBy]
+    [
+      group_id,
+      sender_id,
+      message,
+      media_url,
+      media_type
+    ]
   );
 
-  const group = groupResult.rows[0];
-
-  /////////////////////////////////////////////////////
-  // add creator
-  /////////////////////////////////////////////////////
-  await db.query(
-    `
-    INSERT INTO group_members (group_id, user_id)
-    VALUES ($1, $2)
-    `,
-    [group.id, createdBy]
-  );
-
-  /////////////////////////////////////////////////////
-  // add members
-  /////////////////////////////////////////////////////
-  for (const memberId of members) {
-
-    await db.query(
-      `
-      INSERT INTO group_members (group_id, user_id)
-      VALUES ($1, $2)
-      `,
-      [group.id, memberId]
-    );
-  }
-
-  return group;
+  return result.rows[0];
 };
-
 /////////////////////////////////////////////////////
 // ✅ GET MY GROUPS
 /////////////////////////////////////////////////////
