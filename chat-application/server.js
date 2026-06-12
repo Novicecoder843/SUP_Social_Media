@@ -14,11 +14,13 @@ const app = express();
 /////////////////////////////////////////////////////
 app.use(cors()); // ✅ ADD THIS
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 /////////////////////////////////////////////////////
 // 📦 ROUTES
 /////////////////////////////////////////////////////
 app.use("/api/auth", require("./routes/auth.routes"));
+app.use("/api/stories", storyRoutes);
 app.use("/api/chats", require("./routes/chat.routes"));
 app.use("/api", require("./routes/chat.routes"));
 app.use(
@@ -28,7 +30,7 @@ app.use(
 app.get("/", (req, res) => {
   res.send("🚀 Chat API + Socket running");
 });
-app.use("/api/stories",storyRoutes);
+
 /////////////////////////////////////////////////////
 // 🌐 CREATE HTTP SERVER
 /////////////////////////////////////////////////////

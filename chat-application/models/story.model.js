@@ -54,20 +54,16 @@ exports.createStory = async (
 /////////////////////////////////////////////////////
 exports.getAllStories = async () => {
 
-  const result = await db.query(
-    `
+  const result = await db.query(`
     SELECT
       s.*,
-      u.name
+      u.email
     FROM stories s
     JOIN users u
       ON u.id = s.user_id
-
     WHERE s.expires_at > NOW()
-
     ORDER BY s.created_at DESC
-    `
-  );
+  `);
 
   return result.rows;
 };
@@ -162,6 +158,7 @@ exports.replyStory = async (
 /////////////////////////////////////////////////////
 // GET STORY VIEWERS
 /////////////////////////////////////////////////////
+
 exports.getStoryViewers = async (
   story_id
 ) => {
@@ -170,7 +167,7 @@ exports.getStoryViewers = async (
     `
     SELECT
       u.id,
-      u.name,
+      u.email,
       sv.viewed_at
 
     FROM story_views sv
@@ -187,7 +184,6 @@ exports.getStoryViewers = async (
 
   return result.rows;
 };
-
 /////////////////////////////////////////////////////
 // DELETE STORY
 /////////////////////////////////////////////////////

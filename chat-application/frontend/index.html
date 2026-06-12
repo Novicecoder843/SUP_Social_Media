@@ -295,7 +295,51 @@
   border-radius:10px;
   display:block;
 }
+/* Upload Progress Container */
+#uploadContainer{
+  display:none;
+  width:100%;
+  padding:10px;
+  margin-bottom:10px;
+  background:#fff;
+  border-radius:10px;
+}
 
+/* Progress Background */
+.progress-wrapper{
+  width:100%;
+  height:20px;
+  background:#ddd;
+  border-radius:10px;
+  overflow:hidden;
+}
+
+/* Progress Bar */
+#uploadBar{
+  width:0%;
+  height:100%;
+  background:linear-gradient(
+    90deg,
+    #4CAF50,
+    #66BB6A
+  );
+  transition:width .2s ease;
+}
+
+/* Percentage Text */
+#uploadText{
+  margin-top:8px;
+  font-size:14px;
+  font-weight:bold;
+  color:#333;
+}
+
+/* Upload Speed */
+#uploadSpeed{
+  margin-top:4px;
+  font-size:13px;
+  color:#666;
+}
   </style>
 </head>
 
@@ -367,62 +411,83 @@
 
     <div class="chat-input">
 
-      <!-- <div class="input-box">
-
-        <input
-          id="message"
-          placeholder="Message..."
-          onkeypress="handleEnter(event)"
-          oninput="typingEvent()"
-        />
-
-        <button
-          class="send-btn"
-          onclick="send()"
-        >
-          Send
-        </button> -->
-<div class="input-box">
-
-  <input
-    type="file"
-    id="mediaFile"
-    accept="image/*,video/*,.pdf,.doc,.docx"
-    style="display:none"
-    onchange="uploadMedia()"
-  />
-
-  <button
-    class="media-btn"
-    onclick="document.getElementById('mediaFile').click()"
+  <!-- Upload Progress -->
+  <div
+    id="uploadContainer"
+    style="
+      display:none;
+      padding:10px;
+      width:100%;
+    "
   >
-    📎
-  </button>
 
-  <input
-    id="message"
-    placeholder="Message..."
-    onkeypress="handleEnter(event)"
-    oninput="typingEvent()"
-  />
+    <div
+      style="
+        width:100%;
+        background:#ddd;
+        border-radius:10px;
+      "
+    >
+      <div
+        id="uploadBar"
+        style="
+          width:0%;
+          height:20px;
+          background:#4CAF50;
+          border-radius:10px;
+          transition:0.2s;
+        "
+      ></div>
+    </div>
 
-  <button
-    class="send-btn"
-    onclick="send()"
-  >
-    Send
-  </button>
+    <div id="uploadText">
+      0%
+    </div>
 
-</div>
-      </div>
-
+    <div id="uploadSpeed">
+      0 MB/s
     </div>
 
   </div>
 
+  <div class="input-box">
+
+    <input
+      type="file"
+      id="mediaFile"
+      accept="image/*,video/*,.pdf,.doc,.docx"
+      style="display:none"
+      onchange="uploadMedia()"
+    />
+
+    <button
+      class="media-btn"
+      onclick="document.getElementById('mediaFile').click()"
+    >
+      📎
+    </button>
+
+    <input
+      id="message"
+      placeholder="Message..."
+      onkeypress="handleEnter(event)"
+      oninput="typingEvent()"
+    />
+
+    <button
+      class="send-btn"
+      onclick="send()"
+    >
+      Send
+    </button>
+
+  </div>
+
+</div>
+
 <!-- <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script> -->
 <script src="http://localhost:3001/socket.io/socket.io.js"></script>
-
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 <script>
 
 let socket;
@@ -440,14 +505,13 @@ let onlineUsers = [];
 /////////////////////////////////////////////////////
 // MEDIA UPLOAD
 /////////////////////////////////////////////////////
-
-async function uploadMedia(){
+async function uploadMedia() {
 
   const file =
     document.getElementById("mediaFile")
     .files[0];
 
-  if(!file) return;
+  if (!file) return;
 
   const formData =
     new FormData();
@@ -457,45 +521,190 @@ async function uploadMedia(){
     file
   );
 
-  try{
+  const uploadContainer =
+    document.getElementById(
+      "uploadContainer"
+    );
 
-    const res =
-      await fetch(
+  const uploadBar =
+    document.getElementById(
+      "uploadBar"
+    );
+
+  const uploadText =
+    document.getElementById(
+      "uploadText"
+    );
+
+  const uploadSpeed =
+    document.getElementById(
+      "uploadSpeed"
+    );
+
+  uploadContainer.style.display =
+    "block";
+
+  uploadBar.style.width = "0%";
+
+  uploadText.innerHTML =
+    `Uploading ${file.name}<br>0%`;
+
+  uploadSpeed.innerHTML =
+    "0 MB/s";
+
+  const startTime =
+    Date.now();
+
+  try {
+
+    const response =
+      await axios.post(
         "http://localhost:3001/api/chats/upload",
+        formData,
         {
-          method:"POST",
-          headers:{
+          headers: {
             Authorization:
               "Bearer " +
-              localStorage.getItem("token")
+              localStorage.getItem(
+                "token"
+              )
           },
-          body:formData
-        }
-      );
+          onUploadProgress: (progressEvent) => {
+
+  console.log(
+    "PROGRESS EVENT =>",
+    progressEvent
+  );
+
+  if (!progressEvent.total) {
+
+    console.log(
+      "TOTAL SIZE NOT AVAILABLE"
+    );
+
+    return;
+  }
+
+  const percent =
+    Math.round(
+      (
+        progressEvent.loaded *
+        100
+      ) /
+      progressEvent.total
+    );
+
+  console.log(
+    "PERCENT =>",
+    percent
+  );
+
+  uploadBar.style.width =
+    percent + "%";
+
+  const elapsed =
+    Math.max(
+      (
+        Date.now() -
+        startTime
+      ) / 1000,
+      0.1
+    );
+
+  const speed =
+    progressEvent.loaded /
+    elapsed;
+
+  const uploadedMB =
+    (
+      progressEvent.loaded /
+      1024 /
+      1024
+    ).toFixed(2);
+
+  const totalMB =
+    (
+      progressEvent.total /
+      1024 /
+      1024
+    ).toFixed(2);
+
+  uploadText.innerHTML =
+    `
+    ${percent}% Uploaded
+    <br>
+    ${uploadedMB} MB /
+    ${totalMB} MB
+    `;
+
+  uploadSpeed.innerHTML =
+    `
+    Speed:
+    ${(
+      speed /
+      1024 /
+      1024
+    ).toFixed(2)}
+    MB/s
+    `;
+
+  console.log(
+    `UPLOADED => ${uploadedMB} MB`
+  );
+
+  console.log(
+    `SPEED => ${
+      (
+        speed /
+        1024 /
+        1024
+      ).toFixed(2)
+    } MB/s`
+  );
+ }
+ });              
 
     const data =
-      await res.json();
+      response.data;
+
+    uploadBar.style.width =
+      "100%";
+
+    uploadText.innerHTML =
+      "✅ Upload Complete";
+
+    uploadSpeed.innerHTML =
+      "";
+
+    setTimeout(() => {
+
+      uploadContainer.style.display =
+        "none";
+
+    }, 1500);
 
     console.log(
       "UPLOAD RESPONSE:",
       data
     );
 
-    if(!data.media_url){
+    if (!data.media_url) {
 
-      alert("Upload failed");
+      alert(
+        "Upload failed"
+      );
 
       return;
     }
 
-    if(currentGroupId){
+    if (currentGroupId) {
 
       socket.emit(
         "send_group_message",
         {
           group_id:
             currentGroupId,
-          message:"",
+          message: "",
           media_url:
             data.media_url,
           media_type:
@@ -503,7 +712,7 @@ async function uploadMedia(){
         }
       );
 
-    }else{
+    } else {
 
       socket.emit(
         "send_message",
@@ -512,7 +721,7 @@ async function uploadMedia(){
             myUserId,
           receiver_id:
             currentChatUser,
-          message:"",
+          message: "",
           media_url:
             data.media_url,
           media_type:
@@ -521,13 +730,22 @@ async function uploadMedia(){
       );
     }
 
-  }catch(err){
+  } catch (err) {
 
     console.error(err);
 
-    alert(
-      "Media upload failed"
-    );
+    uploadText.innerHTML =
+      "❌ Upload Failed";
+
+    uploadSpeed.innerHTML =
+      "";
+
+    setTimeout(() => {
+
+      uploadContainer.style.display =
+        "none";
+
+    }, 2000);
   }
 }
 /////////////////////////////////////////////////////

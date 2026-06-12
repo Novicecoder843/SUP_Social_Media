@@ -213,24 +213,20 @@ exports.likeStory = async (
 // 💬 REPLY STORY
 /////////////////////////////////////////////////////
 
-exports.replyStory = async (
-  req,
-  res
-) => {
-
+exports.replyStory = async (req, res) => {
   try {
 
-    const storyId =
-      req.params.id;
+    console.log("BODY =>", req.body);
+console.log("MESSAGE =>", req.body?.message);
 
-    const senderId =
-      req.user.id;
+    const storyId = req.params.id;
+    const senderId = req.user.id;
 
-    const { message } =
-      req.body;
+    const message = req.body?.message?.trim();
+
+
 
     if (!message) {
-
       return res.status(400).json({
         success: false,
         message: "Reply message is required"
@@ -251,10 +247,7 @@ exports.replyStory = async (
 
   } catch (err) {
 
-    console.log(
-      "❌ Reply Story Error:",
-      err.message
-    );
+    console.log("REPLY ERROR =>", err);
 
     return res.status(500).json({
       success: false,
