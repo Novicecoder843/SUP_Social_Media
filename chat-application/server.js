@@ -6,7 +6,7 @@ const cors = require("cors"); // ✅ ADD THIS
 
 const { Server } = require("socket.io");
 const { setSocket } = require("./config/socket");
-
+const storyRoutes =require("./routes/story.routes");
 const app = express();
 
 /////////////////////////////////////////////////////
@@ -28,7 +28,7 @@ app.use(
 app.get("/", (req, res) => {
   res.send("🚀 Chat API + Socket running");
 });
-
+app.use("/api/stories",storyRoutes);
 /////////////////////////////////////////////////////
 // 🌐 CREATE HTTP SERVER
 /////////////////////////////////////////////////////
@@ -62,3 +62,5 @@ const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
+
+
