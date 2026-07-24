@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SUP Chat</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <!-- SOCKET.IO -->
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+
+<body>
+
+<div class="app">
+
+    <!-- LEFT SIDEBAR -->
+    <div class="sidebar">
+
+        <div class="sidebar-header">
+
+            <h2>Chats</h2>
+
+            <div class="user-login">
+
+                <input type="number" id="userId" placeholder="Your User ID">
+
+                <button onclick="joinChat()">
+                    Join
+                </button>
+
+            </div>
+
+        </div>
+
+        <!-- CONVERSATIONS -->
+        <div id="conversationList" class="conversation-list">
+
+            <div class="conversation active">
+
+                <div class="avatar">R</div>
+
+                <div class="conversation-info">
+
+                    <div class="top-row">
+
+                        <span class="name">Rahul</span>
+
+                        <span class="time">10:30 AM</span>
+
+                    </div>
+
+                    <div class="bottom-row">
+
+                        <span class="last-message">Hello bro</span>
+
+                        <span class="unread">2</span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- RIGHT CHAT AREA -->
+    <div class="chat-area">
+
+        <!-- CHAT HEADER -->
+        <div class="chat-header">
+
+            <div class="chat-user">
+
+                <div class="avatar large">R</div>
+
+                <div>
+
+                    <h3 id="chatUserName">Rahul</h3>
+
+                    <span id="onlineStatus" class="online">
+                        🟢 Online
+                    </span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- MESSAGES -->
+        <div id="messages" class="messages"></div>
+
+        <!-- TYPING -->
+        <div id="typing" class="typing"></div>
+
+        <!-- INPUT AREA -->
+        <div class="message-input-area">
+
+            <button class="icon-btn">😊</button>
+
+            <button class="icon-btn">📎</button>
+
+            <button class="icon-btn">🎤</button>
+
+            <input
+                type="number"
+                id="receiverId"
+                placeholder="Receiver ID"
+                class="receiver-input"
+            >
+
+            <input
+                type="text"
+                id="message"
+                placeholder="Type a message"
+                onkeypress="handleKey(event)"
+            >
+
+            <button class="send-btn" onclick="sendMessage()">
+                ➤
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script src="chat.js"></script>
+
+</body>
+</html>
